@@ -87,6 +87,7 @@ jobs:
 | `baseline_ref` | empty | SAST reports only what is new since this ref, e.g. `${{ github.base_ref }}` on a pull request |
 | `images` | empty | Images Trivy also scans (and SBOMs), one reference per line |
 | `image_registries` | empty | ECR account ids those images live in |
+| `trivy_runs_on` | `ubuntu-latest` | A larger runner, for images too big for a standard one (Trivy reads images straight from the registry, one copy on disk) |
 | `zap_target` | empty | URL ZAP scans (staging or preview, never production). **Empty: ZAP is recorded as not run, with the reason**, and the build does not fail |
 | `zap_scan` | `baseline` | `baseline` (passive) or `full` / `api` (active attack: needs the `dast-active` environment's approval and `zap_confirm` equal to the target) |
 | `zap_runs_on` | `ubuntu-latest` | A self-hosted runner, for a target inside a private network |

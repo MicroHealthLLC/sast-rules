@@ -21,6 +21,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -88,6 +89,15 @@ def _trivy_counts(report: dict) -> dict[str, dict[str, int]]:
     return kinds
 
 
+def _target_name(t: dict) -> str:
+    """The artifact name trivy.yml gives a target (its `dest` step)."""
+    if t.get("kind") == "repo":
+        return "repository"
+    tail = str(t.get("ref", "")).rsplit("/", 1)[-1]
+    tail = re.split(r"[:@]", tail, maxsplit=1)[0]
+    return re.sub(r"[^A-Za-z0-9._-]", "-", tail)
+
+
 def trivy_and_sbom(art: Path) -> tuple[dict, dict]:
     targets, documents = [], []
     for d in sorted(art.glob("trivy-*")):
@@ -103,7 +113,23 @@ def trivy_and_sbom(art: Path) -> tuple[dict, dict]:
         bom = _load(d / "sbom.cdx.json")
         if isinstance(bom, dict):
             documents.append({"target": name, "components": len(bom.get("components") or [])})
-    t_ok = bool(targets) and all(t["status"] == "ran" for t in targets)
+    # A planned target that left no artifact at all (its job failed before
+    # uploading) is a failed target, never an absent one.
+    try:
+        planned = json.loads(os.environ.get("TRIVY_TARGETS") or "[]")
+    except ValueError:
+        planned = []
+    seen = {t["target"] for t in targets}
+    for t in planned if isinstance(planned, list) else []:
+        name = _target_name(t)
+        if name not in seen:
+            targets.append({"target": name, "status": "failed", "findings": None})
+            seen.add(name)
+    t_ok = (
+        bool(targets)
+        and all(t["status"] == "ran" for t in targets)
+        and os.environ.get("RESULT_TRIVY", "success") in ("success", "")
+    )
     trivy = {"status": _status("TRIVY", t_ok), "targets": targets}
     if trivy["status"] == "failed" and any(t["status"] == "ran" for t in targets):
         trivy["status"] = "partial"

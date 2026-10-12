@@ -13,8 +13,11 @@ name: Trivy and SBOM
 #   * Reports go where scripts/destination.sh says: the default branch's
 #     to <project>/trivy-fs/… and <project>/sbom/…, where Tueri Core ingests
 #     them; another branch's under _branch-scans/; a pull request's nowhere.
-#   * Images are pulled with the caller's credentials, saved to a tarball
-#     and scanned from it: no registry token reaches Trivy.
+#   * Images are read by Trivy straight from the registry (--image-src
+#     remote): one copy of the layers on disk, not a pulled image plus a
+#     saved tarball, which a large image (CUDA, for one) does not fit. The
+#     registry token reaches Trivy only through its environment, from a
+#     mode-0600 env file, never a command line or a log.
 
 on:
   workflow_call:
@@ -50,9 +53,17 @@ on:
         description: "ECR registry account ids the images live in, comma-separated (logged in with AWS_ROLE)"
         type: string
         default: ""
+      runs_on:
+        description: "Runner label for the Trivy jobs (a larger runner for very large images)"
+        type: string
+        default: ubuntu-latest
     secrets:
       AWS_ROLE:
         required: true
+    outputs:
+      targets:
+        description: "Every target planned (JSON list of {kind, ref}); the combined report marks one that left no report as failed"
+        value: ${{ jobs.plan.outputs.matrix }}
 
 permissions:
   contents: read
@@ -82,7 +93,7 @@ jobs:
   scan:
     name: Trivy ${{ matrix.target.kind == 'repo' && 'repository' || matrix.target.ref }}
     needs: plan
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     timeout-minutes: 60
     if: needs.plan.outputs.matrix != '[]'
     strategy:
@@ -194,12 +205,20 @@ jobs:
           RUN trivy --version
           DOCKERFILE
 
-      - name: Pull and save the image
+      - name: Registry credential for the image (environment only)
         if: matrix.target.kind == 'image'
         run: |
-          docker pull "$IMAGE_REF"
-          mkdir -p "$RUNNER_TEMP/img"
-          docker save -o "$RUNNER_TEMP/img/image.tar" "$IMAGE_REF"
+          mkdir -p "$RUNNER_TEMP/img" && : > "$RUNNER_TEMP/img/env" && chmod 600 "$RUNNER_TEMP/img/env"
+          host="${IMAGE_REF%%/*}"
+          case "$host" in
+            *.dkr.ecr.*.amazonaws.com)
+              region="$(printf '%s' "$host" | sed -E 's/.*\.dkr\.ecr\.([a-z0-9-]+)\.amazonaws\.com/\1/')"
+              pw="$(docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+                     --entrypoint aws sast-trivy:fips ecr get-login-password --region "$region")"
+              echo "::add-mask::$pw"
+              printf 'TRIVY_USERNAME=AWS\nTRIVY_PASSWORD=%s\n' "$pw" > "$RUNNER_TEMP/img/env" ;;
+            *) echo "Not an ECR image: scanned anonymously." ;;
+          esac
 
       - name: Run Trivy
         id: scan
@@ -208,7 +227,10 @@ jobs:
         run: |
           out="$RUNNER_TEMP/out"; mkdir -p "$out" "$RUNNER_TEMP/trivy-cache"
           common=(--cache-dir /cache --skip-version-check --no-progress --timeout 40m)
-          run() { docker run --rm -e HOME=/tmp -v "$PWD/src:/src" -v "$RUNNER_TEMP/img:/img" \
+          envf=(); [ -s "$RUNNER_TEMP/img/env" ] && envf=(--env-file "$RUNNER_TEMP/img/env")
+          mkdir -p "$RUNNER_TEMP/trivy-tmp"
+          run() { docker run --rm -e HOME=/tmp -e TMPDIR=/scratch "${envf[@]}" -v "$PWD/src:/src" \
+                    -v "$RUNNER_TEMP/trivy-tmp:/scratch" \
                     -v "$out:/out" -v "$RUNNER_TEMP/trivy-cache:/cache" -w /src sast-trivy:fips trivy "$@"; }
           if [ "$KIND" = repo ]; then
             ignore=(); [ -f src/.trivyignore ] && ignore=(--ignorefile .trivyignore)
@@ -217,11 +239,12 @@ jobs:
             run convert --format sarif --output /out/trivy.sarif /out/trivy-fs.json
             [ "$SBOM" = true ] && run fs "${common[@]}" --format cyclonedx --output /out/sbom.cdx.json .
           else
-            run image "${common[@]}" --input /img/image.tar --format json --output /out/trivy-image.json \
-              --scanners vuln,secret --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+            run image "${common[@]}" --image-src remote --format json --output /out/trivy-image.json \
+              --scanners vuln,secret --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL "$IMAGE_REF"
             run convert --format sarif --output /out/trivy.sarif /out/trivy-image.json
-            [ "$SBOM" = true ] && run image "${common[@]}" --input /img/image.tar --format cyclonedx --output /out/sbom.cdx.json
+            [ "$SBOM" = true ] && run image "${common[@]}" --image-src remote --format cyclonedx --output /out/sbom.cdx.json "$IMAGE_REF"
           fi
+          rm -f "$RUNNER_TEMP/img/env"
           ls -la "$out"
 
       - name: Upload SARIF to GitHub code scanning

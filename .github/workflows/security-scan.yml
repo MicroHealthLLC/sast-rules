@@ -92,6 +92,10 @@ on:
         description: "ECR registry account ids the images live in, comma-separated"
         type: string
         default: ""
+      trivy_runs_on:
+        description: "Runner for Trivy (a larger runner for very large images)"
+        type: string
+        default: ubuntu-latest
       # ZAP
       zap_target:
         description: "URL ZAP scans (staging/preview). Empty: ZAP is recorded as not run."
@@ -151,6 +155,7 @@ jobs:
       sbom: ${{ inputs.sbom }}
       images: ${{ inputs.images }}
       image_registries: ${{ inputs.image_registries }}
+      runs_on: ${{ inputs.trivy_runs_on }}
     secrets:
       AWS_ROLE: ${{ secrets.AWS_ROLE }}
 
@@ -261,6 +266,7 @@ jobs:
           RESULT_SAST: ${{ needs.sast.result }}
           RESULT_TRIVY: ${{ needs.trivy.result }}
           RESULT_ZAP: ${{ needs.zap.result }}
+          TRIVY_TARGETS: ${{ needs.trivy.outputs.targets }}
           FAIL_ON: ${{ inputs.fail_on }}
           RULES_COMMIT: ${{ steps.self.outputs.sha }}
           SCAN_COMMIT: ${{ steps.dest.outputs.commit }}
@@ -270,7 +276,7 @@ jobs:
           set +e
           docker run --rm --network none -v "$PWD/.sast-rules:/r:ro" -v "$RUNNER_TEMP:$RUNNER_TEMP" \
             -e ENABLED_SAST -e ENABLED_TRIVY -e ENABLED_SBOM -e ENABLED_ZAP \
-            -e RESULT_SAST -e RESULT_TRIVY -e RESULT_ZAP -e FAIL_ON -e RULES_COMMIT \
+            -e RESULT_SAST -e RESULT_TRIVY -e RESULT_ZAP -e TRIVY_TARGETS -e FAIL_ON -e RULES_COMMIT \
             -e SCAN_COMMIT -e SCAN_BRANCH -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -e GITHUB_SERVER_URL \
             -e GITHUB_EVENT_NAME -e GITHUB_STEP_SUMMARY sast-report:fips \
             python3 /r/scripts/combine_reports.py "$RUNNER_TEMP/artifacts" "$RUNNER_TEMP/report"

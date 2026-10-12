@@ -67,6 +67,15 @@ class CombineTests(unittest.TestCase):
         self.assertEqual(doc["scanners"]["zap"], {"status": "disabled", "alerts": None})
         self.assertEqual(rc, 0)
 
+    def test_a_planned_image_that_left_no_report_fails_the_run(self) -> None:
+        planned = json.dumps([{"kind": "repo", "ref": ""},
+                              {"kind": "image", "ref": "1.dkr.ecr.us-east-1.amazonaws.com/a/vllm:sha-1"}])
+        rc, doc = run(self.art, ON | {"TRIVY_TARGETS": planned, "RESULT_TRIVY": "failure"})
+        self.assertEqual(rc, 1)
+        names = {t["target"]: t["status"] for t in doc["scanners"]["trivy"]["targets"]}
+        self.assertEqual(names, {"repository": "ran", "vllm": "failed"})
+        self.assertEqual(doc["scanners"]["trivy"]["status"], "partial")
+
     def test_fail_on_counts_every_scanner(self) -> None:
         self.assertEqual(run(self.art, ON | {"FAIL_ON": "critical"})[0], 1)
         self.assertEqual(run(self.art, ON | {"FAIL_ON": "none"})[0], 0)
