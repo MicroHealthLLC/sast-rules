@@ -171,8 +171,11 @@ jobs:
           # The Go build and module caches and the linker's temporary files go to
           # tmpfs (memory): Trivy's build needs several GB of them, more than a
           # GitHub-hosted runner's disk has left beside the other images, and none of
-          # it belongs in a layer. Only the binary is written to disk.
-          RUN --mount=type=tmpfs,target=/tmp/go/pkg/mod --mount=type=tmpfs,target=/tmp/gobuild \
+          # it belongs in a layer. Only the binary is written to disk. The tmpfs
+          # covers all of GOPATH (/tmp/go): a mount deeper down makes BuildKit
+          # create /tmp/go and /tmp/go/pkg owned by root, and the build user
+          # (10001) then cannot create pkg/sumdb or bin/.
+          RUN --mount=type=tmpfs,target=/tmp/go --mount=type=tmpfs,target=/tmp/gobuild \
               GOCACHE=/tmp/gobuild/cache GOTMPDIR=/tmp/gobuild GOEXPERIMENT=jsonv2 go install -trimpath \
                 -ldflags "-s -w -X github.com/aquasecurity/trivy/pkg/version/app.ver=${TRIVY_VERSION}" \
                 "github.com/aquasecurity/trivy/cmd/trivy@v${TRIVY_VERSION}" \
