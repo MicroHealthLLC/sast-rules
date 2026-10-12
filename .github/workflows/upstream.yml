@@ -1,0 +1,67 @@
+name: Upstream updates
+# Daily. Each kind of update gets its own pull request, so a reviewer reads one
+# thing at a time; nothing here changes `main` without review.
+#   rules   GitLab's newest vX.Y.Z tag (scripts/sync_upstream.py), with the
+#           rules added, changed, retired and relicensed listed in the PR
+#   engine  the newest Opengrep release (scripts/bump_engine.py)
+#   fips    the FIPS image pins (scripts/fips_bump.py)
+# opengrep-rules is archived and frozen; it is never synced.
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [rules, engine, fips]
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          # GH_PAT where it exists: a PR opened with GITHUB_TOKEN starts no CI.
+          token: ${{ secrets.GH_PAT || github.token }}
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: SastRulesUpstream
+          aws-region: us-east-1
+      - uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # aws-actions/amazon-ecr-login v2
+        with:
+          registries: "295669632222"
+      - name: Update
+        run: |
+          case "${{ matrix.kind }}" in
+            rules)  scripts/ci-run.sh python3 scripts/sync_upstream.py gitlab --summary "$RUNNER_TEMP/body.md" ;;
+            engine) scripts/ci-run.sh python3 scripts/bump_engine.py | tee "$RUNNER_TEMP/body.md" ;;
+            fips)   scripts/ci-run.sh python3 scripts/fips_bump.py | tee "$RUNNER_TEMP/body.md" ;;
+          esac
+          touch "$RUNNER_TEMP/body.md"
+      - name: Open or refresh the pull request
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then echo "Nothing new." >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          branch="upstream/${{ matrix.kind }}"
+          title="chore(${{ matrix.kind }}): upstream update"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add -A
+          git commit -qm "$title"
+          git push -f origin "$branch"
+          cat "$RUNNER_TEMP/body.md" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$(gh pr view "$branch" --json state -q .state 2>/dev/null)" = OPEN ]; then
+            gh pr edit "$branch" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create --base main --head "$branch" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          fi

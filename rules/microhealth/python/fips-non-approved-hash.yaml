@@ -1,0 +1,31 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: python.fips-non-approved-hash
+    languages: [python]
+    severity: WARNING
+    message: >-
+      $ALG is not a FIPS 140-3 approved hash. Under the OpenSSL FIPS provider
+      MicroHealth's images run, hashlib refuses it and this call raises at
+      runtime. Use SHA-256 (hashlib.sha256) or another SHA-2/SHA-3 function;
+      if the digest is not used for security (a cache key, a checksum a
+      third-party format requires), pass usedforsecurity=False and say why in
+      a comment.
+    metadata:
+      category: security
+      cwe: ["CWE-327: Use of a Broken or Risky Cryptographic Algorithm"]
+      references:
+        - https://csrc.nist.gov/projects/cryptographic-module-validation-program
+    pattern-either:
+      - patterns:
+          - pattern-either:
+              - pattern: hashlib.$ALG(...)
+          - metavariable-regex:
+              metavariable: $ALG
+              regex: ^(md5|md4|blake2b|blake2s)$
+          - pattern-not: hashlib.$ALG(..., usedforsecurity=False, ...)
+      - patterns:
+          - pattern: hashlib.new("$ALG", ...)
+          - metavariable-regex:
+              metavariable: $ALG
+              regex: ^(?i)(md5|md4|blake2b|blake2s|ripemd160)$
+          - pattern-not: hashlib.new(..., usedforsecurity=False, ...)

@@ -1,0 +1,59 @@
+name: CI
+# Every change: the bundles and the lock must be what the sources build, every
+# rule in both bundles must load in the pinned Opengrep, MicroHealth's own
+# rules must pass their tests, and the shared workflow must scan this
+# repository end to end (no S3 upload).
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build check and rule tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # ECR pull of the FIPS base
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: SastRulesCi
+          aws-region: us-east-1
+      - uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # aws-actions/amazon-ecr-login v2
+        with:
+          registries: "295669632222"
+      - name: dist/ and rules.lock.json match the sources
+        run: scripts/ci-run.sh python3 scripts/build.py --check
+      - name: Every rule loads, and our own rules pass their tests
+        run: |
+          version="$(jq -r .version engine.json)"; file="$(jq -r .assets.x86_64.file engine.json)"
+          curl -fsSL -o "$RUNNER_TEMP/opengrep" "https://github.com/opengrep/opengrep/releases/download/v${version}/${file}"
+          echo "$(jq -r .assets.x86_64.sha256 engine.json)  $RUNNER_TEMP/opengrep" | sha256sum -c -
+          chmod 0755 "$RUNNER_TEMP/opengrep"
+          mkdir -p "$RUNNER_TEMP/empty"; echo 'x = 1' > "$RUNNER_TEMP/empty/a.py"
+          for b in internal product; do
+            docker run --rm --network none -u "$(id -u)" -e HOME=/tmp \
+              -v "$RUNNER_TEMP:/t" -v "$PWD:/repo:ro" -w /t/empty --entrypoint /t/opengrep sast-tools:fips \
+              scan --config "/repo/dist/$b.yaml" --no-rewrite-rule-ids --json-output="/t/$b.json" --quiet .
+            n="$(jq '.errors | length' "$RUNNER_TEMP/$b.json")"
+            [ "$n" = 0 ] || { jq '.errors[:20]' "$RUNNER_TEMP/$b.json"; echo "::error::$n rule errors in $b"; exit 1; }
+          done
+          docker run --rm --network none -u "$(id -u)" -e HOME=/tmp \
+            -v "$RUNNER_TEMP:/t" -v "$PWD:/repo:ro" -w /repo --entrypoint /t/opengrep sast-tools:fips \
+            scan --test rules/microhealth
+
+  self-scan:
+    name: Shared workflow, end to end
+    permissions: {contents: read, actions: read, security-events: write, id-token: write}
+    uses: ./.github/workflows/opengrep.yml
+    with:
+      aws_region: us-east-1
+      bundle: product
+    secrets: inherit

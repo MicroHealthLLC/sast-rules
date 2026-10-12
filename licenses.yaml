@@ -1,0 +1,41 @@
+# Which license may go in which bundle. scripts/build.py fails on a rule whose
+# license is not listed here, so a new upstream license is a decision someone
+# makes in a reviewed pull request, never a default.
+#
+#   internal  run in CI on MicroHealth's own repositories. Running a rule on our
+#             own code is use, not sale, so the Commons Clause permits it.
+#   product   shipped inside a product customers pay for (Tueri Core's Code
+#             module scanner). Permissive licenses only: MIT and Apache-2.0,
+#             whose only condition is attribution (dist/NOTICE.md ships with
+#             every bundle). Copyleft (GPL, LGPL) and the Commons Clause stay
+#             out until counsel says otherwise; move a license here only with
+#             that decision recorded in the pull request.
+#   vendor: false   not copied into this public repository at all.
+licenses:
+  MIT:
+    bundles: [internal, product]
+  Apache-2.0:
+    bundles: [internal, product]
+  GPL-2.0:
+    bundles: [internal]
+  LGPL-2.1:
+    bundles: [internal]
+  LGPL-3.0:
+    bundles: [internal]
+  LGPL-2.1-only+Commons-Clause:
+    bundles: [internal]
+  GitLab-EE:
+    # GitLab's Enterprise Edition license: proprietary, needs a GitLab
+    # subscription. Neither vendored nor bundled.
+    bundles: []
+    vendor: false
+
+# `# License:` header text (regex, first match wins) → license key above.
+headers:
+  "Commons Clause": LGPL-2.1-only+Commons-Clause
+  "Enterprise Edition": GitLab-EE
+  "^MIT": MIT
+  "^Apache 2\\.0": Apache-2.0
+  "^GPL 2\\.0": GPL-2.0
+  "Lesser General Public License v2\\.1": LGPL-2.1
+  "Lesser General Public License v3\\.0": LGPL-3.0

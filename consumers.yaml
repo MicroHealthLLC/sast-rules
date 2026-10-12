@@ -1,0 +1,17 @@
+# Repositories that pin this one. On every release, .github/workflows/release.yml
+# opens a pull request in each (scripts/bump_consumers.sh) moving every
+# `MicroHealthLLC/sast-rules…@<sha>` pin to the release commit. Merging it is
+# how a repository takes new rules: reviewed, never silently.
+consumers:
+  - {repo: MicroHealthLLC/TueriCore, branch: integration}
+  - {repo: MicroHealthLLC/TueriCXO, branch: integration}
+  - {repo: MicroHealthLLC/e-aar, branch: Integration}
+  - {repo: MicroHealthLLC/fips-container, branch: integration}
+  - {repo: MicroHealthLLC/fluenta, branch: integration}
+  - {repo: MicroHealthLLC/gnosis, branch: integration}
+  - {repo: MicroHealthLLC/kb-saas, branch: integration}
+  - {repo: MicroHealthLLC/simplr-ehr, branch: Integration}
+  - {repo: MicroHealthLLC/TueriDev, branch: integration}
+  - {repo: MicroHealthLLC/TueriTerm, branch: integration}
+  - {repo: MicroHealthLLC/mh-vllm, branch: integration}
+  - {repo: MicroHealthLLC/SimplrSSH, branch: integration}

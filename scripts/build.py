@@ -1,0 +1,256 @@
+#!/usr/bin/env python3
+"""Build the rule bundles and the lock file from the vendored sources.
+
+    python3 scripts/build.py           # rewrite dist/ and rules.lock.json
+    python3 scripts/build.py --check   # fail if either is not what the sources build
+
+Inputs (all in this repository, nothing is fetched):
+  sources.yaml     where each source came from and how its license is read
+  licenses.yaml    which license may go in which bundle
+  overrides.yaml   rules we turn off or re-grade, each with its reason
+  upstream/<src>/  vendored upstream rule files, never edited by hand
+  rules/<src>/     rules MicroHealth writes
+
+Outputs:
+  dist/<bundle>.yaml   one rules file per bundle, every id rewritten to
+                       `mh.<source>.<upstream id>` so a moved upstream file or a
+                       renamed folder never changes a finding's identity
+  dist/SHA256SUMS      what the shared workflow verifies before it scans
+  dist/NOTICE.md       the attributions every bundle carries
+  rules.lock.json      every rule ever shipped: source, upstream path, license,
+                       content hash, bundles, status. A rule that leaves its
+                       source is kept as `retired`, never dropped, so a consumer
+                       can tell "the rule stopped running" from "the code was
+                       fixed" (Tueri Core must not auto-resolve on the former).
+
+The build fails on: an unclassified license, a duplicate id, a rule whose
+license is not allowed in a bundle that would contain it, an override with no
+reason, or an override naming a rule that does not exist.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import sys
+from pathlib import Path
+
+import yaml
+
+ROOT = Path(__file__).resolve().parent.parent
+DIST = ROOT / "dist"
+LOCK = ROOT / "rules.lock.json"
+BUNDLES = ("internal", "product")
+SKIP_PARTS = {".git", ".github", "stats", "scripts", "qa", "spec", "mappings", "ci", "tests"}
+
+_LICENSE_HEADER = re.compile(r"^#\s*License:\s*(?:License:\s*)?(.+?)\s*$", re.MULTILINE)
+
+
+def load_yaml(path: Path) -> dict:
+    with path.open(encoding="utf-8") as fh:
+        return yaml.safe_load(fh) or {}
+
+
+def rule_files(base: Path):
+    """Every file under `base` whose YAML is a rules document."""
+    for path in sorted(base.rglob("*")):
+        if path.suffix not in (".yml", ".yaml") or not path.is_file():
+            continue
+        rel = path.relative_to(base)
+        if (
+            SKIP_PARTS & set(rel.parts)
+            or ".test." in path.name
+            or path.name.startswith(".")
+            or rel == Path("template.yaml")  # opengrep-rules' authoring template
+        ):
+            continue
+        try:
+            doc = load_yaml(path)
+        except yaml.YAMLError:
+            continue
+        if isinstance(doc, dict) and isinstance(doc.get("rules"), list):
+            yield path, rel, doc
+
+
+def classify(text: str, header_map: dict[str, str]) -> str | None:
+    """The license key of one rule file, from its `# License:` header."""
+    m = _LICENSE_HEADER.search(text)
+    if not m:
+        return None
+    header = m.group(1)
+    for pattern, key in header_map.items():
+        if re.search(pattern, header):
+            return key
+    return None
+
+
+def rule_hash(rule: dict) -> str:
+    return hashlib.sha256(json.dumps(rule, sort_keys=True).encode()).hexdigest()
+
+
+def collect(sources: dict, licenses: dict) -> tuple[list[dict], list[str]]:
+    rules: list[dict] = []
+    errors: list[str] = []
+    header_map = licenses.get("headers", {})
+    for name, src in sources["sources"].items():
+        base = ROOT / src["path"]
+        if not base.exists():
+            errors.append(f"source {name}: {src['path']} does not exist")
+            continue
+        for path, rel, doc in rule_files(base):
+            if src["license"] == "per-file":
+                lic = classify(path.read_text(encoding="utf-8"), header_map)
+                if lic is None:
+                    errors.append(f"{path.relative_to(ROOT)}: license header not recognised")
+                    continue
+            else:
+                lic = src["license"]
+            # The registry's own scheme: folders, file stem, rule id.
+            prefix = ".".join((*rel.parent.parts, path.stem)) if src.get("qualify_by_path") else ""
+            for rule in doc["rules"]:
+                if not isinstance(rule, dict) or "id" not in rule:
+                    errors.append(f"{path.relative_to(ROOT)}: a rule without an id")
+                    continue
+                upstream_id = str(rule["id"])
+                local = f"{prefix}.{upstream_id}" if prefix else upstream_id
+                rules.append(
+                    {
+                        "id": f"mh.{name}.{local}",
+                        "source": name,
+                        "upstream_id": upstream_id,
+                        "path": str(path.relative_to(ROOT)),
+                        "license": lic,
+                        "rule": rule,
+                    }
+                )
+    return rules, errors
+
+
+def build(check: bool) -> int:
+    sources = load_yaml(ROOT / "sources.yaml")
+    licenses = load_yaml(ROOT / "licenses.yaml")
+    overrides = load_yaml(ROOT / "overrides.yaml")
+    allowed = {k: set(v.get("bundles", [])) for k, v in licenses["licenses"].items()}
+
+    rules, errors = collect(sources, licenses)
+    seen: dict[str, str] = {}
+    for r in rules:
+        if r["id"] in seen:
+            errors.append(f"duplicate id {r['id']}: {seen[r['id']]} and {r['path']}")
+        seen[r["id"]] = r["path"]
+        if r["license"] not in allowed:
+            errors.append(f"{r['path']}: license {r['license']!r} is not in licenses.yaml")
+
+    disabled = overrides.get("disabled") or {}
+    regraded = overrides.get("severity") or {}
+    for rid, why in disabled.items():
+        if not str(why or "").strip():
+            errors.append(f"overrides.yaml: disabled {rid} has no reason")
+        if rid not in seen:
+            errors.append(f"overrides.yaml: disabled {rid} names no rule")
+    for rid, spec in regraded.items():
+        if not str((spec or {}).get("reason", "")).strip():
+            errors.append(f"overrides.yaml: severity {rid} has no reason")
+        if rid not in seen:
+            errors.append(f"overrides.yaml: severity {rid} names no rule")
+    if errors:
+        print("\n".join(errors), file=sys.stderr)
+        return 1
+
+    previous = json.loads(LOCK.read_text()) if LOCK.exists() else {"rules": {}}
+    lock_rules: dict[str, dict] = {}
+    bundles: dict[str, list[dict]] = {b: [] for b in BUNDLES}
+    for r in sorted(rules, key=lambda x: x["id"]):
+        rule = dict(r["rule"])
+        rule["id"] = r["id"]
+        if r["id"] in regraded:
+            rule["severity"] = regraded[r["id"]]["to"]
+        meta = dict(rule.get("metadata") or {})
+        meta.update(
+            {
+                "mh_source": r["source"],
+                "mh_upstream_id": r["upstream_id"],
+                "mh_license": r["license"],
+            }
+        )
+        rule["metadata"] = meta
+        in_bundles = [] if r["id"] in disabled else sorted(allowed[r["license"]])
+        for b in in_bundles:
+            bundles[b].append(rule)
+        entry = {
+            "source": r["source"],
+            "upstream_id": r["upstream_id"],
+            "path": r["path"],
+            "license": r["license"],
+            "sha256": rule_hash(rule),
+            "bundles": in_bundles,
+            "status": "disabled" if r["id"] in disabled else "active",
+        }
+        if r["id"] in disabled:
+            entry["reason"] = disabled[r["id"]]
+        lock_rules[r["id"]] = entry
+    for rid, old in previous.get("rules", {}).items():
+        if rid not in lock_rules:
+            lock_rules[rid] = {**old, "status": "retired", "bundles": []}
+
+    pins = {
+        name: {k: src[k] for k in ("url", "ref", "commit") if k in src}
+        for name, src in sources["sources"].items()
+    }
+    notice = (ROOT / "NOTICE.md").read_text(encoding="utf-8")
+    outputs: dict[Path, str] = {}
+    for b, items in bundles.items():
+        header = (
+            f"# sast-rules bundle `{b}` — built by scripts/build.py; do not edit.\n"
+            f"# {len(items)} rules. Sources: "
+            + ", ".join(f"{n}@{p.get('commit', 'local')[:12]}" for n, p in pins.items())
+            + "\n# Attributions and licenses: NOTICE.md (shipped beside this file).\n"
+        )
+        body = yaml.safe_dump(
+            {"rules": items}, sort_keys=False, allow_unicode=True, width=1_000_000
+        )
+        outputs[DIST / f"{b}.yaml"] = header + body
+    outputs[DIST / "NOTICE.md"] = notice
+    sums = "".join(
+        f"{hashlib.sha256(outputs[DIST / f'{b}.yaml'].encode()).hexdigest()}  {b}.yaml\n"
+        for b in BUNDLES
+    )
+    outputs[DIST / "SHA256SUMS"] = sums
+    lock = {
+        "comment": "Generated by scripts/build.py. Retired and disabled rules stay listed.",
+        "sources": pins,
+        "bundles": {b: len(items) for b, items in bundles.items()},
+        "rules": dict(sorted(lock_rules.items())),
+    }
+    outputs[LOCK] = json.dumps(lock, indent=1, sort_keys=False) + "\n"
+
+    if check:
+        stale = [
+            str(p.relative_to(ROOT))
+            for p, text in outputs.items()
+            if not p.exists() or p.read_text(encoding="utf-8") != text
+        ]
+        if stale:
+            print("Out of date (run python3 scripts/build.py): " + ", ".join(stale), file=sys.stderr)
+            return 1
+        print("dist/ and rules.lock.json match the sources.")
+        return 0
+    DIST.mkdir(exist_ok=True)
+    for p, text in outputs.items():
+        p.write_text(text, encoding="utf-8")
+    counts = ", ".join(f"{b}={len(items)}" for b, items in bundles.items())
+    retired = sum(1 for e in lock_rules.values() if e["status"] == "retired")
+    print(f"Built {counts}; {len(disabled)} disabled, {retired} retired.")
+    return 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--check", action="store_true")
+    return build(ap.parse_args().check)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

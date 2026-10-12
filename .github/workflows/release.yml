@@ -1,0 +1,70 @@
+name: Release
+# Every push to main that changes what a scan runs (a bundle, the engine pin or
+# the shared workflow) becomes a release `vYYYY.MM.N`, with the bundles,
+# SHA256SUMS and NOTICE attached, and a pull request in every consumer
+# (consumers.yaml) moving its pin to it.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dist/**"
+      - "engine.json"
+      - ".github/workflows/opengrep.yml"
+      - "scripts/annotate_report.py"
+      - "scripts/publication_status.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Tag and publish
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prefix="v$(date -u +%Y).$(( 10#$(date -u +%m) ))"
+          n="$(git tag -l "${prefix}.*" | wc -l)"
+          tag="${prefix}.${n}"
+          prev="$(git tag -l 'v*' --sort=-v:refname | head -1)"
+          {
+            echo "Rules commit \`${GITHUB_SHA}\`. Opengrep $(jq -r .version engine.json)."
+            echo
+            echo "Bundles: $(jq -c .bundles rules.lock.json)"
+            if [ -n "$prev" ]; then
+              echo
+              echo "Rule changes since ${prev}:"
+              git show "${prev}:rules.lock.json" > "$RUNNER_TEMP/old.json"
+              jq -rn --slurpfile o "$RUNNER_TEMP/old.json" --slurpfile n rules.lock.json '
+                ($o[0].rules) as $a | ($n[0].rules) as $b |
+                "- added: \([$b|keys[]|select($a[.]==null)]|length)",
+                "- changed: \([$b|to_entries[]|select($a[.key]!=null and $a[.key].sha256!=.value.sha256)]|length)",
+                "- retired or disabled: \([$b|to_entries[]|select(.value.status!="active" and ($a[.key].status//"active")=="active")]|length)"'
+            fi
+          } > "$RUNNER_TEMP/notes.md"
+          git tag "$tag" "$GITHUB_SHA"
+          git push origin "$tag"
+          gh release create "$tag" dist/internal.yaml dist/product.yaml dist/SHA256SUMS dist/NOTICE.md \
+            --title "$tag" --notes-file "$RUNNER_TEMP/notes.md"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Open pin PRs in every consumer
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::GH_PAT is not available to this repository; consumers were not bumped. Run scripts/bump_consumers.sh ${{ steps.tag.outputs.tag }} $GITHUB_SHA with a token that can push to them."
+            exit 0
+          fi
+          scripts/bump_consumers.sh "${{ steps.tag.outputs.tag }}" "$GITHUB_SHA"

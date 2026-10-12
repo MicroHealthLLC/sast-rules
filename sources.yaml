@@ -1,0 +1,32 @@
+# Where every rule comes from. scripts/sync_upstream.py moves `ref`/`commit`;
+# do not edit those two by hand. Ids become `mh.<source>.<id>` (scripts/build.py).
+sources:
+  gitlab:
+    # GitLab's SAST rules. Maintained; each file states its own license in a
+    # `# License:` header (MIT, Apache-2.0 from gosec, GPL-2.0 from flawfinder,
+    # LGPL, Commons Clause, GitLab EE), so the license is read per file.
+    url: https://gitlab.com/gitlab-org/security-products/sast-rules.git
+    ref: v2.10.1
+    commit: 53bf5cf6df3c51b6c02110f5a638b5e6213666cd
+    track: tags
+    path: upstream/gitlab
+    license: per-file
+    include: [c, csharp, go, java, javascript, python, scala, rules]
+  opengrep:
+    # opengrep/opengrep-rules: archived read-only on 2025-11-28, so this is a
+    # one-time import and never syncs. LGPL-2.1 with the Commons Clause
+    # (licensor Semgrep, Inc.): allowed in the internal bundle only, see
+    # licenses.yaml. Ids are qualified by their folder, as the original
+    # registry did: folders, file stem, id
+    # (python/lang/security/use-defused-xml.yaml → mh.opengrep.python.lang.security.use-defused-xml.use-defused-xml).
+    url: https://github.com/opengrep/opengrep-rules.git
+    ref: main
+    commit: f1d2b562b414783763fd02a6ed2736eaed622efa
+    track: frozen
+    path: upstream/opengrep
+    license: LGPL-2.1-only+Commons-Clause
+    qualify_by_path: true
+  microhealth:
+    # Rules MicroHealth writes. MIT, like the rest of this repository.
+    path: rules/microhealth
+    license: MIT

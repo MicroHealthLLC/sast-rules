@@ -1,0 +1,11 @@
+# Rules we turn off or re-grade. Every entry carries its reason: a suppression
+# without a reason is a lie a security tool tells itself. Upstream files are
+# never edited; the override is applied when the bundles are built, and the
+# lock file keeps the rule listed as `disabled` with this reason.
+#
+# disabled:
+#   mh.gitlab.some-rule-id: "what was assessed and why it does not apply"
+# severity:
+#   mh.opengrep.some.rule: {to: WARNING, reason: "why"}
+disabled: {}
+severity: {}

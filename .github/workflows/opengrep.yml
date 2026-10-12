@@ -1,0 +1,282 @@
+name: SAST (Opengrep)
+# The one SAST workflow every MicroHealth repository runs. A repository calls
+# it, pinned by commit, with a few lines (README "Use it in a repository"):
+#
+#   jobs:
+#     sast:
+#       permissions: {contents: read, actions: read, security-events: write, id-token: write}
+#       uses: MicroHealthLLC/sast-rules/.github/workflows/opengrep.yml@<sha> # vYYYY.MM.N
+#       with:
+#         aws_region: ${{ vars.AWS_REGION_EAST_1 }}
+#         s3_bucket: ${{ vars.SECURITY_REPORTS_S3_BUCKET }}
+#       secrets: inherit
+#
+# What a run does, and why:
+#   * The rules come from THIS repository at the commit the caller pinned —
+#     read from the job's OIDC token (`job_workflow_sha`), since a reusable
+#     workflow's `github` context describes the caller. Pinning the workflow
+#     pins the rules; nothing is fetched from a rule registry at scan time.
+#   * The bundle's sha256 must match dist/SHA256SUMS, and the Opengrep binary's
+#     must match engine.json, or the run stops before scanning.
+#   * The scan runs in a container built FROM the MicroHealth FIPS Python image
+#     (pinned tag@digest; scripts/fips_bump.py moves it), with `--network none`:
+#     Opengrep's binary can make HTTPS calls of its own, outside the system
+#     OpenSSL, and a scan with every rule local has no reason to.
+#   * The JSON report is stamped with the ruleset and engine
+#     (scripts/annotate_report.py) and uploaded to
+#     s3://<bucket>/<project>/sast/dt=<day>/run-<id>/sast.json, where Tueri Core
+#     ingests it. `rules_evaluated` in that stamp is what lets Tueri Core tell a
+#     retired rule from fixed code.
+#   * SARIF goes to GitHub code scanning (category `sast`) when the repository
+#     has it; its publication outcome is recorded separately from the scan's.
+
+on:
+  workflow_call:
+    inputs:
+      bundle:
+        description: "internal (every rule we may run on our own code) or product (permissive licenses only)"
+        type: string
+        default: internal
+      project:
+        description: "Tueri Core project the report belongs to (default: the repository name)"
+        type: string
+        default: ""
+      aws_region:
+        type: string
+        required: true
+      s3_bucket:
+        description: "Evidence bucket; empty skips the S3 upload (and Tueri Core never sees the run)"
+        type: string
+        default: ""
+      exclude:
+        description: "Extra paths to skip, one glob per line (a .sastignore file at the root is read too)"
+        type: string
+        default: ""
+      fail_on_findings:
+        description: "Fail the job when the scan reports a finding not suppressed inline"
+        type: boolean
+        default: false
+    secrets:
+      AWS_ROLE:
+        description: "OIDC role: pulls the FIPS image from ECR and writes the report to S3"
+        required: true
+    outputs:
+      findings:
+        description: "Findings reported (inline suppressions excluded)"
+        value: ${{ jobs.sast.outputs.findings }}
+      rules_commit:
+        description: "The sast-rules commit whose rules ran"
+        value: ${{ jobs.sast.outputs.rules_commit }}
+
+permissions:
+  contents: read
+
+jobs:
+  sast:
+    name: SAST (Opengrep)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      # upload-sarif reads this workflow run (GET /actions/runs/{id}); without
+      # it a private repository's upload fails "Resource not accessible by
+      # integration" and the SARIF is never published.
+      actions: read
+      security-events: write
+      id-token: write # job_workflow_sha, ECR pull and the S3 upload
+    outputs:
+      findings: ${{ steps.annotate.outputs.findings }}
+      rules_commit: ${{ steps.self.outputs.sha }}
+    env:
+      AWS_REGION: ${{ inputs.aws_region }}
+      S3_BUCKET: ${{ inputs.s3_bucket }}
+      BUNDLE: ${{ inputs.bundle }}
+      FIPS_PYTHON: 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-python:dev-latest@sha256:3ebb23e109edabcc9265c65bafa313565bb3146615c26c8e49f3f2725af120f0
+    steps:
+      - name: Which sast-rules commit is running
+        id: self
+        run: |
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "::error::The calling job must grant 'id-token: write' (see the README)."
+            exit 1
+          fi
+          token="$(curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sast-rules" | jq -r .value)"
+          payload="$(printf '%s' "$token" | cut -d. -f2 | tr '_-' '/+')"
+          while [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="$payload="; done
+          claims="$(printf '%s' "$payload" | base64 -d)"
+          sha="$(printf '%s' "$claims" | jq -r .job_workflow_sha)"
+          ref="$(printf '%s' "$claims" | jq -r .job_workflow_ref)"
+          repo="${ref%%/.github/workflows/*}"
+          case "$sha" in (*[!0-9a-f]*|"") echo "::error::No job_workflow_sha in the OIDC token"; exit 1;; esac
+          case "$BUNDLE" in (internal|product) ;; (*) echo "::error::bundle must be internal or product, not '$BUNDLE'"; exit 1;; esac
+          echo "repo=$repo" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "Rules: $repo@$sha, bundle $BUNDLE" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          path: src
+
+      - name: Checkout the rules (the commit this workflow runs at)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          repository: ${{ steps.self.outputs.repo }}
+          ref: ${{ steps.self.outputs.sha }}
+          path: .sast-rules
+          persist-credentials: false
+
+      - name: Verify the bundle and fetch the engine
+        id: engine
+        run: |
+          (cd .sast-rules/dist && sha256sum -c --ignore-missing SHA256SUMS) | grep -qx "${BUNDLE}.yaml: OK" \
+            || { echo "::error::dist/${BUNDLE}.yaml does not match dist/SHA256SUMS"; exit 1; }
+          case "$(uname -m)" in (x86_64) arch=x86_64;; (aarch64|arm64) arch=aarch64;; (*) echo "::error::unsupported runner $(uname -m)"; exit 1;; esac
+          version="$(jq -r .version .sast-rules/engine.json)"
+          file="$(jq -r ".assets.${arch}.file" .sast-rules/engine.json)"
+          want="$(jq -r ".assets.${arch}.sha256" .sast-rules/engine.json)"
+          mkdir -p "$RUNNER_TEMP/image"
+          curl -fsSL -o "$RUNNER_TEMP/image/opengrep" \
+            "https://github.com/opengrep/opengrep/releases/download/v${version}/${file}"
+          echo "${want}  $RUNNER_TEMP/image/opengrep" | sha256sum -c -
+          chmod 0755 "$RUNNER_TEMP/image/opengrep"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: GitHubActionsSast
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to the FIPS base registry (ECR)
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # aws-actions/amazon-ecr-login v2
+        with:
+          registries: "295669632222"
+
+      - name: Build the scanner image (FIPS)
+        run: |
+          docker build --build-arg APK_REFRESH=${{ github.run_id }} --build-arg BASE="$FIPS_PYTHON" \
+            -t sast-scan:fips -f - "$RUNNER_TEMP/image" <<'DOCKERFILE'
+          ARG BASE
+          FROM ${BASE}
+          # Per-run package refresh: a new value re-runs the layer below.
+          ARG APK_REFRESH
+          # git: Opengrep takes its targets from `git ls-files`, which keeps
+          # .gitignore'd files out of the scan; the checkout belongs to the
+          # runner user, so git trusts the mounted tree. aws-cli and py3-yaml
+          # (Alpine's, on the image's Python and so the system OpenSSL with
+          # only the FIPS provider) upload the report and stamp it. Root: the
+          # scan writes into mounted runner directories; nothing here ships.
+          USER root
+          RUN apk add --no-cache git aws-cli py3-yaml && apk upgrade --no-cache \
+              && git config --system --add safe.directory '*'
+          # The Opengrep musl build, verified against engine.json before this
+          # build. It is statically linked except for musl libc and loads no
+          # OpenSSL; it runs with --network none below.
+          COPY opengrep /usr/local/bin/opengrep
+          RUN opengrep --version
+          DOCKERFILE
+
+      - name: Preflight — verify AWS credentials and S3 write access
+        if: inputs.s3_bucket != ''
+        run: |
+          PROJECT="${{ inputs.project }}"; PROJECT="${PROJECT:-${GITHUB_REPOSITORY##*/}}"
+          printf 'preflight ok: run %s commit %s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > "$RUNNER_TEMP/preflight.txt"
+          docker run --rm \
+            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+            -e AWS_DEFAULT_REGION="$AWS_REGION" -v "$RUNNER_TEMP:/data" -w /data \
+            --entrypoint aws sast-scan:fips \
+            s3 cp preflight.txt "s3://${S3_BUCKET}/${PROJECT}/_preflight/sast.txt" --content-type text/plain
+
+      - name: Run Opengrep
+        id: scan
+        env:
+          EXCLUDE: ${{ inputs.exclude }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          args=()
+          while IFS= read -r line; do
+            line="${line%%#*}"; line="$(printf '%s' "$line" | xargs)"
+            [ -n "$line" ] && args+=("--exclude=$line")
+          done < <(printf '%s\n' "$EXCLUDE"; [ -f src/.sastignore ] && cat src/.sastignore)
+          docker run --rm --network none \
+            -v "$PWD/src:/src" -v "$PWD/.sast-rules/dist:/rules:ro" -v "$RUNNER_TEMP/out:/out" \
+            -w /src -e HOME=/tmp sast-scan:fips \
+            opengrep scan --config "/rules/${BUNDLE}.yaml" --no-rewrite-rule-ids \
+              --json-output=/out/sast.json --sarif-output=/out/sast.sarif --quiet \
+              "${args[@]}" .
+
+      - name: Stamp the report with its ruleset
+        id: annotate
+        run: |
+          out="$(docker run --rm --network none \
+            -v "$PWD/.sast-rules:/r:ro" -v "$RUNNER_TEMP/out:/out" sast-scan:fips \
+            python3 /r/scripts/annotate_report.py /out/sast.json "/r/dist/${BUNDLE}.yaml" \
+              "$BUNDLE" "${{ steps.self.outputs.sha }}" "${{ steps.engine.outputs.version }}")"
+          echo "$out" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "findings=${out%% *}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload SARIF to GitHub code scanning
+        id: sarif_publication
+        if: always() && steps.scan.outcome != 'skipped'
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # github/codeql-action/upload-sarif v4
+        with:
+          sarif_file: ${{ runner.temp }}/out/sast.sarif
+          category: sast
+          checkout_path: ${{ github.workspace }}/src
+
+      - name: Record scan and SARIF publication status
+        id: publication_status
+        if: always()
+        env:
+          SCAN_OUTCOME: ${{ steps.scan.outcome }}
+          SARIF_UPLOAD_OUTCOME: ${{ steps.sarif_publication.outcome }}
+        run: |
+          docker run --rm --network none \
+            -v "$PWD/.sast-rules:/r:ro" -v "$RUNNER_TEMP:$RUNNER_TEMP" -w "$RUNNER_TEMP/out" \
+            -e SCAN_OUTCOME -e SARIF_UPLOAD_OUTCOME \
+            -e GITHUB_REPOSITORY -e GITHUB_SHA -e GITHUB_REF -e GITHUB_RUN_ID \
+            -e GITHUB_RUN_ATTEMPT -e GITHUB_SERVER_URL \
+            -e GITHUB_OUTPUT -e GITHUB_STEP_SUMMARY \
+            sast-scan:fips python3 /r/scripts/publication_status.py
+
+      - name: Upload JSON report to S3
+        if: inputs.s3_bucket != ''
+        env:
+          SCAN_OUTCOME: ${{ steps.scan.outcome }}
+          SARIF_PUBLICATION_STATUS: ${{ steps.publication_status.outputs.sarif_publication_status }}
+          STATUS_RECORDED_AT: ${{ steps.publication_status.outputs.recorded_at_utc }}
+          RULES_COMMIT: ${{ steps.self.outputs.sha }}
+          ENGINE_VERSION: ${{ steps.engine.outputs.version }}
+        run: |
+          [ -s "$RUNNER_TEMP/out/sast.json" ] || { echo "::error::sast.json was not created"; exit 1; }
+          PROJECT="${{ inputs.project }}"; PROJECT="${PROJECT:-${GITHUB_REPOSITORY##*/}}"
+          KEY="${PROJECT}/sast/dt=$(date -u +%F)/run-${GITHUB_RUN_ID}/sast.json"
+          docker run --rm \
+            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+            -e AWS_DEFAULT_REGION="$AWS_REGION" -v "$RUNNER_TEMP/out:/data" -w /data \
+            --entrypoint aws sast-scan:fips \
+            s3 cp sast.json "s3://${S3_BUCKET}/${KEY}" --content-type application/json \
+            --metadata "commit=${GITHUB_SHA},branch=${GITHUB_REF_NAME},run=${GITHUB_RUN_ID},scan=${SCAN_OUTCOME},sarif-publication=${SARIF_PUBLICATION_STATUS},status-recorded-at=${STATUS_RECORDED_AT},engine=opengrep-${ENGINE_VERSION},rules=${RULES_COMMIT},bundle=${BUNDLE}"
+          echo "Uploaded s3://${S3_BUCKET}/${KEY}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload report artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # actions/upload-artifact v7.0.1
+        with:
+          name: sast-reports
+          path: |
+            ${{ runner.temp }}/out/sast.json
+            ${{ runner.temp }}/out/sast.sarif
+            ${{ runner.temp }}/out/publication-status.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Fail on findings
+        if: inputs.fail_on_findings && steps.annotate.outputs.findings != '0'
+        run: |
+          echo "::error::${{ steps.annotate.outputs.findings }} SAST findings (inputs.fail_on_findings is on)"
+          exit 1
