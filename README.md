@@ -92,6 +92,11 @@ A suppression without a reason is a lie a security tool tells itself.
 | [opengrep-rules](https://github.com/opengrep/opengrep-rules) (archived 2025-11-28) | `upstream/opengrep/` | LGPL-2.1 + Commons Clause | internal | frozen |
 | MicroHealth | `rules/microhealth/` | MIT | internal, product | written here |
 
+Only **security** rules are published: a rule whose `metadata.category` is
+anything else (style, correctness, portability, performance, …) stays listed
+in the lock as `excluded`, with the reason, and enters no bundle. SAST findings
+are security findings; a style rule run across a codebase buries them.
+
 [`licenses.yaml`](licenses.yaml) decides which license may enter which bundle,
 and the build fails on a license it does not list:
 

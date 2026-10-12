@@ -8,6 +8,7 @@ Inputs (all in this repository, nothing is fetched):
   sources.yaml     where each source came from and how its license is read
   licenses.yaml    which license may go in which bundle
   overrides.yaml   rules we turn off or re-grade, each with its reason
+                   (a source's `categories` keeps all but security rules out)
   upstream/<src>/  vendored upstream rule files, never edited by hand
   rules/<src>/     rules MicroHealth writes
 
@@ -140,8 +141,16 @@ def collect(sources: dict, licenses: dict) -> tuple[list[dict], list[str]]:
                     continue
                 upstream_id = str(rule["id"])
                 local = f"{prefix}.{upstream_id}" if prefix else upstream_id
+                category = str((rule.get("metadata") or {}).get("category") or "")
                 rules.append(
                     {
+                        "category": category,
+                        "excluded": (
+                            f"category {category or '(none)'}: only "
+                            f"{', '.join(src['categories'])} rules are published (sources.yaml)"
+                        )
+                        if src.get("categories") and category not in src["categories"]
+                        else None,
                         "id": f"mh.{name}.{local}",
                         "source": name,
                         "upstream_id": upstream_id,
@@ -202,7 +211,8 @@ def build(check: bool) -> int:
             }
         )
         rule["metadata"] = meta
-        in_bundles = [] if r["id"] in disabled else sorted(allowed[r["license"]])
+        off = r["id"] in disabled or r["excluded"]
+        in_bundles = [] if off else sorted(allowed[r["license"]])
         for b in in_bundles:
             bundles[b].append(rule)
         entry = {
@@ -212,10 +222,12 @@ def build(check: bool) -> int:
             "license": r["license"],
             "sha256": rule_hash(rule),
             "bundles": in_bundles,
-            "status": "disabled" if r["id"] in disabled else "active",
+            "status": "disabled" if r["id"] in disabled else "excluded" if r["excluded"] else "active",
         }
         if r["id"] in disabled:
             entry["reason"] = disabled[r["id"]]
+        elif r["excluded"]:
+            entry["reason"] = r["excluded"]
         lock_rules[r["id"]] = entry
     for rid, old in previous.get("rules", {}).items():
         if rid not in lock_rules:
@@ -288,7 +300,8 @@ def build(check: bool) -> int:
         p.write_text(text, encoding="utf-8")
     counts = ", ".join(f"{b}={len(items)}" for b, items in bundles.items())
     retired = sum(1 for e in lock_rules.values() if e["status"] == "retired")
-    print(f"Built {counts}; {len(disabled)} disabled, {retired} retired.")
+    excluded = sum(1 for e in lock_rules.values() if e["status"] == "excluded")
+    print(f"Built {counts}; {len(disabled)} disabled, {excluded} excluded, {retired} retired.")
     return 0
 
 
