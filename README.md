@@ -83,6 +83,7 @@ jobs:
 | `fail_on` | `none` | Fail the run on a finding at or above `critical`, `high`, `medium` or `low` |
 | `bundle` | `internal` | SAST rules: `internal` or `product` (permissive licenses only) |
 | `exclude` | empty | Paths SAST skips, one glob per line; `.sastignore` is read too |
+| `sast_timeout_minutes` | `120` | How long SAST may take |
 | `baseline_ref` | empty | SAST reports only what is new since this ref, e.g. `${{ github.base_ref }}` on a pull request |
 | `images` | empty | Images Trivy also scans (and SBOMs), one reference per line |
 | `image_registries` | empty | ECR account ids those images live in |

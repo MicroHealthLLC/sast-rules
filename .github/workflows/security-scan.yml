@@ -75,6 +75,10 @@ on:
         description: "Paths SAST skips, one glob per line (a .sastignore file is read too)"
         type: string
         default: ""
+      sast_timeout_minutes:
+        description: "How long SAST may take"
+        type: number
+        default: 120
       baseline_ref:
         description: "SAST reports only what is new since this ref (a pull request's base); such a scan is never uploaded for ingest"
         type: string
@@ -131,6 +135,7 @@ jobs:
       exclude: ${{ inputs.exclude }}
       ref: ${{ inputs.ref }}
       baseline_ref: ${{ inputs.baseline_ref }}
+      timeout_minutes: ${{ inputs.sast_timeout_minutes }}
     secrets:
       AWS_ROLE: ${{ secrets.AWS_ROLE }}
 
