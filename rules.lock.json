@@ -14,8 +14,8 @@
   "microhealth": {}
  },
  "bundles": {
-  "internal": 2592,
-  "product": 277
+  "internal": 2588,
+  "product": 273
  },
  "rules": {
   "mh.gitlab.c_access_rule-RpcImpersonateClient-ImpersonateLoggedOnUser": {
@@ -3753,11 +3753,8 @@
    "path": "upstream/gitlab/rules/gitlab/python/exec/rule-start-process-partial-path.yml",
    "license": "MIT",
    "sha256": "818865307f589c226f02eea55ef02693a108a360aeb2397ce6ea5773c2f0b8cb",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "retired"
   },
   "mh.gitlab.python_exec_rule-start-process-path": {
    "source": "gitlab",
@@ -3765,11 +3762,8 @@
    "path": "upstream/gitlab/rules/gitlab/python/exec/rule-start-process-path.yml",
    "license": "MIT",
    "sha256": "901f3de95b688a29a44b6ce50eda906086f38f1f876f9bedb564832e8e0ee9a0",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "retired"
   },
   "mh.gitlab.python_exec_rule-start-process-with-no-shell": {
    "source": "gitlab",
@@ -3801,11 +3795,8 @@
    "path": "upstream/gitlab/rules/gitlab/python/exec/rule-subprocess-call-array.yml",
    "license": "MIT",
    "sha256": "0d6ee9185508f23ad1baa665f3ff4743736b76e2eb985710a375144bf37dd535",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "retired"
   },
   "mh.gitlab.python_exec_rule-subprocess-popen-shell-true": {
    "source": "gitlab",
@@ -6541,11 +6532,8 @@
    "path": "upstream/gitlab/rules/gitlab/scala/unsafe/rule-InformationExposureVariant2.yml",
    "license": "MIT",
    "sha256": "47ee88386ff033caa6fbbe4a9cf730bf1c8552cdf9dd507c459e7a9c503845fe",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "retired"
   },
   "mh.gitlab.scala_unsafe_rule-SensitiveDataExposure": {
    "source": "gitlab",

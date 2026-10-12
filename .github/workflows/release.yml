@@ -54,9 +54,17 @@ jobs:
                 "- retired or disabled: \([$b|to_entries[]|select(.value.status!="active" and ($a[.key].status//"active")=="active")]|length)"'
             fi
           } > "$RUNNER_TEMP/notes.md"
+          # The engine's complete source for the pinned version travels with
+          # the release (LGPL-2.1: whoever MicroHealth gives the binary to can
+          # get its source from the same place), as do every license text.
+          version="$(jq -r .version engine.json)"
+          curl -fsSL -o "$RUNNER_TEMP/opengrep-${version}-source.tar.gz" \
+            "https://github.com/opengrep/opengrep/archive/refs/tags/v${version}.tar.gz"
+          tar -czf "$RUNNER_TEMP/licenses.tar.gz" -C dist licenses
           git tag "$tag" "$GITHUB_SHA"
           git push origin "$tag"
           gh release create "$tag" dist/internal.yaml dist/product.yaml dist/SHA256SUMS dist/NOTICE.md \
+            "$RUNNER_TEMP/licenses.tar.gz" "$RUNNER_TEMP/opengrep-${version}-source.tar.gz" \
             --title "$tag" --notes-file "$RUNNER_TEMP/notes.md"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - name: Open pin PRs in every consumer

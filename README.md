@@ -174,10 +174,49 @@ musl and loads no OpenSSL. It contains an HTTPS client of its own (its
 `--network none`. The scan reads local files and writes a report. It performs
 no cryptography that a FIPS boundary covers.
 
-## License
+## Licenses
 
-This repository's own files (`scripts/`, `tests/`, `rules/microhealth/`,
-`.github/`, and the configuration and documentation at the root) are MIT
-licensed; see [`LICENSE`](LICENSE). The rules under `upstream/` keep their own
-licenses, recorded per rule in `rules.lock.json` and summarised in
-[`NOTICE.md`](NOTICE.md).
+Everything here is used, and redistributed, only as its license allows. The
+short version:
+
+| What | License | Run it on MicroHealth's code (internal) | Ship it in a product MicroHealth sells | What the license asks, and how it is met |
+|---|---|---|---|---|
+| This repository's own files (`scripts/`, `tests/`, `rules/microhealth/`, `.github/`, root config and docs) | **MIT**, MicroHealth, LLC ([`LICENSE`](LICENSE)) | yes | yes | Keep the copyright and license notice: [`LICENSE`](LICENSE), shipped as `dist/licenses/MIT.txt` |
+| GitLab rules headed MIT | MIT, GitLab Inc. | yes | yes | Keep GitLab's notice: [`NOTICE.md`](NOTICE.md) and `dist/licenses/upstream-gitlab-LICENSE.txt` ship with every bundle |
+| GitLab's Go rules (from gosec) | Apache-2.0 | yes | yes | Ship the license text (`dist/licenses/Apache-2.0.txt`) and state the changes (every bundle's header and `NOTICE.md`) |
+| GitLab's C rules (from flawfinder) | GPL-2.0 | yes | **no** | Ship the license text and the complete source (this repository); kept out of the product bundle |
+| GitLab `rules/lgpl/` | LGPL-3.0 | yes | **no** | Ship the license texts, state the changes, keep the source available (this repository) |
+| GitLab `rules/lgpl-cc/` and all of opengrep-rules | LGPL-2.1 **with the Commons Clause** | yes | **no** | As LGPL-2.1, plus no "Sell". Publishing them free and running them on our own code are not sales; they never enter the product bundle |
+| GitLab `rules/gitlab/` | GitLab Enterprise Edition (proprietary) | **not used** | **not used** | Not copied into this repository at all |
+| Opengrep, the engine | LGPL-2.1 | yes (downloaded at scan time) | only with its notice and source | Unmodified binary, pinned by sha256; every release attaches the engine's source for the pinned version |
+
+How this is enforced, not just written down:
+
+- [`licenses.yaml`](licenses.yaml) is the decision: which license may enter
+  which bundle. The **product** bundle accepts **MIT and Apache-2.0 only**.
+  The build fails on a rule whose license is not listed, and moving a license
+  into the product bundle is a reviewed change to that file.
+- The license of every rule is read from its own file's `# License:` header,
+  not assumed from its folder, and recorded on the rule
+  (`metadata.mh_license`) and in [`rules.lock.json`](rules.lock.json).
+- Every bundle's header lists the licenses of the rules inside it and the
+  changes made to them. [`NOTICE.md`](NOTICE.md) and the full text of every
+  license (`dist/licenses/`) ship beside every bundle and with every release.
+- The upstream files are kept unmodified under `upstream/`, so this
+  repository is always the complete corresponding source of every bundle.
+
+Two points are worth a lawyer's confirmation before relying on them in a
+contract, and MicroHealth treats them conservatively until then:
+
+1. **The Commons Clause** (GitLab `rules/lgpl-cc/`, opengrep-rules). Its rules
+   are used on MicroHealth's own code and published here free of charge, never
+   sold and never shipped in a product.
+2. **Shipping the Opengrep binary inside a product** (Tueri Core's code scanner
+   image). LGPL-2.1 allows it with the license text, a notice, and access to the
+   source. The image carries all three: `dist/licenses/LGPL-2.1-only.txt`, a
+   notice naming the version, and this repository's release copy of the source.
+
+"Semgrep" appears in this repository only where an upstream license or rule
+file names it (the Commons Clause's licensor, rule metadata). Those files are
+reproduced as their licenses require and are not MicroHealth's use of the
+name.

@@ -228,17 +228,37 @@ def build(check: bool) -> int:
     notice = (ROOT / "NOTICE.md").read_text(encoding="utf-8")
     outputs: dict[Path, str] = {}
     for b, items in bundles.items():
+        licenses_in = sorted({r["metadata"]["mh_license"] for r in items})
         header = (
             f"# sast-rules bundle `{b}` — built by scripts/build.py; do not edit.\n"
             f"# {len(items)} rules. Sources: "
             + ", ".join(f"{n}@{p.get('commit', 'local')[:12]}" for n, p in pins.items())
-            + "\n# Attributions and licenses: NOTICE.md (shipped beside this file).\n"
+            + f"\n# Licenses of the rules in this bundle: {', '.join(licenses_in)}.\n"
+            "# Each rule's own license is its metadata.mh_license.\n"
+            "# MODIFIED from the upstream rules (MicroHealth, LLC): each rule's id is\n"
+            "# prefixed `mh.<source>.`, metadata.mh_source / mh_upstream_id / mh_license\n"
+            "# are added, a word in metadata.security-severity is replaced by a number\n"
+            "# (the original kept as mh_upstream_security_severity), and overrides.yaml\n"
+            "# is applied. Nothing else is changed. The date of each change is the date\n"
+            "# of the sast-rules commit that built this file; the unmodified upstream\n"
+            "# files and the build are in https://github.com/MicroHealthLLC/sast-rules.\n"
+            "# Attributions: NOTICE.md; full license texts: licenses/ (both shipped\n"
+            "# beside this file).\n"
         )
         body = yaml.safe_dump(
             {"rules": items}, sort_keys=False, allow_unicode=True, width=1_000_000
         )
         outputs[DIST / f"{b}.yaml"] = header + body
     outputs[DIST / "NOTICE.md"] = notice
+    # The full text of every license a bundle may carry ships with the bundles.
+    for lic in sorted((ROOT / "licenses").glob("*.txt")):
+        outputs[DIST / "licenses" / lic.name] = lic.read_text(encoding="utf-8")
+    outputs[DIST / "licenses" / "MIT.txt"] = (ROOT / "LICENSE").read_text(encoding="utf-8")
+    # ... and each upstream LICENSE file as vendored (the Commons Clause and
+    # its licensor are only stated there).
+    for lic in sorted((ROOT / "upstream").rglob("LICENSE*")):
+        name = "upstream-" + "-".join(lic.relative_to(ROOT / "upstream").parts) + ".txt"
+        outputs[DIST / "licenses" / name] = lic.read_text(encoding="utf-8")
     sums = "".join(
         f"{hashlib.sha256(outputs[DIST / f'{b}.yaml'].encode()).hexdigest()}  {b}.yaml\n"
         for b in BUNDLES
@@ -263,7 +283,7 @@ def build(check: bool) -> int:
             return 1
         print("dist/ and rules.lock.json match the sources.")
         return 0
-    DIST.mkdir(exist_ok=True)
+    (DIST / "licenses").mkdir(parents=True, exist_ok=True)
     for p, text in outputs.items():
         p.write_text(text, encoding="utf-8")
     counts = ", ".join(f"{b}={len(items)}" for b, items in bundles.items())

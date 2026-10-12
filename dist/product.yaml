@@ -1,6 +1,16 @@
 # sast-rules bundle `product` — built by scripts/build.py; do not edit.
-# 277 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
-# Attributions and licenses: NOTICE.md (shipped beside this file).
+# 273 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
+# Licenses of the rules in this bundle: Apache-2.0, MIT.
+# Each rule's own license is its metadata.mh_license.
+# MODIFIED from the upstream rules (MicroHealth, LLC): each rule's id is
+# prefixed `mh.<source>.`, metadata.mh_source / mh_upstream_id / mh_license
+# are added, a word in metadata.security-severity is replaced by a number
+# (the original kept as mh_upstream_security_severity), and overrides.yaml
+# is applied. Nothing else is changed. The date of each change is the date
+# of the sast-rules commit that built this file; the unmodified upstream
+# files and the build are in https://github.com/MicroHealthLLC/sast-rules.
+# Attributions: NOTICE.md; full license texts: licenses/ (both shipped
+# beside this file).
 rules:
 - id: mh.gitlab.csharp_cookies_rule-CookieWithoutHttpOnlyFlag
   languages:
@@ -8790,101 +8800,6 @@ rules:
     mh_upstream_id: python_exec_rule-os-popen2
     mh_license: MIT
   severity: INFO
-- id: mh.gitlab.python_exec_rule-start-process-partial-path
-  languages:
-  - python
-  message: 'Starting a process with a partial executable path
-
-    '
-  patterns:
-  - pattern-either:
-    - patterns:
-      - pattern: os.popen(...)
-      - pattern-not: os.popen("...", ...)
-    - patterns:
-      - pattern: os.system(...)
-      - pattern-not: os.system("...", ...)
-    - patterns:
-      - pattern: os.popen2(...)
-      - pattern-not: os.popen2("...", ...)
-    - patterns:
-      - pattern: os.popen3(...)
-      - pattern-not: os.popen3("...", ...)
-    - patterns:
-      - pattern: os.popen4(...)
-      - pattern-not: os.popen4("...", ...)
-    - patterns:
-      - pattern: popen2.popen2(...)
-      - pattern-not: popen2.popen2("...", ...)
-    - patterns:
-      - pattern: popen2.popen3(...)
-      - pattern-not: popen2.popen3("...", ...)
-    - patterns:
-      - pattern: popen2.popen4(...)
-      - pattern-not: popen2.popen4("...", ...)
-    - patterns:
-      - pattern: popen2.Popen3(...)
-      - pattern-not: popen2.Popen3("...", ...)
-    - patterns:
-      - pattern: popen2.Popen4(...)
-      - pattern-not: popen2.Popen4("...", ...)
-    - patterns:
-      - pattern: commands.getoutput(...)
-      - pattern-not: commands.getoutput("...", ...)
-    - patterns:
-      - pattern: commands.getstatusoutput(...)
-      - pattern-not: commands.getstatusoutput("...", ...)
-  metadata:
-    cwe: CWE-78
-    owasp:
-    - A1:2017-Injection
-    - A03:2021-Injection
-    - A05:2025-Injection
-    shortDescription: Improper neutralization of special elements used in an OS Command ('OS Command Injection')
-    security-severity: '8.0'
-    category: security
-    mh_upstream_security_severity: High
-    mh_source: gitlab
-    mh_upstream_id: python_exec_rule-start-process-partial-path
-    mh_license: MIT
-  severity: INFO
-- id: mh.gitlab.python_exec_rule-start-process-path
-  languages:
-  - python
-  message: 'Starting a process with a partial executable path
-
-    '
-  patterns:
-  - pattern-either:
-    - pattern: subprocess.Popen($BIN, shell=False)
-    - pattern: subprocess.Popen([$BIN, ...], shell=False)
-    - pattern: os.system($BIN, shell=False)
-    - pattern: os.system([$BIN, ...], shell=False)
-    - pattern: popen2.Popen3($BIN, shell=False)
-    - pattern: popen2.Popen3([$BIN, ...], shell=False)
-    - pattern: popen2.Popen4($BIN, shell=False)
-    - pattern: popen2.Popen4([$BIN, ...], shell=False)
-    - pattern: commands.getoutput($BIN, shell=False)
-    - pattern: commands.getoutput([$BIN, ...], shell=False)
-    - pattern: commands.getstatusoutput($BIN, shell=False)
-    - pattern: commands.getstatusoutput([$BIN, ...], shell=False)
-  - metavariable-regex:
-      metavariable: $BIN
-      regex: ^['"][^/\.][^:].*['"]
-  metadata:
-    cwe: CWE-426
-    owasp:
-    - A1:2017-Injection
-    - A08:2021-Software and Data Integrity Failures
-    - A08:2025-Software or Data Integrity Failures
-    shortDescription: Untrusted search path
-    security-severity: '8.0'
-    category: security
-    mh_upstream_security_severity: High
-    mh_source: gitlab
-    mh_upstream_id: python_exec_rule-start-process-path
-    mh_license: MIT
-  severity: ERROR
 - id: mh.gitlab.python_exec_rule-start-process-with-no-shell
   languages:
   - python
@@ -8985,39 +8900,6 @@ rules:
     mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_exec_rule-subprocess-call
-    mh_license: MIT
-  severity: WARNING
-- id: mh.gitlab.python_exec_rule-subprocess-call-array
-  languages:
-  - python
-  message: 'subprocess call - check for execution of untrusted input
-
-    '
-  patterns:
-  - pattern: 'subprocess.$FUNC([..., $ARG, ...])
-
-      '
-  - metavariable-pattern:
-      metavariable: $ARG
-      patterns:
-      - pattern-not: '"..."
-
-          '
-      - pattern-not: '''...''
-
-          '
-  metadata:
-    cwe: CWE-78
-    owasp:
-    - A1:2017-Injection
-    - A03:2021-Injection
-    - A05:2025-Injection
-    shortDescription: Improper neutralization of special elements used in an OS Command ('OS Command Injection')
-    security-severity: '8.0'
-    category: security
-    mh_upstream_security_severity: High
-    mh_source: gitlab
-    mh_upstream_id: python_exec_rule-subprocess-call-array
     mh_license: MIT
   severity: WARNING
 - id: mh.gitlab.python_exec_rule-subprocess-popen-shell-true
@@ -13316,49 +13198,6 @@ rules:
     mh_license: MIT
   patterns:
   - pattern: $E.printStackTrace(...)
-  severity: WARNING
-- id: mh.gitlab.scala_unsafe_rule-InformationExposureVariant2
-  languages:
-  - scala
-  message: 'The sensitive information may be valuable information on its own (such as a password), or it
-
-    may be useful for launching other, more deadly attacks. If an attack fails, an attacker may use
-
-    error information provided by the server to launch another more focused attack. For example, an
-
-    attempt to exploit a path traversal weakness (CWE-22) might yield the full pathname of the
-
-    installed application.
-
-    '
-  metadata:
-    category: security
-    cwe: CWE-209
-    owasp:
-    - A6:2017-Security Misconfiguration
-    - A04:2021-Insecure Design
-    - A10:2025-Mishandling of Exceptional Conditions
-    shortDescription: Information Exposure Through an Error Message
-    technology:
-    - scala
-    security-severity: '0.0'
-    mh_upstream_security_severity: Info
-    mh_source: gitlab
-    mh_upstream_id: scala_unsafe_rule-InformationExposureVariant2
-    mh_license: MIT
-  patterns:
-  - pattern-either:
-    - pattern: $E.printStackTrace
-    - patterns:
-      - pattern: $E.printStackTrace($OUT)
-      - metavariable-pattern:
-          metavariable: $OUT
-          pattern-either:
-          - pattern: '($PS: java.io.PrintStream)'
-          - pattern: '($PW: java.io.PrintWriter)'
-          - pattern: java.lang.System.out
-          - pattern: '($O: java.io.OutputStream)'
-          - pattern: '($SOS: javax.servlet.ServletOutputStream)'
   severity: WARNING
 - id: mh.gitlab.scala_unsafe_rule-SensitiveDataExposure
   languages:

@@ -11,7 +11,10 @@ sources:
     track: tags
     path: upstream/gitlab
     license: per-file
-    include: [c, csharp, go, java, javascript, python, scala, rules]
+    # rules/gitlab is left out: its folder LICENSE is GitLab's Enterprise
+    # Edition license, so even the files in it headed MIT are not clearly ours
+    # to redistribute.
+    include: [c, csharp, go, java, javascript, python, scala, rules/lgpl, rules/lgpl-cc]
   opengrep:
     # opengrep/opengrep-rules: archived read-only on 2025-11-28, so this is a
     # one-time import and never syncs. LGPL-2.1 with the Commons Clause
