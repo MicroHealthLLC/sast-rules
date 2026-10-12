@@ -206,7 +206,9 @@ jobs:
             -w /src -e HOME=/tmp sast-scan:fips \
             opengrep scan --config "/rules/${BUNDLE}.yaml" --no-rewrite-rule-ids \
               --json-output=/out/sast.json --sarif-output=/out/sast.sarif --quiet \
-              "${args[@]}" .
+              "${args[@]}" . >/dev/null
+          # Only the reports carry results: the text output (matched source
+          # lines) is discarded rather than printed into the Actions log.
 
       - name: Stamp the report with its ruleset
         id: annotate

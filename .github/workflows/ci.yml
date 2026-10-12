@@ -25,12 +25,14 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: SastRulesCi
-          aws-region: us-east-1
+          aws-region: ${{ vars.AWS_REGION_EAST_1 }}
       - uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # aws-actions/amazon-ecr-login v2
         with:
           registries: "295669632222"
       - name: dist/ and rules.lock.json match the sources
         run: scripts/ci-run.sh python3 scripts/build.py --check
+      - name: The shared workflow's controls and the status recorder
+        run: scripts/ci-run.sh python3 -m unittest discover -s tests -v
       - name: Every rule loads, and our own rules pass their tests
         run: |
           version="$(jq -r .version engine.json)"; file="$(jq -r .assets.x86_64.file engine.json)"
@@ -54,6 +56,6 @@ jobs:
     permissions: {contents: read, actions: read, security-events: write, id-token: write}
     uses: ./.github/workflows/opengrep.yml
     with:
-      aws_region: us-east-1
+      aws_region: ${{ vars.AWS_REGION_EAST_1 }}
       bundle: product
     secrets: inherit

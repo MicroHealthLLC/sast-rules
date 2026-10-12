@@ -86,6 +86,31 @@ def classify(text: str, header_map: dict[str, str]) -> str | None:
     return None
 
 
+# GitHub code scanning reads `security-severity` as a CVSS-style number and
+# refuses the whole SARIF upload when one rule carries a word ("Low"), which
+# GitLab's rules do. A word becomes the midpoint of GitHub's band for it; the
+# upstream value is kept beside it, so nothing is lost and the grading is
+# visible.
+_SEVERITY_SCORE = {"critical": "9.5", "high": "8.0", "medium": "5.5", "low": "2.0", "info": "0.0"}
+
+
+def _numeric_security_severity(meta: dict) -> None:
+    value = meta.get("security-severity")
+    if value is None:
+        return
+    try:
+        float(str(value))
+        return
+    except ValueError:
+        pass
+    score = _SEVERITY_SCORE.get(str(value).strip().lower())
+    meta["mh_upstream_security_severity"] = value
+    if score is None:
+        del meta["security-severity"]
+    else:
+        meta["security-severity"] = score
+
+
 def rule_hash(rule: dict) -> str:
     return hashlib.sha256(json.dumps(rule, sort_keys=True).encode()).hexdigest()
 
@@ -168,6 +193,7 @@ def build(check: bool) -> int:
         if r["id"] in regraded:
             rule["severity"] = regraded[r["id"]]["to"]
         meta = dict(rule.get("metadata") or {})
+        _numeric_security_severity(meta)
         meta.update(
             {
                 "mh_source": r["source"],
