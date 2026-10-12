@@ -1,0 +1,321 @@
+name: ZAP DAST
+# OWASP ZAP against a deployed, reachable URL. Called by security-scan.yml; it
+# can be called on its own the same way.
+#
+#   * baseline (default): spider + passive checks. Read-only, ungated.
+#   * full / api: an ACTIVE attack that can create, modify or delete data.
+#     The run pauses at the caller's `dast-active` GitHub Environment (give it
+#     required reviewers, or the gate is a no-op) and `confirm` must repeat
+#     the exact target. Staging only; never a system you do not own.
+#   * No target: the scan is recorded as NOT RUN with that reason — never as
+#     a pass, and never as a failure of the build.
+#   * GitHub-hosted runners are on the public internet; an internal target
+#     needs a self-hosted runner inside the network (`runs_on`).
+#   * Every container is built here FROM MicroHealth's FIPS Python image: ZAP's
+#     release tarball and the scan scripts and policies of ZAP's official
+#     image, each refused unless its SHA-256 matches. ZAP is Java: its TLS (the
+#     JDK's) is outside the FIPS claim — a test tool attacking a target.
+#   * Reports go where scripts/destination.sh says (<project>/zap-dast/… for
+#     the default branch).
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: "URL to scan (staging/preview). Empty: the scan is recorded as not run."
+        type: string
+        default: ""
+      scan:
+        description: "baseline | full | api"
+        type: string
+        default: baseline
+      openapi:
+        description: "api scans: OpenAPI definition, a URL or a repository path"
+        type: string
+        default: ""
+      confirm:
+        description: "full/api only: must equal the target, to confirm an active attack"
+        type: string
+        default: ""
+      project:
+        type: string
+        default: ""
+      aws_region:
+        type: string
+        required: true
+      s3_bucket:
+        type: string
+        default: ""
+      ref:
+        type: string
+        default: ""
+      runs_on:
+        description: "Runner label (a self-hosted runner for an internal target)"
+        type: string
+        default: ubuntu-latest
+    secrets:
+      AWS_ROLE:
+        required: true
+    outputs:
+      status:
+        description: "ran | not_run | failed"
+        value: ${{ jobs.zap.outputs.status }}
+
+permissions:
+  contents: read
+
+jobs:
+  approval-gate:
+    name: Approve active scan
+    if: inputs.scan == 'full' || inputs.scan == 'api'
+    runs-on: ubuntu-latest
+    environment: dast-active
+    permissions:
+      contents: read
+    steps:
+      - env:
+          SCAN: ${{ inputs.scan }}
+          TARGET: ${{ inputs.target }}
+        run: echo "Approved a '$SCAN' scan against $TARGET"
+
+  zap:
+    name: ZAP ${{ inputs.scan }}
+    needs: [approval-gate]
+    if: always() && (needs.approval-gate.result == 'skipped' || needs.approval-gate.result == 'success')
+    runs-on: ${{ inputs.runs_on }}
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      status: ${{ steps.status.outputs.status }}
+    env:
+      AWS_REGION: ${{ inputs.aws_region }}
+      S3_BUCKET: ${{ inputs.s3_bucket }}
+      TARGET: ${{ inputs.target }}
+      SCAN: ${{ inputs.scan }}
+      OPENAPI: ${{ inputs.openapi }}
+      CONFIRM: ${{ inputs.confirm }}
+    steps:
+      - name: Is there anything to scan
+        id: has
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          if [ "$SCAN" = api ] && [ -n "$OPENAPI" ] || [ -n "$TARGET" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo '{"status":"not_run","reason":"no target URL (set the zap_target input, e.g. from vars.ZAP_TARGET_URL)"}' > "$RUNNER_TEMP/out/zap-status.json"
+            echo "::warning::ZAP DAST did not run: no target URL. Set ZAP_TARGET_URL (a staging/preview URL) or turn zap off."
+          fi
+          case "$SCAN" in (baseline|full|api) ;; (*) echo "::error::scan must be baseline, full or api"; exit 1;; esac
+          if [ "$SCAN" != baseline ] && [ "$CONFIRM" != "${TARGET:-$OPENAPI}" ]; then
+            echo "::error::A '$SCAN' scan attacks the target and can destroy data. 'confirm' must equal '${TARGET:-$OPENAPI}'."
+            exit 1
+          fi
+
+      - name: Which sast-rules commit is running
+        id: self
+        if: steps.has.outputs.run == 'true'
+        run: |
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "::error::The calling job must grant 'id-token: write' (see the README)."
+            exit 1
+          fi
+          token="$(curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sast-rules" | jq -r .value)"
+          payload="$(printf '%s' "$token" | cut -d. -f2 | tr '_-' '/+')"
+          while [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="$payload="; done
+          claims="$(printf '%s' "$payload" | base64 -d)"
+          sha="$(printf '%s' "$claims" | jq -r .job_workflow_sha)"
+          ref="$(printf '%s' "$claims" | jq -r .job_workflow_ref)"
+          repo="${ref%%/.github/workflows/*}"
+          case "$sha" in (*[!0-9a-f]*|"") echo "::error::No job_workflow_sha in the OIDC token"; exit 1;; esac
+          echo "repo=$repo" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout repository (for .zap/rules.tsv and an OpenAPI file)
+        if: steps.has.outputs.run == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          path: src
+          ref: ${{ inputs.ref }}
+
+      - name: Checkout sast-rules (the commit this workflow runs at)
+        if: steps.has.outputs.run == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          repository: ${{ steps.self.outputs.repo }}
+          ref: ${{ steps.self.outputs.sha }}
+          path: .sast-rules
+          persist-credentials: false
+
+      - name: Where the report goes
+        id: dest
+        if: steps.has.outputs.run == 'true'
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          .sast-rules/scripts/destination.sh src
+          project="${{ inputs.project }}"; echo "project=${project:-${GITHUB_REPOSITORY##*/}}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials
+        if: steps.has.outputs.run == 'true'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: GitHubActionsZap
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to the FIPS base registry (ECR)
+        if: steps.has.outputs.run == 'true'
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # aws-actions/amazon-ecr-login v2
+        with:
+          registries: "295669632222"
+
+      - name: Build scanner images (FIPS)
+        if: steps.has.outputs.run == 'true'
+        run: |
+          docker build --build-arg APK_REFRESH=${{ github.run_id }} -t sast-aws:fips - <<'DOCKERFILE'
+          FROM 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-python:dev-latest@sha256:0e33bb16875879bff135f8a53972cbad7e1b6d24e82b16f2f2c55f17828c64ec
+          # Per-run package refresh: a new value re-runs the layer below.
+          ARG APK_REFRESH
+          # Alpine's aws-cli (v2) on the image's Python, whose ssl module is the
+          # system OpenSSL with only the FIPS provider. fips-python runs as
+          # 10001; this CI-only tool runs as root so it can write into the
+          # runner's mounted directories (nothing in it ships).
+          USER root
+          RUN apk add --no-cache aws-cli && apk upgrade --no-cache
+          ENTRYPOINT ["aws"]
+          DOCKERFILE
+
+          docker build --build-arg APK_REFRESH=${{ github.run_id }} -t sast-zap:fips - <<'DOCKERFILE'
+          FROM 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-python:dev-latest@sha256:0e33bb16875879bff135f8a53972cbad7e1b6d24e82b16f2f2c55f17828c64ec
+          # ZAP's release tarball, verified against the SHA-256 ZAP publishes,
+          # on Alpine's Java 21 (ZAP needs 17 or later). The Python scan
+          # scripts use the ZAP API client from PyPI, pinned, in a venv that
+          # also sees Alpine's py3-yaml and py3-six.
+          ARG ZAP_VERSION=2.17.0
+          ARG ZAP_SHA256=efe799aaa3627db683b43f00c9c210aea0b75c00cc8f0a0f0434d12bb3ddde5a
+          # The scan scripts, policies and scripts ZAP's official image ships,
+          # from zaproxy's docker/ directory at the v2.17.0 tag's commit.
+          ARG ZAP_DOCKER_SRC=https://raw.githubusercontent.com/zaproxy/zaproxy/8a1bff313f4d183dba5aa154ecbe89ad751c9153/docker
+          ARG ZAPROXY_CLIENT_VERSION=0.6.0
+          # Per-run package refresh: a new value re-runs the layer below.
+          ARG APK_REFRESH
+          USER root
+          RUN apk add --no-cache bash curl openjdk21-jre xvfb py3-yaml py3-six \
+              && apk upgrade --no-cache \
+              && python3 -m venv --system-site-packages /opt/zap-py \
+              && /opt/zap-py/bin/pip install --no-cache-dir "zaproxy==${ZAPROXY_CLIENT_VERSION}" \
+              && adduser -D -u 1000 -h /home/zap -s /bin/bash zap \
+              && mkdir -p /zap/wrk /tmp/zap-src && cd /tmp/zap-src \
+              && curl -fsSL -o zap.tar.gz \
+                "https://github.com/zaproxy/zaproxy/releases/download/v${ZAP_VERSION}/ZAP_${ZAP_VERSION}_Linux.tar.gz" \
+              && echo "${ZAP_SHA256}  zap.tar.gz" | sha256sum -c - \
+              && tar -xzf zap.tar.gz -C /zap --strip-components=1 \
+              && printf '%s\n' \
+                '9554545f10fd2adebecd9a4d1d7248e9bc7ca27dccf44e2c2d5a7449a1225f82  zap_common.py' \
+                '18df1d2275c2cc7113ec4dd061687f8c9d6b9032b2e9d7e561bcd173236eda42  zap-baseline.py' \
+                '45896f6d66e48697a20a3a5469943757b2f5ee77487655eaf89a2ec4af4d2217  zap-full-scan.py' \
+                'f37e812e26733ea5e5f071ecbe08ed443671280fa1336be29f5c7e4ab3b4a029  zap-api-scan.py' \
+                '19c4fb449d5caf01d8f3630809f9b5554f8b9454ea9edd5a9a314c1e8904fd88  zap-x.sh' \
+                '029a8670ff8f78a5a2af027c3667bf25500c6e2bed7996644a35f9e147144520  policies/API-Minimal.policy' \
+                '30e2dad1d41253afe0c68e3436cdd9c41d8416919e71e3700a39d874e0e2b2e2  policies/Default Policy.policy' \
+                'a7e778fb74540fab3dc95ff5b7b268e9100a8e7013cf3f9cada224fea11c252b  policies/St-High-Th-High.policy' \
+                '01e60d731139bc13551ab0d397bed783c7b394db719795e621afd6fb0a20499f  policies/St-High-Th-Low.policy' \
+                '869d3bb2543f215c0ab24f097178f8e411b718ea20801dd95b181f1bd0145bb4  policies/St-High-Th-Med.policy' \
+                'a246a19f3546bcadbe88a1d92e0c3c3239bbe291e1ece44d0da1550b297f77cb  policies/St-Ins-Th-High.policy' \
+                '027f1e571bdc36a1a24b8b2b3492b4fffba814ab285d92c70eab539e2a5160ef  policies/St-Ins-Th-Low.policy' \
+                '5e792e3475daab0d62ff606216883cc135b910e602f47251c07da0fd879e7c54  policies/St-Ins-Th-Med.policy' \
+                '1476a018613466479d27cd37c640546eb37114117a36d65c53a8a6c50476a2b1  policies/St-Low-Th-High.policy' \
+                'e07e9f23ee9cee9126fd6816f7b8c5a29ffc111e5bf352da60f4c6141145d5db  policies/St-Low-Th-Low.policy' \
+                '2415cdd0b279adb580217988e6a08fd61002aa8f49a0823e58fbf081368fb162  policies/St-Low-Th-Med.policy' \
+                'e3717fd8324d57f3cfff5e94d59f541933ae65feae811e1e3ae016a08f2f2913  policies/St-Med-Th-High.policy' \
+                'd494b8efdf610cf78ae3a8638cd7cc9de54d55dba1a858e0c1505f6867cf556a  policies/St-Med-Th-Low.policy' \
+                'f24c7c209b2a62dab78a072f67ee2248aaa7cb287b1faa85b2001cf9994ea964  scripts/scripts/httpsender/Alert_on_HTTP_Response_Code_Errors.js' \
+                '2be9938cf3070e940dc96f7b6f72149309682f60c8a3411051d3e475c3905956  scripts/scripts/httpsender/Alert_on_Unexpected_Content_Types.js' \
+                > SHA256SUMS \
+              && while read -r sum path; do \
+                   mkdir -p "$(dirname "$path")" \
+                   && curl -fsSL -o "$path" "${ZAP_DOCKER_SRC}/$(printf '%s' "$path" | sed 's/ /%20/g')" \
+                   || exit 1; \
+                 done < SHA256SUMS \
+              && sha256sum -c SHA256SUMS \
+              && cp zap_common.py zap-baseline.py zap-full-scan.py zap-api-scan.py zap-x.sh /zap/ \
+              && chmod 755 /zap/zap-baseline.py /zap/zap-full-scan.py /zap/zap-api-scan.py /zap/zap-x.sh \
+              && mkdir -p /home/zap/.ZAP /home/zap/.ZAP_D \
+              && cp -R policies /home/zap/.ZAP/policies \
+              && cp -R scripts /home/zap/.ZAP_D/scripts \
+              && chown -R 1000:1000 /zap /home/zap \
+              && cd / && rm -rf /tmp/zap-src
+          # The environment, user and layout the scan scripts expect: they run
+          # /zap/zap-x.sh, read and write reports in /zap/wrk, and take the
+          # policies and scripts from the zap user's home. Their "Error
+          # importing pkg_resources" warning is expected: the venv has no
+          # setuptools, and it serves only a client-version check the scripts
+          # skip inside a container.
+          ENV PATH=/zap:/opt/zap-py/bin:$PATH ZAP_PATH=/zap/zap.sh ZAP_PORT=8080 IS_CONTAINERIZED=true \
+              HOME=/home/zap/ LC_ALL=C.UTF-8 LANG=C.UTF-8
+          WORKDIR /zap
+          USER 1000
+          DOCKERFILE
+
+          docker run --rm sast-aws:fips --version
+          docker run --rm sast-zap:fips zap.sh -cmd -version
+
+      - name: Run ZAP
+        id: scan
+        if: steps.has.outputs.run == 'true'
+        run: |
+          w="$RUNNER_TEMP/zap-work"; mkdir -p "$w" && chmod 777 "$w"
+          case "$SCAN" in
+            baseline) script=zap-baseline.py;  args=(-t "$TARGET") ;;
+            full)     script=zap-full-scan.py; args=(-t "$TARGET") ;;
+            api)
+              script=zap-api-scan.py; def="$OPENAPI"
+              if [ -f "src/$def" ]; then cp "src/$def" "$w/openapi-def"; def=openapi-def; fi
+              args=(-t "$def" -f openapi); [ -n "$TARGET" ] && args+=(-O "$TARGET") ;;
+          esac
+          if [ -f src/.zap/rules.tsv ]; then cp src/.zap/rules.tsv "$w/rules.tsv"; args+=(-c rules.tsv); fi
+          # 0 clean, 1 FAILs, 2 WARNs, 3+ the scan could not run. Findings never
+          # fail this job (Tueri Core is the system of record); a scan that
+          # could not run does.
+          set +e
+          docker run --rm -v "$w:/zap/wrk:rw" sast-zap:fips "$script" "${args[@]}" -J zap.json -r zap.html -w zap.md
+          rc=$?
+          set -e
+          cp "$w"/zap.* "$RUNNER_TEMP/out/" 2>/dev/null || true
+          if [ "$rc" -ge 3 ] || [ ! -s "$RUNNER_TEMP/out/zap.json" ]; then
+            echo "{\"status\":\"failed\",\"reason\":\"ZAP exit $rc\"}" > "$RUNNER_TEMP/out/zap-status.json"
+            echo "::error::ZAP could not run (exit $rc)"; exit 1
+          fi
+          jq -n --arg t "${TARGET:-$OPENAPI}" --arg s "$SCAN" '{status:"ran", target:$t, scan:$s}' > "$RUNNER_TEMP/out/zap-status.json"
+
+      - name: Upload report to S3
+        if: steps.scan.outcome == 'success' && inputs.s3_bucket != '' && steps.dest.outputs.upload == 'true'
+        env:
+          KEY_BASE: ${{ steps.dest.outputs.project }}/${{ steps.dest.outputs.base }}
+        run: |
+          key="${KEY_BASE}zap-dast/dt=$(date -u +%F)/run-${GITHUB_RUN_ID}/zap.json"
+          docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+            -e AWS_DEFAULT_REGION="$AWS_REGION" -v "$RUNNER_TEMP/out:/data" -w /data sast-aws:fips \
+            s3 cp zap.json "s3://${S3_BUCKET}/${key}" --content-type application/json \
+            --metadata "commit=${{ steps.dest.outputs.commit }},branch=${{ steps.dest.outputs.branch }},run=${GITHUB_RUN_ID},scan=${SCAN}"
+          echo "Uploaded s3://${S3_BUCKET}/${key}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Status
+        id: status
+        if: always()
+        run: |
+          s="$(jq -r .status "$RUNNER_TEMP/out/zap-status.json" 2>/dev/null || echo failed)"
+          echo "status=$s" >> "$GITHUB_OUTPUT"
+
+      - name: Upload report artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # actions/upload-artifact v7.0.1
+        with:
+          name: zap-reports
+          path: ${{ runner.temp }}/out/
+          if-no-files-found: warn
+          retention-days: 30

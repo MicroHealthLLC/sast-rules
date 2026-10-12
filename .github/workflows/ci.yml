@@ -52,10 +52,13 @@ jobs:
             scan --test rules/microhealth
 
   self-scan:
-    name: Shared workflow, end to end
+    name: Security scan, end to end
     permissions: {contents: read, actions: read, security-events: write, id-token: write}
-    uses: ./.github/workflows/opengrep.yml
+    uses: ./.github/workflows/security-scan.yml
     with:
       aws_region: ${{ vars.AWS_REGION_EAST_1 }}
       bundle: product
+      # No deployment to attack: ZAP is recorded as not run, which is the
+      # case the combined report must show honestly.
+      zap_target: ""
     secrets: inherit

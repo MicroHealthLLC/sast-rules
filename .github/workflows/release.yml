@@ -10,8 +10,11 @@ on:
       - "dist/**"
       - "engine.json"
       - ".github/workflows/opengrep.yml"
-      - "scripts/annotate_report.py"
-      - "scripts/publication_status.py"
+      - ".github/workflows/trivy.yml"
+      - ".github/workflows/zap.yml"
+      - ".github/workflows/security-scan.yml"
+      - "scripts/**"
+      - "local/**"
   workflow_dispatch:
 
 permissions:

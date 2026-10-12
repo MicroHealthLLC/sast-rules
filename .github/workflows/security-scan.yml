@@ -1,0 +1,296 @@
+name: Security scan
+# The one security workflow every MicroHealth repository runs: SAST
+# (Opengrep), Trivy (dependencies, secrets, misconfiguration; repository and
+# images), the CycloneDX SBOM and ZAP DAST, in parallel, ending in ONE report.
+# Every scanner is ON by default; a repository switches one off with its
+# input. A caller (README "Use it in a repository"):
+#
+#   jobs:
+#     security:
+#       permissions: {contents: read, actions: read, security-events: write, id-token: write}
+#       uses: MicroHealthLLC/sast-rules/.github/workflows/security-scan.yml@<sha> # vYYYY.M.N
+#       with:
+#         aws_region: ${{ vars.AWS_REGION_EAST_1 }}
+#         s3_bucket: ${{ vars.SECURITY_REPORTS_S3_BUCKET }}
+#         zap_target: ${{ vars.ZAP_TARGET_URL }}
+#       secrets: inherit
+#
+# The scanners are this repository's own reusable workflows, called at the
+# same commit (`./`), so pinning this file pins all of them, the rules and
+# the engines. Each one's reports go where Tueri Core ingests them
+# (<project>/sast/, trivy-fs/, trivy-image/, sbom/, zap-dast/); the combined
+# report goes to <project>/_security-scan/…, which ingest does not read: it
+# is the run's record, not a findings source.
+#
+# The combined job FAILS when a scanner that was on did not produce its
+# report — a scan that did not run never reads as a clean one — and, when
+# `fail_on` is set, when a finding at or above that severity is reported.
+# ZAP without a target is recorded as `not_run` (with the reason) and does
+# not fail the build.
+
+on:
+  workflow_call:
+    inputs:
+      sast:
+        description: "Run SAST (Opengrep with MicroHealth's rules)"
+        type: boolean
+        default: true
+      trivy:
+        description: "Run Trivy on the repository (and `images`)"
+        type: boolean
+        default: true
+      sbom:
+        description: "Produce the CycloneDX SBOM (with Trivy)"
+        type: boolean
+        default: true
+      zap:
+        description: "Run ZAP DAST against `zap_target`"
+        type: boolean
+        default: true
+      aws_region:
+        type: string
+        required: true
+      s3_bucket:
+        description: "Evidence bucket; empty keeps every report as an artifact only"
+        type: string
+        default: ""
+      project:
+        description: "Tueri Core project (default: the repository name)"
+        type: string
+        default: ""
+      ref:
+        description: "Branch, tag or commit to scan (default: the triggering ref)"
+        type: string
+        default: ""
+      fail_on:
+        description: "Fail when a finding at or above this severity is reported: none | critical | high | medium | low"
+        type: string
+        default: none
+      # SAST
+      bundle:
+        description: "internal | product"
+        type: string
+        default: internal
+      exclude:
+        description: "Paths SAST skips, one glob per line (a .sastignore file is read too)"
+        type: string
+        default: ""
+      baseline_ref:
+        description: "SAST reports only what is new since this ref (a pull request's base); such a scan is never uploaded for ingest"
+        type: string
+        default: ""
+      # Trivy
+      images:
+        description: "Container images Trivy also scans, one reference per line"
+        type: string
+        default: ""
+      image_registries:
+        description: "ECR registry account ids the images live in, comma-separated"
+        type: string
+        default: ""
+      # ZAP
+      zap_target:
+        description: "URL ZAP scans (staging/preview). Empty: ZAP is recorded as not run."
+        type: string
+        default: ""
+      zap_scan:
+        description: "baseline (default, passive) | full | api (active: gated, see zap.yml)"
+        type: string
+        default: baseline
+      zap_openapi:
+        type: string
+        default: ""
+      zap_confirm:
+        type: string
+        default: ""
+      zap_runs_on:
+        description: "Runner for ZAP (a self-hosted runner for an internal target)"
+        type: string
+        default: ubuntu-latest
+    secrets:
+      AWS_ROLE:
+        required: true
+    outputs:
+      report:
+        description: "Path of the combined report inside the `security-report` artifact"
+        value: security-report.json
+
+permissions:
+  contents: read
+
+jobs:
+  sast:
+    if: inputs.sast
+    permissions: {contents: read, actions: read, security-events: write, id-token: write}
+    uses: ./.github/workflows/opengrep.yml
+    with:
+      bundle: ${{ inputs.bundle }}
+      project: ${{ inputs.project }}
+      aws_region: ${{ inputs.aws_region }}
+      s3_bucket: ${{ inputs.s3_bucket }}
+      exclude: ${{ inputs.exclude }}
+      ref: ${{ inputs.ref }}
+      baseline_ref: ${{ inputs.baseline_ref }}
+    secrets:
+      AWS_ROLE: ${{ secrets.AWS_ROLE }}
+
+  trivy:
+    if: inputs.trivy
+    permissions: {contents: read, actions: read, security-events: write, id-token: write}
+    uses: ./.github/workflows/trivy.yml
+    with:
+      project: ${{ inputs.project }}
+      aws_region: ${{ inputs.aws_region }}
+      s3_bucket: ${{ inputs.s3_bucket }}
+      ref: ${{ inputs.ref }}
+      sbom: ${{ inputs.sbom }}
+      images: ${{ inputs.images }}
+      image_registries: ${{ inputs.image_registries }}
+    secrets:
+      AWS_ROLE: ${{ secrets.AWS_ROLE }}
+
+  zap:
+    if: inputs.zap
+    permissions: {contents: read, id-token: write}
+    uses: ./.github/workflows/zap.yml
+    with:
+      target: ${{ inputs.zap_target }}
+      scan: ${{ inputs.zap_scan }}
+      openapi: ${{ inputs.zap_openapi }}
+      confirm: ${{ inputs.zap_confirm }}
+      project: ${{ inputs.project }}
+      aws_region: ${{ inputs.aws_region }}
+      s3_bucket: ${{ inputs.s3_bucket }}
+      ref: ${{ inputs.ref }}
+      runs_on: ${{ inputs.zap_runs_on }}
+    secrets:
+      AWS_ROLE: ${{ secrets.AWS_ROLE }}
+
+  report:
+    name: Security report
+    needs: [sast, trivy, zap]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    env:
+      AWS_REGION: ${{ inputs.aws_region }}
+      S3_BUCKET: ${{ inputs.s3_bucket }}
+    steps:
+      - name: Which sast-rules commit is running
+        id: self
+        run: |
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "::error::The calling job must grant 'id-token: write' (see the README)."
+            exit 1
+          fi
+          token="$(curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sast-rules" | jq -r .value)"
+          payload="$(printf '%s' "$token" | cut -d. -f2 | tr '_-' '/+')"
+          while [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="$payload="; done
+          claims="$(printf '%s' "$payload" | base64 -d)"
+          sha="$(printf '%s' "$claims" | jq -r .job_workflow_sha)"
+          ref="$(printf '%s' "$claims" | jq -r .job_workflow_ref)"
+          case "$sha" in (*[!0-9a-f]*|"") echo "::error::No job_workflow_sha in the OIDC token"; exit 1;; esac
+          echo "repo=${ref%%/.github/workflows/*}" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          path: src
+          ref: ${{ inputs.ref }}
+
+      - name: Checkout sast-rules (the commit this workflow runs at)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          repository: ${{ steps.self.outputs.repo }}
+          ref: ${{ steps.self.outputs.sha }}
+          path: .sast-rules
+          persist-credentials: false
+
+      - name: Where the report goes
+        id: dest
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          .sast-rules/scripts/destination.sh src "${{ inputs.baseline_ref }}"
+          project="${{ inputs.project }}"; echo "project=${project:-${GITHUB_REPOSITORY##*/}}" >> "$GITHUB_OUTPUT"
+
+      - name: Collect the scanners' reports
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # actions/download-artifact v8.0.1
+        with:
+          path: ${{ runner.temp }}/artifacts
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: GitHubActionsSecurityReport
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to the FIPS base registry (ECR)
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # aws-actions/amazon-ecr-login v2
+        with:
+          registries: "295669632222"
+
+      - name: Build the report image (FIPS)
+        run: |
+          docker build --build-arg APK_REFRESH=${{ github.run_id }} -t sast-report:fips - <<'DOCKERFILE'
+          FROM 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-python:dev-latest@sha256:0e33bb16875879bff135f8a53972cbad7e1b6d24e82b16f2f2c55f17828c64ec
+          # Per-run package refresh: a new value re-runs the layer below.
+          ARG APK_REFRESH
+          USER root
+          RUN apk add --no-cache aws-cli && apk upgrade --no-cache
+          DOCKERFILE
+
+      - name: Combine the reports
+        id: combine
+        env:
+          ENABLED_SAST: ${{ inputs.sast }}
+          ENABLED_TRIVY: ${{ inputs.trivy }}
+          ENABLED_SBOM: ${{ inputs.trivy && inputs.sbom }}
+          ENABLED_ZAP: ${{ inputs.zap }}
+          RESULT_SAST: ${{ needs.sast.result }}
+          RESULT_TRIVY: ${{ needs.trivy.result }}
+          RESULT_ZAP: ${{ needs.zap.result }}
+          FAIL_ON: ${{ inputs.fail_on }}
+          RULES_COMMIT: ${{ steps.self.outputs.sha }}
+          SCAN_COMMIT: ${{ steps.dest.outputs.commit }}
+          SCAN_BRANCH: ${{ steps.dest.outputs.branch }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/report"
+          set +e
+          docker run --rm --network none -v "$PWD/.sast-rules:/r:ro" -v "$RUNNER_TEMP:$RUNNER_TEMP" \
+            -e ENABLED_SAST -e ENABLED_TRIVY -e ENABLED_SBOM -e ENABLED_ZAP \
+            -e RESULT_SAST -e RESULT_TRIVY -e RESULT_ZAP -e FAIL_ON -e RULES_COMMIT \
+            -e SCAN_COMMIT -e SCAN_BRANCH -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -e GITHUB_SERVER_URL \
+            -e GITHUB_EVENT_NAME -e GITHUB_STEP_SUMMARY sast-report:fips \
+            python3 /r/scripts/combine_reports.py "$RUNNER_TEMP/artifacts" "$RUNNER_TEMP/report"
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the combined report to S3
+        if: inputs.s3_bucket != '' && steps.dest.outputs.upload == 'true'
+        env:
+          KEY_BASE: ${{ steps.dest.outputs.project }}/${{ steps.dest.outputs.base }}
+        run: |
+          key="${KEY_BASE}_security-scan/dt=$(date -u +%F)/run-${GITHUB_RUN_ID}/security-report.json"
+          docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+            -e AWS_DEFAULT_REGION="$AWS_REGION" -v "$RUNNER_TEMP/report:/data" -w /data \
+            --entrypoint aws sast-report:fips s3 cp security-report.json "s3://${S3_BUCKET}/${key}" \
+            --content-type application/json --metadata "commit=${{ steps.dest.outputs.commit }},run=${GITHUB_RUN_ID}"
+          echo "Uploaded s3://${S3_BUCKET}/${key}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the combined report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # actions/upload-artifact v7.0.1
+        with:
+          name: security-report
+          path: ${{ runner.temp }}/report/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Verdict
+        run: exit "${{ steps.combine.outputs.rc }}"

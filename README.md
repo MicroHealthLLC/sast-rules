@@ -1,7 +1,8 @@
 # sast-rules
 
-MicroHealth's static application security testing (SAST): the rules, and the
-one GitHub Actions workflow every MicroHealth repository runs to apply them.
+MicroHealth's security scanning: the static analysis (SAST) rules, and the one
+GitHub Actions workflow every MicroHealth repository runs — SAST, Trivy, the
+SBOM and ZAP DAST, in parallel, in one report.
 
 - **Engine:** [Opengrep](https://github.com/opengrep/opengrep) (LGPL-2.1),
   pinned by version and sha256 in [`engine.json`](engine.json).
@@ -38,48 +39,100 @@ It is maintained by MicroHealth for MicroHealth's repositories.
 
 ## Use it in a repository
 
-`.github/workflows/sast.yml`:
+One workflow runs every scanner, in parallel, and ends in one report:
+**SAST** (Opengrep with these rules), **Trivy** (dependency vulnerabilities,
+secrets and misconfiguration, for the repository and any images), the
+**SBOM** (CycloneDX) and **ZAP DAST**. Every scanner is **on by default**;
+switch one off with its input.
+
+`.github/workflows/security-scan.yml`:
 
 ```yaml
-name: SAST
+name: Security scan
 on:
+  push:
+    branches: [integration]     # the default branch: reports feed Tueri Core
+  pull_request:                 # a pull request: a check, reports stay artifacts
   schedule:
     - cron: "30 2 * * *"
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  sast:
+  security:
     permissions: {contents: read, actions: read, security-events: write, id-token: write}
-    uses: MicroHealthLLC/sast-rules/.github/workflows/opengrep.yml@<commit-sha> # vYYYY.M.N
+    uses: MicroHealthLLC/sast-rules/.github/workflows/security-scan.yml@<commit-sha> # vYYYY.M.N
     with:
       aws_region: ${{ vars.AWS_REGION_EAST_1 }}
       s3_bucket: ${{ vars.SECURITY_REPORTS_S3_BUCKET }}
+      zap_target: ${{ vars.ZAP_TARGET_URL }}
+      # sast: false        # each scanner is on unless switched off
+      # trivy: false
+      # sbom: false
+      # zap: false
     secrets: inherit
 ```
 
 | Input | Default | Meaning |
 |---|---|---|
-| `bundle` | `internal` | `internal` (every rule MicroHealth may run on its own code) or `product` (permissive licenses only) |
-| `project` | repository name | The Tueri Core project the report belongs to |
+| `sast`, `trivy`, `sbom`, `zap` | `true` | Switch a scanner off |
 | `aws_region` | — | Region of the evidence bucket |
-| `s3_bucket` | empty | Evidence bucket; empty skips the upload (Tueri Core then never sees the run) |
-| `exclude` | empty | Extra paths to skip, one glob per line. A `.sastignore` file at the repository root is read too. |
-| `fail_on_findings` | `false` | Fail the job when a finding is reported that is not suppressed inline |
+| `s3_bucket` | empty | Evidence bucket; empty keeps every report as an artifact only |
+| `project` | repository name | The Tueri Core project the reports belong to |
+| `ref` | triggering ref | Branch, tag or commit to scan |
+| `fail_on` | `none` | Fail the run on a finding at or above `critical`, `high`, `medium` or `low` |
+| `bundle` | `internal` | SAST rules: `internal` or `product` (permissive licenses only) |
+| `exclude` | empty | Paths SAST skips, one glob per line; `.sastignore` is read too |
+| `baseline_ref` | empty | SAST reports only what is new since this ref, e.g. `${{ github.base_ref }}` on a pull request |
+| `images` | empty | Images Trivy also scans (and SBOMs), one reference per line |
+| `image_registries` | empty | ECR account ids those images live in |
+| `zap_target` | empty | URL ZAP scans (staging or preview, never production). **Empty: ZAP is recorded as not run, with the reason**, and the build does not fail |
+| `zap_scan` | `baseline` | `baseline` (passive) or `full` / `api` (active attack: needs the `dast-active` environment's approval and `zap_confirm` equal to the target) |
+| `zap_runs_on` | `ubuntu-latest` | A self-hosted runner, for a target inside a private network |
 
-Secret `AWS_ROLE`: an OIDC role that can pull MicroHealth's FIPS image from ECR
-and, when `s3_bucket` is set, write to the bucket. The job needs
-`id-token: write`. Outputs: `findings`, `rules_commit`. Artifact
-`sast-reports`: `sast.json`, `sast.sarif`, `publication-status.json`.
+`AWS_ROLE` (secret): OIDC role that pulls MicroHealth's FIPS images from ECR
+and writes the bucket. The calling job needs the four permissions above.
 
-The report lands at `s3://<bucket>/<project>/sast/dt=<day>/run-<id>/sast.json`,
-and the SARIF in GitHub code scanning under the category `sast`.
+**Where reports go.** Only a full scan of the default branch feeds Tueri
+Core: `<project>/sast/`, `trivy-fs/`, `trivy-image/<image>/`, `sbom/`,
+`zap-dast/`. Another branch's scans go under `<project>/_branch-scans/`,
+which Tueri Core never ingests; a pull request's or a diff scan's are
+artifacts only. Absence in a partial scan is not evidence that something was
+fixed.
+
+**One report.** The `Security report` job writes `security-report.json` (and
+a summary table on the run page): every scanner's status (`ran`, `not_run`,
+`failed`, `disabled`), counts by severity, SBOM component counts, the rules
+commit. A scanner that was on and left no report **fails the run**; a count
+is `null` unless the scanner ran, so "did not run" never reads as "found
+nothing". The report is the `security-report` artifact and
+`<project>/_security-scan/…` in the bucket.
+
+Each scanner is also its own reusable workflow (`opengrep.yml`, `trivy.yml`,
+`zap.yml`) for a repository that needs only one.
+
+### Locally
+
+The same rules and engine, from the commit your workflow pins: copy
+[`local/sast.sh`](local/sast.sh) into the repository (e.g. `scripts/sast.sh`)
+and run it, or wire it into `make`, a pre-push hook or a test script:
+
+```sh
+scripts/sast.sh                     # fails on an ERROR finding
+scripts/sast.sh --fail-on warning   # stricter
+scripts/sast.sh --fail-on none --json sast.json
+```
+
+It needs git, curl, python3, sha256sum and docker or nerdctl logged in to
+MicroHealth's ECR. It never needs editing: it reads the pin from
+`.github/workflows/`.
 
 **Suppress a finding inline**, with the full rule id and the reason it does
-not apply, on the line (or the line above):
+not apply, on the line or the line above:
 
 ```python
-import xml.etree.ElementTree as ET  # noopengrep: mh.opengrep.python.lang.security.use-defused-xml.use-defused-xml — parsing goes through _safe_parse
+# noopengrep: mh.opengrep.python.lang.security.use-defused-xml.use-defused-xml — parsing goes through _safe_parse
+import xml.etree.ElementTree as ET
 ```
 
 A suppression without a reason is a lie a security tool tells itself.
@@ -172,6 +225,15 @@ down:
 The scan runs in a container built FROM MicroHealth's FIPS 140-3 Python image.
 Python, git and the AWS CLI there use the system OpenSSL with only the FIPS
 provider (OpenSSL FIPS Provider 3.1.2, CMVP #4985).
+
+**Trivy** is built from source on every run on MicroHealth's FIPS Go image
+with the Go Cryptographic Module (`GOFIPS140`, CMVP #5247); every Go module is
+checked against sum.golang.org. Its vulnerability database is downloaded on
+each run.
+
+**ZAP is outside the FIPS claim.** It is Java, and its TLS is the JDK's. It is
+a test tool attacking a target, not part of any product. Its release tarball
+and scan scripts are refused unless their SHA-256 matches.
 
 **Opengrep is outside the FIPS claim.** It is an OCaml binary linked against
 musl and loads no OpenSSL. It contains an HTTPS client of its own (its

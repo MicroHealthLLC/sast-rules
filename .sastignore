@@ -1,0 +1,4 @@
+# The vendored upstream rules and the built bundles are rule DEFINITIONS:
+# their patterns are what the rules look for, not code that does it.
+upstream/
+dist/

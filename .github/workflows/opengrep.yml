@@ -56,6 +56,14 @@ on:
         description: "Fail the job when the scan reports a finding not suppressed inline"
         type: boolean
         default: false
+      ref:
+        description: "Branch, tag or commit to scan (default: the ref that triggered the run)"
+        type: string
+        default: ""
+      baseline_ref:
+        description: "Report only findings introduced since this ref (a pull request's base). Such a scan is never uploaded for ingest."
+        type: string
+        default: ""
     secrets:
       AWS_ROLE:
         description: "OIDC role: pulls the FIPS image from ECR and writes the report to S3"
@@ -91,7 +99,6 @@ jobs:
       AWS_REGION: ${{ inputs.aws_region }}
       S3_BUCKET: ${{ inputs.s3_bucket }}
       BUNDLE: ${{ inputs.bundle }}
-      FIPS_PYTHON: 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-python:dev-latest@sha256:3ebb23e109edabcc9265c65bafa313565bb3146615c26c8e49f3f2725af120f0
     steps:
       - name: Which sast-rules commit is running
         id: self
@@ -118,6 +125,34 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
         with:
           path: src
+          ref: ${{ inputs.ref }}
+          # A diff scan needs the baseline's history.
+          fetch-depth: ${{ inputs.baseline_ref != '' && '0' || '1' }}
+
+      # Where the report goes. Only a full scan of the default branch feeds
+      # Tueri Core's findings (<project>/sast/...). Another branch's scan is
+      # kept under <project>/_branch-scans/branch=<slug>/..., which ingest never
+      # reads, so work in progress never opens or resolves a finding; a diff
+      # scan (baseline_ref) is a partial view and is not uploaded at all.
+      - name: Where the report goes
+        id: dest
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          BASELINE: ${{ inputs.baseline_ref }}
+        run: |
+          branch="$(git -C src rev-parse --abbrev-ref HEAD)"
+          [ "$branch" = HEAD ] && branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          if [ -n "$BASELINE" ] || [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            echo "prefix=" >> "$GITHUB_OUTPUT"
+            echo "Diff or pull-request scan: not uploaded for ingest." >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$branch" = "$DEFAULT_BRANCH" ]; then
+            echo "prefix=sast" >> "$GITHUB_OUTPUT"
+          else
+            slug="$(printf '%s' "$branch" | tr -c 'A-Za-z0-9._-' '-' | cut -c1-80)"
+            echo "prefix=_branch-scans/branch=${slug}/sast" >> "$GITHUB_OUTPUT"
+          fi
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git -C src rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Checkout the rules (the commit this workflow runs at)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
@@ -157,10 +192,9 @@ jobs:
 
       - name: Build the scanner image (FIPS)
         run: |
-          docker build --build-arg APK_REFRESH=${{ github.run_id }} --build-arg BASE="$FIPS_PYTHON" \
+          docker build --build-arg APK_REFRESH=${{ github.run_id }} \
             -t sast-scan:fips -f - "$RUNNER_TEMP/image" <<'DOCKERFILE'
-          ARG BASE
-          FROM ${BASE}
+          FROM 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-python:dev-latest@sha256:0e33bb16875879bff135f8a53972cbad7e1b6d24e82b16f2f2c55f17828c64ec
           # Per-run package refresh: a new value re-runs the layer below.
           ARG APK_REFRESH
           # git: Opengrep takes its targets from `git ls-files`, which keeps
@@ -180,7 +214,7 @@ jobs:
           DOCKERFILE
 
       - name: Preflight — verify AWS credentials and S3 write access
-        if: inputs.s3_bucket != ''
+        if: inputs.s3_bucket != '' && steps.dest.outputs.prefix != ''
         run: |
           PROJECT="${{ inputs.project }}"; PROJECT="${PROJECT:-${GITHUB_REPOSITORY##*/}}"
           printf 'preflight ok: run %s commit %s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > "$RUNNER_TEMP/preflight.txt"
@@ -194,9 +228,14 @@ jobs:
         id: scan
         env:
           EXCLUDE: ${{ inputs.exclude }}
+          BASELINE: ${{ inputs.baseline_ref }}
         run: |
           mkdir -p "$RUNNER_TEMP/out"
           args=()
+          if [ -n "$BASELINE" ]; then
+            git -C src fetch -q origin "$BASELINE" 2>/dev/null || true
+            args+=("--baseline-commit=$(git -C src rev-parse "origin/$BASELINE" 2>/dev/null || git -C src rev-parse "$BASELINE")")
+          fi
           while IFS= read -r line; do
             line="${line%%#*}"; line="$(printf '%s' "$line" | xargs)"
             [ -n "$line" ] && args+=("--exclude=$line")
@@ -246,7 +285,7 @@ jobs:
             sast-scan:fips python3 /r/scripts/publication_status.py
 
       - name: Upload JSON report to S3
-        if: inputs.s3_bucket != ''
+        if: inputs.s3_bucket != '' && steps.dest.outputs.prefix != ''
         env:
           SCAN_OUTCOME: ${{ steps.scan.outcome }}
           SARIF_PUBLICATION_STATUS: ${{ steps.publication_status.outputs.sarif_publication_status }}
@@ -256,13 +295,13 @@ jobs:
         run: |
           [ -s "$RUNNER_TEMP/out/sast.json" ] || { echo "::error::sast.json was not created"; exit 1; }
           PROJECT="${{ inputs.project }}"; PROJECT="${PROJECT:-${GITHUB_REPOSITORY##*/}}"
-          KEY="${PROJECT}/sast/dt=$(date -u +%F)/run-${GITHUB_RUN_ID}/sast.json"
+          KEY="${PROJECT}/${{ steps.dest.outputs.prefix }}/dt=$(date -u +%F)/run-${GITHUB_RUN_ID}/sast.json"
           docker run --rm \
             -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
             -e AWS_DEFAULT_REGION="$AWS_REGION" -v "$RUNNER_TEMP/out:/data" -w /data \
             --entrypoint aws sast-scan:fips \
             s3 cp sast.json "s3://${S3_BUCKET}/${KEY}" --content-type application/json \
-            --metadata "commit=${GITHUB_SHA},branch=${GITHUB_REF_NAME},run=${GITHUB_RUN_ID},scan=${SCAN_OUTCOME},sarif-publication=${SARIF_PUBLICATION_STATUS},status-recorded-at=${STATUS_RECORDED_AT},engine=opengrep-${ENGINE_VERSION},rules=${RULES_COMMIT},bundle=${BUNDLE}"
+            --metadata "commit=${{ steps.dest.outputs.commit }},branch=${{ steps.dest.outputs.branch }},run=${GITHUB_RUN_ID},scan=${SCAN_OUTCOME},sarif-publication=${SARIF_PUBLICATION_STATUS},status-recorded-at=${STATUS_RECORDED_AT},engine=opengrep-${ENGINE_VERSION},rules=${RULES_COMMIT},bundle=${BUNDLE}"
           echo "Uploaded s3://${S3_BUCKET}/${KEY}" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Upload report artifacts

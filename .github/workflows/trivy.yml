@@ -1,0 +1,257 @@
+name: Trivy and SBOM
+# Dependency vulnerabilities, secrets and misconfiguration (Trivy), and a
+# CycloneDX SBOM, of a repository and optionally of container images. Called
+# by security-scan.yml; it can be called on its own the same way.
+#
+#   * Trivy is BUILT FROM SOURCE at the version engine.json pins, on
+#     MicroHealth's FIPS Go image with the Go Cryptographic Module (GOFIPS140,
+#     CMVP #5247), exactly as Tueri Core's code scanner builds it; every Go
+#     module is checked against sum.golang.org. A release binary would carry
+#     Go's non-validated crypto. It runs on MicroHealth's FIPS Python image.
+#   * Its vulnerability database is downloaded on every run (that is what
+#     makes the scan current); nothing else is.
+#   * Reports go where scripts/destination.sh says: the default branch's
+#     to <project>/trivy-fs/… and <project>/sbom/…, where Tueri Core ingests
+#     them; another branch's under _branch-scans/; a pull request's nowhere.
+#   * Images are pulled with the caller's credentials, saved to a tarball
+#     and scanned from it: no registry token reaches Trivy.
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        description: "Tueri Core project (default: the repository name)"
+        type: string
+        default: ""
+      aws_region:
+        type: string
+        required: true
+      s3_bucket:
+        description: "Evidence bucket; empty skips the upload"
+        type: string
+        default: ""
+      ref:
+        description: "Branch, tag or commit to scan (default: the triggering ref)"
+        type: string
+        default: ""
+      sbom:
+        description: "Also produce the CycloneDX SBOM"
+        type: boolean
+        default: true
+      repository_scan:
+        description: "Scan the repository's files (vulnerabilities, secrets, misconfiguration)"
+        type: boolean
+        default: true
+      images:
+        description: "Container images to scan too, one reference per line (e.g. <account>.dkr.ecr.<region>.amazonaws.com/app:dev-latest)"
+        type: string
+        default: ""
+      image_registries:
+        description: "ECR registry account ids the images live in, comma-separated (logged in with AWS_ROLE)"
+        type: string
+        default: ""
+    secrets:
+      AWS_ROLE:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.p.outputs.matrix }}
+    steps:
+      - id: p
+        env:
+          IMAGES: ${{ inputs.images }}
+          REPO: ${{ inputs.repository_scan }}
+        run: |
+          {
+            [ "$REPO" = true ] && echo '{"kind":"repo","ref":""}'
+            printf '%s\n' "$IMAGES" | sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//' | grep -v '^$' \
+              | jq -Rc '{kind:"image", ref:.}'
+          } | jq -sc . > matrix.json || true
+          echo "matrix=$(cat matrix.json)" >> "$GITHUB_OUTPUT"
+          echo "Trivy targets: $(cat matrix.json)" >> "$GITHUB_STEP_SUMMARY"
+
+  scan:
+    name: Trivy ${{ matrix.target.kind == 'repo' && 'repository' || matrix.target.ref }}
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: needs.plan.outputs.matrix != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+      id-token: write
+    env:
+      AWS_REGION: ${{ inputs.aws_region }}
+      S3_BUCKET: ${{ inputs.s3_bucket }}
+      KIND: ${{ matrix.target.kind }}
+      IMAGE_REF: ${{ matrix.target.ref }}
+    steps:
+      - name: Which sast-rules commit is running
+        id: self
+        run: |
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "::error::The calling job must grant 'id-token: write' (see the README)."
+            exit 1
+          fi
+          token="$(curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sast-rules" | jq -r .value)"
+          payload="$(printf '%s' "$token" | cut -d. -f2 | tr '_-' '/+')"
+          while [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="$payload="; done
+          claims="$(printf '%s' "$payload" | base64 -d)"
+          sha="$(printf '%s' "$claims" | jq -r .job_workflow_sha)"
+          ref="$(printf '%s' "$claims" | jq -r .job_workflow_ref)"
+          case "$sha" in (*[!0-9a-f]*|"") echo "::error::No job_workflow_sha in the OIDC token"; exit 1;; esac
+          echo "repo=${ref%%/.github/workflows/*}" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          path: src
+          ref: ${{ inputs.ref }}
+
+      - name: Checkout sast-rules (the commit this workflow runs at)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          repository: ${{ steps.self.outputs.repo }}
+          ref: ${{ steps.self.outputs.sha }}
+          path: .sast-rules
+          persist-credentials: false
+
+      - name: Where the reports go
+        id: dest
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          .sast-rules/scripts/destination.sh src
+          project="${{ inputs.project }}"; project="${project:-${GITHUB_REPOSITORY##*/}}"
+          name=""
+          if [ "$KIND" = image ]; then
+            # The image's repository name, as Tueri Core keys an image stream.
+            name="$(printf '%s' "${IMAGE_REF##*/}" | sed 's/[:@].*//' | tr -c 'A-Za-z0-9._-' '-')"
+          fi
+          echo "project=$project" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "artifact=trivy-${name:-repository}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: GitHubActionsTrivy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to the FIPS base registry (ECR)
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # aws-actions/amazon-ecr-login v2
+        with:
+          registries: ${{ inputs.image_registries != '' && format('295669632222,{0}', inputs.image_registries) || '295669632222' }}
+
+      - name: Build Trivy (FIPS, from source)
+        run: |
+          version="$(jq -r .trivy.version .sast-rules/engine.json)"
+          docker build --build-arg APK_REFRESH=${{ github.run_id }} --build-arg TRIVY_VERSION="$version" \
+            -t sast-trivy:fips - <<'DOCKERFILE'
+          FROM 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-go:dev-latest@sha256:8851dd0e45806ba6e5242152e2abc1219e3f0cf8754a95c92fde1d3fc753c7f2 AS trivy
+          ARG TRIVY_VERSION
+          # GOEXPERIMENT=jsonv2 is what upstream's own release build sets.
+          RUN GOEXPERIMENT=jsonv2 go install -trimpath \
+                -ldflags "-s -w -X github.com/aquasecurity/trivy/pkg/version/app.ver=${TRIVY_VERSION}" \
+                "github.com/aquasecurity/trivy/cmd/trivy@v${TRIVY_VERSION}" \
+           && go version -m "${GOPATH}/bin/trivy" | grep -q 'GOFIPS140=v1.0.0' \
+           && mkdir -p /tmp/out && cp "${GOPATH}/bin/trivy" /tmp/out/trivy
+
+          FROM 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-python:dev-latest@sha256:0e33bb16875879bff135f8a53972cbad7e1b6d24e82b16f2f2c55f17828c64ec
+          # Per-run package refresh: a new value re-runs the layer below.
+          ARG APK_REFRESH
+          # git: Trivy reads the checkout; aws-cli uploads the reports. Root:
+          # the scan writes into mounted runner directories; nothing ships.
+          USER root
+          RUN apk add --no-cache git aws-cli && apk upgrade --no-cache \
+              && git config --system --add safe.directory '*'
+          COPY --from=trivy /tmp/out/trivy /usr/local/bin/trivy
+          RUN trivy --version
+          DOCKERFILE
+
+      - name: Pull and save the image
+        if: matrix.target.kind == 'image'
+        run: |
+          docker pull "$IMAGE_REF"
+          mkdir -p "$RUNNER_TEMP/img"
+          docker save -o "$RUNNER_TEMP/img/image.tar" "$IMAGE_REF"
+
+      - name: Run Trivy
+        id: scan
+        env:
+          SBOM: ${{ inputs.sbom }}
+        run: |
+          out="$RUNNER_TEMP/out"; mkdir -p "$out" "$RUNNER_TEMP/trivy-cache"
+          common=(--cache-dir /cache --skip-version-check --no-progress --timeout 40m)
+          run() { docker run --rm -e HOME=/tmp -v "$PWD/src:/src" -v "$RUNNER_TEMP/img:/img" \
+                    -v "$out:/out" -v "$RUNNER_TEMP/trivy-cache:/cache" -w /src sast-trivy:fips trivy "$@"; }
+          if [ "$KIND" = repo ]; then
+            ignore=(); [ -f src/.trivyignore ] && ignore=(--ignorefile .trivyignore)
+            run fs "${common[@]}" "${ignore[@]}" --format json --output /out/trivy-fs.json \
+              --scanners vuln,secret,misconfig --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL .
+            run convert --format sarif --output /out/trivy.sarif /out/trivy-fs.json
+            [ "$SBOM" = true ] && run fs "${common[@]}" --format cyclonedx --output /out/sbom.cdx.json .
+          else
+            run image "${common[@]}" --input /img/image.tar --format json --output /out/trivy-image.json \
+              --scanners vuln,secret --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+            run convert --format sarif --output /out/trivy.sarif /out/trivy-image.json
+            [ "$SBOM" = true ] && run image "${common[@]}" --input /img/image.tar --format cyclonedx --output /out/sbom.cdx.json
+          fi
+          ls -la "$out"
+
+      - name: Upload SARIF to GitHub code scanning
+        if: always() && steps.scan.outcome == 'success'
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # github/codeql-action/upload-sarif v4
+        with:
+          sarif_file: ${{ runner.temp }}/out/trivy.sarif
+          category: ${{ steps.dest.outputs.artifact }}
+          checkout_path: ${{ github.workspace }}/src
+
+      - name: Upload reports to S3
+        if: inputs.s3_bucket != '' && steps.dest.outputs.upload == 'true'
+        env:
+          P: ${{ steps.dest.outputs.project }}/${{ steps.dest.outputs.base }}
+          NAME: ${{ steps.dest.outputs.name }}
+          META: commit=${{ steps.dest.outputs.commit }},branch=${{ steps.dest.outputs.branch }},run=${{ github.run_id }},rules=${{ steps.self.outputs.sha }}
+        run: |
+          day="$(date -u +%F)"; run="run-${GITHUB_RUN_ID}"
+          put() { docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+                    -e AWS_DEFAULT_REGION="$AWS_REGION" -v "$RUNNER_TEMP/out:/data" -w /data \
+                    --entrypoint aws sast-trivy:fips s3 cp "$1" "s3://${S3_BUCKET}/$2" \
+                    --content-type application/json --metadata "$META"
+                  echo "Uploaded s3://${S3_BUCKET}/$2" | tee -a "$GITHUB_STEP_SUMMARY"; }
+          if [ "$KIND" = repo ]; then
+            put trivy-fs.json "${P}trivy-fs/dt=${day}/${run}/trivy-fs.json"
+            [ -s "$RUNNER_TEMP/out/sbom.cdx.json" ] && put sbom.cdx.json "${P}sbom/source/dt=${day}/${run}/${P%%/*}-source.cdx.json"
+          else
+            put trivy-image.json "${P}trivy-image/${NAME}/dt=${day}/${run}/trivy-${NAME}.json"
+            [ -s "$RUNNER_TEMP/out/sbom.cdx.json" ] && put sbom.cdx.json "${P}sbom/image/${NAME}/dt=${day}/${run}/sbom-${NAME}.cdx.json"
+          fi
+          true
+
+      - name: Upload report artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # actions/upload-artifact v7.0.1
+        with:
+          name: ${{ steps.dest.outputs.artifact }}
+          path: ${{ runner.temp }}/out/
+          if-no-files-found: warn
+          retention-days: 30

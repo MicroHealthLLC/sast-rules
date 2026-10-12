@@ -57,6 +57,23 @@ class SharedWorkflowTests(unittest.TestCase):
         self.assertIn("sha256sum -c", run)
         self.assertIn("engine.json", run)
 
+    def test_every_scanner_is_on_by_default(self) -> None:
+        inputs = load("security-scan.yml")["on"]["workflow_call"]["inputs"]
+        for toggle in ("sast", "trivy", "sbom", "zap"):
+            self.assertEqual(inputs[toggle]["default"], "true", toggle)
+        jobs = load("security-scan.yml")["jobs"]
+        self.assertEqual(jobs["report"]["needs"], ["sast", "trivy", "zap"])
+        self.assertEqual(jobs["report"]["if"], "always()")
+        for name in ("sast", "trivy", "zap"):
+            self.assertTrue(jobs[name]["uses"].startswith("./.github/workflows/"), name)
+
+    def test_no_partial_scan_feeds_ingest(self) -> None:
+        dest = (WORKFLOWS.parent.parent / "scripts" / "destination.sh").read_text()
+        self.assertIn("pull_request", dest)
+        self.assertIn("_branch-scans/branch=", dest)
+        for name in ("trivy.yml", "zap.yml", "security-scan.yml"):
+            self.assertIn("steps.dest.outputs.upload == 'true'", (WORKFLOWS / name).read_text(), name)
+
     def test_actions_are_pinned_and_permissions_explicit(self) -> None:
         for path in WORKFLOWS.glob("*.yml"):
             text = path.read_text()
@@ -71,6 +88,11 @@ class SharedWorkflowTests(unittest.TestCase):
             self.assertEqual(wf.get("permissions"), {"contents": "read"}, path.name)
             for name, job in wf["jobs"].items():
                 self.assertIsInstance(job.get("permissions"), dict, f"{path.name}:{name}")
+                for step in job.get("steps") or []:
+                    if "docker build" in step.get("run", ""):
+                        for line in step["run"].splitlines():
+                            if line.strip().startswith("FROM "):
+                                self.assertRegex(line, r"microhealthllc/fips-[a-z0-9-]+:dev-latest@sha256:[0-9a-f]{64}", path.name)
 
 
 if __name__ == "__main__":
