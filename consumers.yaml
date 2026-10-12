@@ -11,7 +11,7 @@ consumers:
   - {repo: MicroHealthLLC/gnosis, branch: integration}
   - {repo: MicroHealthLLC/kb-saas, branch: integration}
   - {repo: MicroHealthLLC/simplr-ehr, branch: Integration}
-  - {repo: MicroHealthLLC/TueriDev, branch: integration}
+  - {repo: MicroHealthLLC/TueriDev, branch: Integration}
   - {repo: MicroHealthLLC/TueriTerm, branch: integration}
   - {repo: MicroHealthLLC/mh-vllm, branch: integration}
-  - {repo: MicroHealthLLC/SimplrSSH, branch: integration}
+  - {repo: MicroHealthLLC/SimplrSSH, branch: main}
