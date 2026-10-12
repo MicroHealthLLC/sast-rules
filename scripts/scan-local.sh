@@ -49,12 +49,25 @@ image="$(grep -m1 -o '295669632222\.dkr\.ecr\.us-east-1\.amazonaws\.com/microhea
 image="${SAST_IMAGE:-$image}"
 src="$(cd "$target" && git rev-parse --show-toplevel 2>/dev/null || pwd)"
 out="$(mktemp -d)"
+# Scan what git would see, as CI does: tracked files and new files that are
+# not ignored, including uncommitted edits, and never build output or other
+# .gitignore'd files (the scan image has no git to decide that itself).
+if git -C "$src" rev-parse --git-dir >/dev/null 2>&1; then
+  view="$(mktemp -d)"
+  (cd "$src" && git ls-files -z --cached --others --exclude-standard \
+     | xargs -0 -r -I{} sh -c '[ -f "$1" ] && printf "%s\0" "$1"' _ {} \
+     | tar --null -T - -cf -) | tar -xf - -C "$view"
+  cp "$src/.sastignore" "$view/" 2>/dev/null || true
+  src_view="$view"
+else
+  src_view="$src"
+fi
 args=()
 if [ -f "$src/.sastignore" ]; then
   while IFS= read -r line; do line="${line%%#*}"; line="$(printf '%s' "$line" | xargs)"; [ -n "$line" ] && args+=("--exclude=$line"); done < "$src/.sastignore"
 fi
 "$rt" run --rm --network none -u "$(id -u):$(id -g)" -e HOME=/tmp \
-  -v "$src:/src:ro" -v "$here/dist:/rules:ro" -v "$cache:/usr/local/bin/opengrep:ro" -v "$out:/out" \
+  -v "$src_view:/src:ro" -v "$here/dist:/rules:ro" -v "$cache:/usr/local/bin/opengrep:ro" -v "$out:/out" \
   -w /src --entrypoint /usr/local/bin/opengrep "$image" \
   scan --config "/rules/${bundle}.yaml" --no-rewrite-rule-ids --json-output=/out/sast.json \
   --quiet "${args[@]}" . >/dev/null
@@ -71,6 +84,7 @@ PY
 )
 echo "SAST (sast-rules ${bundle}, Opengrep ${version}): ${errors} error, ${warnings} warning, ${infos} info"
 rm -rf "$out"
+[ "$src_view" != "$src" ] && rm -rf "$src_view"
 case "$fail_on" in
   error) [ "$errors" -eq 0 ] ;;
   warning) [ "$errors" -eq 0 ] && [ "$warnings" -eq 0 ] ;;
