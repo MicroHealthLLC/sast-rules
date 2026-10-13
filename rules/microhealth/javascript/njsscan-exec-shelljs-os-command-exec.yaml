@@ -1,0 +1,83 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/exec/exec_shelljs.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/exec/rule-shelljs_os_command_exec.yml
+# (mh.gitlab.rules_lgpl_javascript_exec_rule-shelljs-os-command-exec, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.exec.shelljs-os-command-exec
+  pattern-either:
+  - patterns:
+    - pattern-inside: |
+        require('shelljs')
+        ...
+    - pattern-either:
+      - pattern-inside: function (req, $RES, ...) {...}
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $EXEC.exec(<... req.$QUERY.$VAR ...>, ...)
+      - pattern: |
+          $EXEC.exec( <... req.$QUERY ...>, ...)
+      - pattern: |
+          $INP = <... req.$QUERY.$VAR ...>;
+          ...
+          $EXEC.exec(<... $INP ...>, ...)
+      - pattern: |
+          $INP = <... req.$QUERY ...>;
+          ...
+          $EXEC.exec(<... $INP ...>, ...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-inside: |
+        require('shelljs')
+        ...
+    - pattern-either:
+      - pattern-inside: function (request, $RES, ...) {...}
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $EXEC.exec(<... request.$QUERY.$VAR ...>, ...)
+      - pattern: |
+          $EXEC.exec( <... request.$QUERY ...>, ...)
+      - pattern: |
+          $INP = <... request.$QUERY.$VAR ...>;
+          ...
+          $EXEC.exec(<... $INP ...>, ...)
+      - pattern: |
+          $INP = <... request.$QUERY ...>;
+          ...
+          $EXEC.exec(<... $INP ...>, ...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    User controlled data in 'shelljs.exec()' can result in Remote OS Command Execution.
+  languages:
+  - javascript
+  severity: ERROR
+  metadata:
+    shortDescription: Improper neutralization of special elements used in an OS command ('OS Command Injection')
+    category: security
+    owasp:
+    - A1:2017-Injection
+    - A03:2021-Injection
+    - A05:2025-Injection
+    cwe: CWE-78
+    security-severity: CRITICAL
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_exec_rule-shelljs-os-command-exec

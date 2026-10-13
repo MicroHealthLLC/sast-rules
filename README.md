@@ -184,6 +184,12 @@ with its reason.
   `rules/microhealth/` and change the copy.
 - A new rule goes in `rules/microhealth/<language>/<name>.yaml`, with a test
   file of the same name beside it (`# ruleid:` and `# ok:` comments).
+- Every rule file there starts with a `# License:` header, read per file as
+  GitLab's are: `MIT` for a rule we wrote, the upstream license for a changed
+  copy of an upstream rule (an LGPL rule we narrowed is still LGPL and stays
+  out of the product bundle). A copy gets a new id, says in its header what
+  changed, carries `metadata.mh_replaces: <old id>`, and the old id is
+  disabled in `overrides.yaml` with a reason naming the copy.
 - `python3 scripts/build.py` rebuilds `dist/` and the lock. CI fails if they
   were not rebuilt, if any rule does not load in the pinned engine, or if a
   rule test fails.

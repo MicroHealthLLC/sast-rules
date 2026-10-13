@@ -1,0 +1,217 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/ssrf/ssrf_puppeteer.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/ssrf/rule-puppeteer_ssrf.yml
+# (mh.gitlab.rules_lgpl_javascript_ssrf_rule-puppeteer-ssrf, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.ssrf.puppeteer-ssrf
+  pattern-either:
+  - patterns:
+    - pattern-inside: |
+        require('puppeteer')
+        ...
+    - pattern-either:
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern: $PAGE.goto(<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.goto(<... req.$BODY ...>,...)
+      - pattern: $PAGE.setContent(<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.setContent(<... req.$BODY ...>,...)
+      - pattern: $PAGE.evaluate(<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluate(<... req.$BODY ...>,...)
+      - pattern: $PAGE.evaluateHandle(<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluateHandle(<... req.$BODY ...>,...)
+      - pattern: $PAGE.evaluateOnNewDocument(<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluateOnNewDocument(<... req.$BODY ...>,...)
+      - pattern: $PAGE.evaluate($CODE,<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluate($CODE,<... req.$BODY ...>,...)
+      - pattern: $PAGE.evaluateHandle($CODE,<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluateHandle($CODE,<... req.$BODY ...>,...)
+      - pattern: $PAGE.evaluateOnNewDocument($CODE,<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluateOnNewDocument($CODE,<... req.$BODY ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PAGE.goto(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PAGE.goto(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PAGE.setContent(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PAGE.setContent(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluate(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PAGE.evaluate(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluateHandle(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PAGE.evaluateHandle(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluateOnNewDocument(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PAGE.evaluateOnNewDocument(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluate($CODE,<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PAGE.evaluate($CODE,<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluateHandle($CODE,<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PAGE.evaluateHandle($CODE,<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluateOnNewDocument($CODE,<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PAGE.evaluateOnNewDocument($CODE,<... $INPUT ...>,...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-inside: |
+        require('puppeteer')
+        ...
+    - pattern-either:
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern: $PAGE.goto(<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.goto(<... request.$BODY ...>,...)
+      - pattern: $PAGE.setContent(<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.setContent(<... request.$BODY ...>,...)
+      - pattern: $PAGE.evaluate(<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluate(<... request.$BODY ...>,...)
+      - pattern: $PAGE.evaluateHandle(<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluateHandle(<... request.$BODY ...>,...)
+      - pattern: $PAGE.evaluateOnNewDocument(<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluateOnNewDocument(<... request.$BODY ...>,...)
+      - pattern: $PAGE.evaluate($CODE,<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluate($CODE,<... request.$BODY ...>,...)
+      - pattern: $PAGE.evaluateHandle($CODE,<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluateHandle($CODE,<... request.$BODY ...>,...)
+      - pattern: $PAGE.evaluateOnNewDocument($CODE,<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluateOnNewDocument($CODE,<... request.$BODY ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PAGE.goto(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PAGE.goto(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PAGE.setContent(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PAGE.setContent(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluate(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PAGE.evaluate(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluateHandle(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PAGE.evaluateHandle(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluateOnNewDocument(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PAGE.evaluateOnNewDocument(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluate($CODE,<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PAGE.evaluate($CODE,<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluateHandle($CODE,<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PAGE.evaluateHandle($CODE,<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluateOnNewDocument($CODE,<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PAGE.evaluateOnNewDocument($CODE,<... $INPUT ...>,...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    If unverified user data can reach the `puppeteer` methods it can result in Server-Side Request Forgery vulnerabilities.
+  metadata:
+    owasp:
+    - A1:2017-Injection
+    - A10:2021-Server-Side Request Forgery
+    - A01:2025-Broken Access Control
+    cwe: CWE-918
+    shortDescription: Server-side request forgery (SSRF)
+    security-severity: CRITICAL
+    category: security
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_ssrf_rule-puppeteer-ssrf
+  severity: ERROR
+  languages:
+  - javascript

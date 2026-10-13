@@ -1,0 +1,16 @@
+<!-- License: MIT (c) MicroHealth, LLC. Test cases for the rule beside this file. -->
+<!doctype html>
+<html>
+  <head>
+    <!-- ruleid: html.missing-integrity -->
+    <script src="https://cdn.example.com/lib.js"></script>
+    <!-- ruleid: html.missing-integrity -->
+    <link rel="stylesheet" href="//cdn.example.com/site.css">
+    <!-- ok: html.missing-integrity -->
+    <script src="https://cdn.example.com/lib.js" integrity="sha384-AAAA" crossorigin="anonymous"></script>
+    <!-- ok: html.missing-integrity -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3C/svg%3E" />
+    <!-- ok: html.missing-integrity -->
+    <script type="module" src="/src/main.tsx"></script>
+  </head>
+</html>

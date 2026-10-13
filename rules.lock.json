@@ -14,7 +14,7 @@
   "microhealth": {}
  },
  "bundles": {
-  "internal": 2143,
+  "internal": 2142,
   "product": 283
  },
  "rules": {
@@ -4740,10 +4740,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/crypto/rule-node_timing_attack.yml",
    "license": "LGPL-3.0",
    "sha256": "14f419babb0d678f2e03ab74f12853bcbda090b1aa7a6d55782e4f745443fef5",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.crypto.node-timing-attack: comparing a secret-named variable with a literal (null, undefined, '', a number or boolean) is a presence check, not a secret comparison; upstream's pattern-nots for those never matched (trailing ';')."
   },
   "mh.gitlab.rules_lgpl_javascript_crypto_rule-node-tls-reject": {
    "source": "gitlab",
@@ -4850,10 +4849,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/dos/rule-layer7_object_dos.yml",
    "license": "LGPL-3.0",
    "sha256": "88b6d798af4999779cbaf28cfd65e9dff2490465948b59172992aa39b0dfea94",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.dos.layer7-object-dos: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_dos_rule-regex-dos": {
    "source": "gitlab",
@@ -4861,10 +4859,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/dos/rule-regex_dos.yml",
    "license": "LGPL-3.0",
    "sha256": "eae0f17e930b1c1aeb4ec4eda3959bb4ad3ef9017d9a1928eadf03275a809c8f",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.dos.regex-dos: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_electronjs_rule-electron-allow-http": {
    "source": "gitlab",
@@ -4938,10 +4935,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/eval/rule-eval_nodejs.yml",
    "license": "LGPL-3.0",
    "sha256": "1cc9c9ad023f7e475adbd5cd4f55e76bc8b393111633146eb48e2872e152cc38",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.eval.eval-nodejs: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_eval_rule-eval-require": {
    "source": "gitlab",
@@ -4949,10 +4945,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/eval/rule-eval_require.yml",
    "license": "LGPL-3.0",
    "sha256": "6b3d9106113152ceb49e0a68469f4a0c24fabff42a379727a29cada5b9d1088b",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.eval.eval-require: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_eval_rule-grpc-insecure-connection": {
    "source": "gitlab",
@@ -4982,10 +4977,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/eval/rule-sandbox_code_injection.yml",
    "license": "LGPL-3.0",
    "sha256": "72200104374782b3b0012bd6f449c5bca4affcb2f68f54ec82f9fe7104477b06",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.eval.sandbox-code-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_eval_rule-serializetojs-deserialize": {
    "source": "gitlab",
@@ -5004,10 +4998,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/eval/rule-server_side_template_injection.yml",
    "license": "LGPL-3.0",
    "sha256": "9a48156282aafa8d26e26a1435441ab8223036dc64d741759f208b17ca5706ef",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.eval.server-side-template-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_eval_rule-vm-code-injection": {
    "source": "gitlab",
@@ -5015,10 +5008,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/eval/rule-vm_code_injection.yml",
    "license": "LGPL-3.0",
    "sha256": "8dfc5b5fec2d06c705ab9d84bf90c1f57acce4fcd615316f0d00661cfcb07fa9",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.eval.vm-code-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_eval_rule-vm-compilefunction-injection": {
    "source": "gitlab",
@@ -5026,10 +5018,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/eval/rule-vm_compilefunction_injection.yml",
    "license": "LGPL-3.0",
    "sha256": "3292b1f94115817a1ddaa4b15e15a264ea69f3da3008509f3f58702c2739d378",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.eval.vm-compilefunction-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_eval_rule-vm-runincontext-injection": {
    "source": "gitlab",
@@ -5037,10 +5028,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/eval/rule-vm_runincontext_injection.yml",
    "license": "LGPL-3.0",
    "sha256": "90c7b95f10f2455bf4bebe3a62e11c6287f7406d6c0c510f97617fafe6366daf",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.eval.vm-runincontext-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_eval_rule-vm-runinnewcontext-injection": {
    "source": "gitlab",
@@ -5048,10 +5038,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/eval/rule-vm_runinnewcontext_injection.yml",
    "license": "LGPL-3.0",
    "sha256": "e0eb0e5a61bb160c6159239f5dda5bcc537f3a4f9be4912c5a0ad9ea09a16ed4",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.eval.vm-runinnewcontext-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_eval_rule-vm2-code-injection": {
    "source": "gitlab",
@@ -5059,10 +5048,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/eval/rule-vm2_code_injection.yml",
    "license": "LGPL-3.0",
    "sha256": "c80fbd2e8f3e47dd091123bad04a595bf9e9dd969827473df2e1e2fe87fe9b0c",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.eval.vm2-code-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_eval_rule-vm2-context-injection": {
    "source": "gitlab",
@@ -5070,10 +5058,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/eval/rule-vm2_context_injection.yml",
    "license": "LGPL-3.0",
    "sha256": "c041fc58891726d57d94ddd741bc06cbc8dbd1137caaaae11682adc21442dce5",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.eval.vm2-context-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_eval_rule-yaml-deserialize": {
    "source": "gitlab",
@@ -5092,10 +5079,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/exec/rule-shelljs_os_command_exec.yml",
    "license": "LGPL-3.0",
    "sha256": "97e429af7c1fa394b6414443c1cbbad06e3b83a65cddd9632c16954264f16da8",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.exec.shelljs-os-command-exec: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_headers_rule-cookie-session-default": {
    "source": "gitlab",
@@ -5180,10 +5166,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/headers/rule-express_cors.yml",
    "license": "LGPL-3.0",
    "sha256": "daa1997094a777cb046ce4f8ba483b7a0143405dd020f6aa1f700708b14d93f2",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.headers.express-cors: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_headers_rule-generic-cors": {
    "source": "gitlab",
@@ -5202,10 +5187,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/headers/rule-generic_header_injection.yml",
    "license": "LGPL-3.0",
    "sha256": "9e2b5d19bb4bbf6e01f83284dee846e895cac8097dd4b9372ba7abede0426dc2",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.headers.generic-header-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_headers_rule-header-xss-generic": {
    "source": "gitlab",
@@ -5213,10 +5197,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/headers/rule-header_xss_generic.yml",
    "license": "LGPL-3.0",
    "sha256": "ec28b41b99da940079aef8eda3e61bb6e9af8ef2aaaa72b99acd7c75eb3a9570",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.headers.header-xss-generic: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_headers_rule-header-xss-lusca": {
    "source": "gitlab",
@@ -5246,10 +5229,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/headers/rule-host_header_injection.yml",
    "license": "LGPL-3.0",
    "sha256": "543092885bafd0edd04860ab311a51660f24aef5d40aa8cb17c4c5242a5f5129",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.headers.host-header-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_jwt_rule-hardcoded-jwt-secret": {
    "source": "gitlab",
@@ -5323,10 +5305,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/redirect/rule-express_open_redirect.yml",
    "license": "LGPL-3.0",
    "sha256": "40618ab643c0190042ccbd308a3feefae29d9ad19ca41dd1f595434d393b0910",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.redirect.express-open-redirect: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_redirect_rule-express-open-redirect2": {
    "source": "gitlab",
@@ -5334,10 +5315,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/redirect/rule-express_open_redirect2.yml",
    "license": "LGPL-3.0",
    "sha256": "4e6cb91ddc773c25153fb90b048bf44bc89e2ffe8e2e92f7031dbe9b6e84c7ea",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.redirect.express-open-redirect2: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_ssrf_rule-node-ssrf": {
    "source": "gitlab",
@@ -5345,10 +5325,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/ssrf/rule-node_ssrf.yml",
    "license": "LGPL-3.0",
    "sha256": "e680ffda2b7989e853f195bb9577dfcc8737beaa54cb523218f180794c7d1192",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.ssrf.node-ssrf: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_ssrf_rule-phantom-ssrf": {
    "source": "gitlab",
@@ -5356,10 +5335,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/ssrf/rule-phantom_ssrf.yml",
    "license": "LGPL-3.0",
    "sha256": "2e407dbc491109cd3679b45d967b4932813885966401e81e934f4326d6681dcd",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.ssrf.phantom-ssrf: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_ssrf_rule-playwright-ssrf": {
    "source": "gitlab",
@@ -5367,10 +5345,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/ssrf/rule-playwright_ssrf.yml",
    "license": "LGPL-3.0",
    "sha256": "d80b1c99a710bea9d21fe6662323473591003ef36c060bb2bef49b79d5b98c1a",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.ssrf.playwright-ssrf: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_ssrf_rule-puppeteer-ssrf": {
    "source": "gitlab",
@@ -5378,10 +5355,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/ssrf/rule-puppeteer_ssrf.yml",
    "license": "LGPL-3.0",
    "sha256": "16b1e67ffb0131e5aebd432a1509ba7b53e36a942df8431414877710052f6a88",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.ssrf.puppeteer-ssrf: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_ssrf_rule-wkhtmltoimage-ssrf": {
    "source": "gitlab",
@@ -5389,10 +5365,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/ssrf/rule-wkhtmltoimage_ssrf.yml",
    "license": "LGPL-3.0",
    "sha256": "0f77e60bc8c4bef5089e5b18dc8df2a296cebdae6c19dc047823aa9771661470",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.ssrf.wkhtmltoimage-ssrf: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_ssrf_rule-wkhtmltopdf-ssrf": {
    "source": "gitlab",
@@ -5400,10 +5375,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/ssrf/rule-wkhtmltopdf_ssrf.yml",
    "license": "LGPL-3.0",
    "sha256": "4220de4506fe1e78322dd9faa53b9854aea912235f66e92b4ac8785aba7d9720",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.ssrf.wkhtmltopdf-ssrf: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_traversal_rule-admzip-path-overwrite": {
    "source": "gitlab",
@@ -5422,10 +5396,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/traversal/rule-express_lfr.yml",
    "license": "LGPL-3.0",
    "sha256": "4774ecb6cfe57e2aa3d41d50548ee0f6223c73ac2a4ef50baa07c0f0257b841c",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.traversal.express-lfr: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_traversal_rule-express-lfr-warning": {
    "source": "gitlab",
@@ -5444,10 +5417,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/traversal/rule-generic_path_traversal.yml",
    "license": "LGPL-3.0",
    "sha256": "9c29f378adae901f3dfe27be7e7b66cfe1090a1c62f33148454cbb0d8de1f1a3",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.traversal.generic-path-traversal: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_traversal_rule-join-resolve-path-traversal": {
    "source": "gitlab",
@@ -5455,10 +5427,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/traversal/rule-join_resolve_path_traversal.yml",
    "license": "LGPL-3.0",
    "sha256": "5b659f8b42400651434e3709a17a832f4117ef743585d5cc26f3d4ed85706f51",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.traversal.join-resolve-path-traversal: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_traversal_rule-tar-path-overwrite": {
    "source": "gitlab",
@@ -5488,10 +5459,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/xml/rule-node_entity_expansion.yml",
    "license": "LGPL-3.0",
    "sha256": "4d7932da8998c5f6e7c09d096dcb225b38de655d7f446a2a8d935b9604e06915",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.xml.node-entity-expansion: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_xml_rule-node-xpath-injection": {
    "source": "gitlab",
@@ -5499,10 +5469,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/xml/rule-node_xpath_injection.yml",
    "license": "LGPL-3.0",
    "sha256": "6e725c6bbb1b400418d0ff87ce8d91cda37c8d09591ba58d2212723082361a53",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.xml.node-xpath-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_xml_rule-node-xxe": {
    "source": "gitlab",
@@ -5510,10 +5479,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/xml/rule-node_xxe.yml",
    "license": "LGPL-3.0",
    "sha256": "70f1613907aba00f3eefb5a880820f83ffa707e51c961119518ad9f31345a44c",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.xml.node-xxe: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_xml_rule-xxe-expat": {
    "source": "gitlab",
@@ -5521,10 +5489,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/xml/rule-xxe_expat.yml",
    "license": "LGPL-3.0",
    "sha256": "0cc55f427ef6f1b6e7c03c80c2387874fd050291c52ac9803a3754c8b31b6630",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.xml.xxe-expat: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_xss_rule-express-xss": {
    "source": "gitlab",
@@ -5532,10 +5499,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/xss/rule-express_xss.yml",
    "license": "LGPL-3.0",
    "sha256": "c7e9de07d76f05bb428e9870a167b54bb564ff1e7447630cd46ad6f25d38ae7b",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.xss.express-xss: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_xss_rule-handlebars-noescape": {
    "source": "gitlab",
@@ -5543,10 +5509,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/xss/rule-handlebars_noescape.yml",
    "license": "LGPL-3.0",
    "sha256": "37c52d5a927eb8d0e9b95d7df1950491fe229500452d5e2d0358c7dcc984c319",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.xss.handlebars-noescape: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_xss_rule-handlebars-safestring": {
    "source": "gitlab",
@@ -5554,10 +5519,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/xss/rule-handlebars_safestring.yml",
    "license": "LGPL-3.0",
    "sha256": "c99d4a371be7c9e6050c01a22d52eefdd3c66b352b3d56a95688dd3f55a5a169",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.xss.handlebars-safestring: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
   },
   "mh.gitlab.rules_lgpl_javascript_xss_rule-squirrelly-autoescape": {
    "source": "gitlab",
@@ -6792,6 +6756,50 @@
    ],
    "status": "active"
   },
+  "mh.microhealth.generic.secrets.generic-api-key": {
+   "source": "microhealth",
+   "upstream_id": "generic.secrets.generic-api-key",
+   "path": "rules/microhealth/generic/generic-api-key.yaml",
+   "license": "LGPL-2.1-only+Commons-Clause",
+   "sha256": "19df190277b4fd99f0f2432a64a8d4b37069bd8592909992f9beaedc843af5f1",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.generic.secrets.private-key": {
+   "source": "microhealth",
+   "upstream_id": "generic.secrets.private-key",
+   "path": "rules/microhealth/generic/private-key.yaml",
+   "license": "LGPL-2.1-only+Commons-Clause",
+   "sha256": "a6bdeb5048614f834ab312bd7a0fe2e895aedf38c5e008fd79d8647c993020bb",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.generic.secrets.telegram-bot-api-key": {
+   "source": "microhealth",
+   "upstream_id": "generic.secrets.telegram-bot-api-key",
+   "path": "rules/microhealth/generic/telegram-bot-api-key.yaml",
+   "license": "LGPL-2.1-only+Commons-Clause",
+   "sha256": "133ed40e27b862e0b7b58303a1b321e6c3b71230a807f21a4998468193fd5095",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.html.missing-integrity": {
+   "source": "microhealth",
+   "upstream_id": "html.missing-integrity",
+   "path": "rules/microhealth/html/missing-integrity.yaml",
+   "license": "LGPL-2.1-only+Commons-Clause",
+   "sha256": "ba468bb3688e4d97f4885909728fe9f7160cc546ddc05e70257e6f903bbf468f",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
   "mh.microhealth.javascript.express-sendfile-request-path": {
    "source": "microhealth",
    "upstream_id": "javascript.express-sendfile-request-path",
@@ -6828,6 +6836,402 @@
    ],
    "status": "active"
   },
+  "mh.microhealth.javascript.njsscan.crypto.node-timing-attack": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.crypto.node-timing-attack",
+   "path": "rules/microhealth/javascript/njsscan-crypto-node-timing-attack.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "117cee3b0e8570b19a9b37e0350235fd14e283f1c54fa3b833c1ea8d8e302b67",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.dos.layer7-object-dos": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.dos.layer7-object-dos",
+   "path": "rules/microhealth/javascript/njsscan-dos-layer7-object-dos.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "b1c75964a381fb3e2ec40901cc9f3d6540e08aeb21bd0a5264880f21656db4b0",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.dos.regex-dos": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.dos.regex-dos",
+   "path": "rules/microhealth/javascript/njsscan-dos-regex-dos.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "3bfdb589070846b6026e6cb1b016a223128ec4dd2f9c5f289504a4f8bb1196c3",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.eval.eval-nodejs": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.eval.eval-nodejs",
+   "path": "rules/microhealth/javascript/njsscan-eval-eval-nodejs.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "6a1389ea1445ac50c280999d461b4eb97389eb78a7c171293c9fb090aacda19d",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.eval.eval-require": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.eval.eval-require",
+   "path": "rules/microhealth/javascript/njsscan-eval-eval-require.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "af07ed3170028e020f491f210f162428767e762a73bbbe3b858acfd067483755",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.eval.sandbox-code-injection": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.eval.sandbox-code-injection",
+   "path": "rules/microhealth/javascript/njsscan-eval-sandbox-code-injection.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "faff2f6337845d9dcecf009fcd164bf2e676e5d8c2b1805b4984c5264ec0c17f",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.eval.server-side-template-injection": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.eval.server-side-template-injection",
+   "path": "rules/microhealth/javascript/njsscan-eval-server-side-template-injection.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "b3bce4a05a08fc08d487fa82cff7fc77a741965e38b3f0f2cd21fb4938f3927d",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.eval.vm-code-injection": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.eval.vm-code-injection",
+   "path": "rules/microhealth/javascript/njsscan-eval-vm-code-injection.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "de3460d1d6edfa89cb9a9db683a068f962f88c56bfc0453321c89e35ba30716e",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.eval.vm-compilefunction-injection": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.eval.vm-compilefunction-injection",
+   "path": "rules/microhealth/javascript/njsscan-eval-vm-compilefunction-injection.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "d1473c76f991e2539898979a4c69b1a393fe02c001d6104695f4ef05f1f709b0",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.eval.vm-runincontext-injection": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.eval.vm-runincontext-injection",
+   "path": "rules/microhealth/javascript/njsscan-eval-vm-runincontext-injection.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "36c9ae7c536ba0bd82cfd324422b68842958a6adfa9da7af1a9d8a2a059aacea",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.eval.vm-runinnewcontext-injection": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.eval.vm-runinnewcontext-injection",
+   "path": "rules/microhealth/javascript/njsscan-eval-vm-runinnewcontext-injection.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "6a0fdadc90fc4dc3dc3d68013d9afe219220533070189e9731f0cd1cf4fa9ab7",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.eval.vm2-code-injection": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.eval.vm2-code-injection",
+   "path": "rules/microhealth/javascript/njsscan-eval-vm2-code-injection.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "f89798767f624ec5e4c336685ad94d700ad2f534bd59269823e94576c4879fe0",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.eval.vm2-context-injection": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.eval.vm2-context-injection",
+   "path": "rules/microhealth/javascript/njsscan-eval-vm2-context-injection.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "dabbc6051e19e708ae28bf00e8aeeb7fc19cc394e4fc61797f64bc372996db64",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.exec.shelljs-os-command-exec": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.exec.shelljs-os-command-exec",
+   "path": "rules/microhealth/javascript/njsscan-exec-shelljs-os-command-exec.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "8649c6614f61cd6e5704135abd219c6e11b6cd099586f32683c3a972f922eb5d",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.headers.express-cors": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.headers.express-cors",
+   "path": "rules/microhealth/javascript/njsscan-headers-express-cors.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "f4d328500f3b9c5e11c7fc8367fa6b8c6b7d58add0d9da6bde5712cca388f149",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.headers.generic-header-injection": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.headers.generic-header-injection",
+   "path": "rules/microhealth/javascript/njsscan-headers-generic-header-injection.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "0a89c51210cdc7cf89ed9bbd90498281925047c210eccd929eb182e9c6dd56a8",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.headers.header-xss-generic": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.headers.header-xss-generic",
+   "path": "rules/microhealth/javascript/njsscan-headers-header-xss-generic.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "7f76c5f5d9ad196271b7a128d6bbb371c96e55e1fcf7c609eb9137a4ad33ea50",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.headers.host-header-injection": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.headers.host-header-injection",
+   "path": "rules/microhealth/javascript/njsscan-headers-host-header-injection.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "2769e239978d63ab2fd23454b34551600037501a2021000a422eaed3c3eeb5ef",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.redirect.express-open-redirect": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.redirect.express-open-redirect",
+   "path": "rules/microhealth/javascript/njsscan-redirect-express-open-redirect.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "8d7614e1f0cc3e762a8b0b67e430beb3062c5011023d0a728434374055603f39",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.redirect.express-open-redirect2": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.redirect.express-open-redirect2",
+   "path": "rules/microhealth/javascript/njsscan-redirect-express-open-redirect2.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "e83baed45c47240da8a3dc32477d7a3b53588ab4eb8a1837fd6a50138732eceb",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.ssrf.node-ssrf": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.ssrf.node-ssrf",
+   "path": "rules/microhealth/javascript/njsscan-ssrf-node-ssrf.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "f233ff3f9bfbd09eec7c64214045955973b1650eedd2a7d1aad128920f8a3fb4",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.ssrf.phantom-ssrf": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.ssrf.phantom-ssrf",
+   "path": "rules/microhealth/javascript/njsscan-ssrf-phantom-ssrf.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "af911ed8d56963ad14d9d0d6b7f07cde50aa034da9fcfe4fea58e1d5a9ba845c",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.ssrf.playwright-ssrf": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.ssrf.playwright-ssrf",
+   "path": "rules/microhealth/javascript/njsscan-ssrf-playwright-ssrf.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "33a17dc9f90fa696d23850029a90e93ae2a13b79cb76dbf06d8e3ba8331b64c0",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.ssrf.puppeteer-ssrf": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.ssrf.puppeteer-ssrf",
+   "path": "rules/microhealth/javascript/njsscan-ssrf-puppeteer-ssrf.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "d9c9001e9ce629b7139811d173ffff3eba11c27e180d2cbde85fed5b5c559c11",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.ssrf.wkhtmltoimage-ssrf": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.ssrf.wkhtmltoimage-ssrf",
+   "path": "rules/microhealth/javascript/njsscan-ssrf-wkhtmltoimage-ssrf.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "df54a9fefed1decf8b06aefc92030274a92e79b6233b80abf1165d2ea3f003c3",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.ssrf.wkhtmltopdf-ssrf": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.ssrf.wkhtmltopdf-ssrf",
+   "path": "rules/microhealth/javascript/njsscan-ssrf-wkhtmltopdf-ssrf.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "41041f40c0836b9058be0e3d7b87c66235b469456dc25dceb79ab1c94da797ba",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.traversal.express-lfr": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.traversal.express-lfr",
+   "path": "rules/microhealth/javascript/njsscan-traversal-express-lfr.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "00f9c49d155a53618121f281a380bc43e58a6bccdb237dfcf786240b114e39da",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.traversal.generic-path-traversal": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.traversal.generic-path-traversal",
+   "path": "rules/microhealth/javascript/njsscan-traversal-generic-path-traversal.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "ec1e2f7999419df5dc86b3fa0274eefaf13b72ff893ae35ccc0d49a02382983c",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.traversal.join-resolve-path-traversal": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.traversal.join-resolve-path-traversal",
+   "path": "rules/microhealth/javascript/njsscan-traversal-join-resolve-path-traversal.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "d3413d8d92736ac020963e965fd4d11bb12fa3ea517060febfe2af4b9968edf3",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.xml.node-entity-expansion": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.xml.node-entity-expansion",
+   "path": "rules/microhealth/javascript/njsscan-xml-node-entity-expansion.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "7a02958ca2574a6692e4047031336772d353ba499a8923e551534d1836d7b0b1",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.xml.node-xpath-injection": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.xml.node-xpath-injection",
+   "path": "rules/microhealth/javascript/njsscan-xml-node-xpath-injection.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "29079a57bc89bb9df974473830f5d281c561759357d6dc3ced23cc9519887f34",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.xml.node-xxe": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.xml.node-xxe",
+   "path": "rules/microhealth/javascript/njsscan-xml-node-xxe.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "78c19503e702d737fe28928eea5b6b484b332a3d8ca79e9b08c24ba62f80abb3",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.xml.xxe-expat": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.xml.xxe-expat",
+   "path": "rules/microhealth/javascript/njsscan-xml-xxe-expat.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "90a43fb16c7d2b2a89cfa3f263b655a92da2b06c793ceba332544de0912c5c8f",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.xss.express-xss": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.xss.express-xss",
+   "path": "rules/microhealth/javascript/njsscan-xss-express-xss.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "ecf12f7ff2bf2c337ace7e1d3d43ec68856b1f1a3b1dcb60436f7095a9d1f0df",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.xss.handlebars-noescape": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.xss.handlebars-noescape",
+   "path": "rules/microhealth/javascript/njsscan-xss-handlebars-noescape.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "70a42828e754d572d53b3fffa996d1892cd27934f3f8770cfdd9bdf94c0e484e",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.njsscan.xss.handlebars-safestring": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.xss.handlebars-safestring",
+   "path": "rules/microhealth/javascript/njsscan-xss-handlebars-safestring.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "cfd5c7b8391f8b4298cc9d246d2d92a2bc23d75147490e8f3cf934179c392a8a",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
   "mh.microhealth.javascript.react-unsanitized-inner-html": {
    "source": "microhealth",
    "upstream_id": "javascript.react-unsanitized-inner-html",
@@ -6861,6 +7265,17 @@
    "bundles": [
     "internal",
     "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.json.npm.package-dependencies-check": {
+   "source": "microhealth",
+   "upstream_id": "json.npm.package-dependencies-check",
+   "path": "rules/microhealth/json/package-dependencies-check.yaml",
+   "license": "LGPL-2.1-only+Commons-Clause",
+   "sha256": "6e9dac0f5ede02845603b1eb1945bbef0810a322626a516668a69444530f6397",
+   "bundles": [
+    "internal"
    ],
    "status": "active"
   },
@@ -9588,10 +10003,9 @@
    "path": "upstream/opengrep/generic/secrets/gitleaks/generic-api-key.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "f60d54840d84beffa8c881b6017dd40d2f59c7db7b9c5a47a30a557d7591b7d7",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.generic.secrets.generic-api-key: OAuth client identifiers (client_id-named values, GitHub's Ov23li/Iv23li/Iv1. formats) are public by definition (RFC 6749 2.2) and no longer match; everything else is unchanged."
   },
   "mh.opengrep.generic.secrets.gitleaks.github-app-token.github-app-token": {
    "source": "opengrep",
@@ -10291,10 +10705,9 @@
    "path": "upstream/opengrep/generic/secrets/gitleaks/private-key.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "6add5fad1f142aa310838e1c9afd950e4cbacee2ebf6f2d2e7ae95dc6e12a127",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.generic.secrets.private-key: a PEM armour whose only body is a template interpolation (${...}) is code that encodes a run-time key, not key material; the body is also matched lazily so each block is its own finding."
   },
   "mh.opengrep.generic.secrets.gitleaks.pulumi-api-token.pulumi-api-token": {
    "source": "opengrep",
@@ -10885,10 +11298,9 @@
    "path": "upstream/opengrep/generic/secrets/security/detected-aws-account-id.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "33ba6a791e219ede66235835b57dff154decf8b99971207ebc9c0cfb3928c95c",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "An AWS account ID is an identifier, not a credential (AWS: \"account IDs are not considered secret\"); access needs credentials this rule never sees. It fired on every pinned MicroHealth FIPS image reference (295669632222.dkr.ecr...), 87 times in Tueri Core alone, burying real findings. Secret keys are still caught by the AWS access-key and secret rules in both upstream sources and by Trivy's secret scanner."
   },
   "mh.opengrep.generic.secrets.security.detected-aws-appsync-graphql-key.detected-aws-appsync-graphql-key": {
    "source": "opengrep",
@@ -11345,10 +11757,9 @@
    "path": "upstream/opengrep/generic/secrets/security/detected-telegram-bot-api-key.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "66b823409b56731b5b1c9fee1a9e994ca263af11482978b8497893f9e7ca1829",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.generic.secrets.telegram-bot-api-key: the token now needs a boundary on both sides; the original matched '256:AAAA...' inside SSH fingerprints 'SHA256:AAAA...'."
   },
   "mh.opengrep.generic.secrets.security.detected-twilio-api-key.detected-twilio-api-key": {
    "source": "opengrep",
@@ -12377,10 +12788,9 @@
    "path": "upstream/opengrep/html/security/audit/missing-integrity.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "ccdb637c76373e741466172e42a1a7d22b62ce455dea388101eae9053416e670",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.html.missing-integrity: only URLs that start with scheme:// or // count as externally hosted; the original matched '://' anywhere in the value, e.g. inside an inline data: URI."
   },
   "mh.opengrep.html.security.plaintext-http-link.plaintext-http-link": {
    "source": "opengrep",
@@ -15801,10 +16211,9 @@
    "path": "upstream/opengrep/json/npm/security/package-dependencies-check.yml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "93766421fcae14200db5b09ea9839d4c1285d83c5c6632d3f57a576a1a1fec1a",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.json.npm.package-dependencies-check: the value is judged as an npm spec, so exact versions, file:/link:/workspace: paths, npm: aliases to an exact version and pinned .tgz tarball URLs no longer fire (upstream matched any '-' or 'x'), while ranges, wildcards, partial versions, dist-tags and unpinned git specs do, scoped packages included."
   },
   "mh.opengrep.kotlin.gradle.security.build-gradle-password-hardcoded.build-gradle-password-hardcoded": {
    "source": "opengrep",

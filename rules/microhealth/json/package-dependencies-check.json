@@ -1,0 +1,49 @@
+{
+  "name": "fixture",
+  "dependencies": {
+    // ok: json.npm.package-dependencies-check
+    "exact": "1.2.3",
+    // ok: json.npm.package-dependencies-check
+    "pre": "6.0.0-beta.4",
+    // ok: json.npm.package-dependencies-check
+    "@scope/exact": "19.3.0",
+    // ok: json.npm.package-dependencies-check
+    "alias-exact": "npm:string-width@4.2.3",
+    // ok: json.npm.package-dependencies-check
+    "local": "file:mobile/plugins/tueri-native",
+    // ok: json.npm.package-dependencies-check
+    "linked": "link:../shared-x",
+    // ok: json.npm.package-dependencies-check
+    "ws": "workspace:packages/core-x",
+    // ok: json.npm.package-dependencies-check
+    "tarball": "https://github.com/example/Capacitor-NodeJS/releases/download/v1.0.0-beta.10/capacitor-nodejs.tgz",
+    // ok: json.npm.package-dependencies-check
+    "git-pinned": "git+https://github.com/example/repo.git#v1.2.3",
+    // ruleid: json.npm.package-dependencies-check
+    "caret": "^1.2.3",
+    // ruleid: json.npm.package-dependencies-check
+    "@scope/tilde": "~4.0.0",
+    // ruleid: json.npm.package-dependencies-check
+    "range": ">=1.0.0 <2.0.0",
+    // ruleid: json.npm.package-dependencies-check
+    "either": "1.x || 2.x",
+    // ruleid: json.npm.package-dependencies-check
+    "hyphen": "1.0.0 - 2.0.0",
+    // ruleid: json.npm.package-dependencies-check
+    "star": "*",
+    // ruleid: json.npm.package-dependencies-check
+    "wild": "1.2.x",
+    // ruleid: json.npm.package-dependencies-check
+    "partial": "2",
+    // ruleid: json.npm.package-dependencies-check
+    "tag": "latest",
+    // ruleid: json.npm.package-dependencies-check
+    "nexttag": "next",
+    // ruleid: json.npm.package-dependencies-check
+    "alias-range": "npm:string-width@^4.2.3",
+    // ruleid: json.npm.package-dependencies-check
+    "git-moving": "git+https://github.com/example/repo.git",
+    // ruleid: json.npm.package-dependencies-check
+    "short": "example/repo"
+  }
+}

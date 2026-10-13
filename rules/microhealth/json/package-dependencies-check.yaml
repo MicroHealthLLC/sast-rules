@@ -1,0 +1,66 @@
+# License: LGPL-2.1-only with the Commons Clause (c) Semgrep, Inc.; modified by MicroHealth
+# Derived by MicroHealth from upstream/opengrep/json/npm/security/package-dependencies-check.yml
+# (mh.opengrep.json.npm.security.package-dependencies-check.package-dependencies-check,
+# disabled in overrides.yaml in favour of this copy).
+# Change: upstream flagged any value holding one of ~ - ^ > < = x, so an
+# exact local path ("file:mobile/plugins/tueri-native": the hyphen) and a
+# release tarball pinned to a tag (".../download/v1.0.0-beta.10/x.tgz": the
+# x) were "variant versions", while scoped names (@scope/pkg) were never
+# looked at. The value is now judged as an npm spec. It fires on moving specs
+# only: ^ ~ > < * || and hyphen ranges, x/X wildcards, partial versions
+# ("1", "1.2"), "" , latest and other dist-tags, npm: aliases to any of
+# those, and git/GitHub specs without a #commit or #tag. It does not fire on
+# an exact version (prerelease and build included), file:/link:/workspace:/
+# portal: paths, an npm: alias to an exact version, or an http(s) .tgz /
+# .tar.gz tarball URL (the lockfile pins its integrity).
+rules:
+- id: json.npm.package-dependencies-check
+  patterns:
+  - pattern-regex: '"[^"\n]+"\s*:\s*"(?!(?:file|link|workspace|portal):)(?!https?://[^"#\s]+\.(?:tgz|tar\.gz)")(?:[^"]*(?:[\^~<>*]|\|\||\s-\s)[^"]*|(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?(?:[xX]|\d+\.[xX](?:\.[\dxX]+)?|\d+\.\d+\.[xX])|(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?\d+(?:\.\d+)?|(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?[A-Za-z][\w.\-]*||(?:git(?:\+(?:ssh|https?|file))?://|git@|github:|gitlab:|bitbucket:|gist:)[^"#]*|https?://[^"#]*\.git|[\w.\-]+/[\w.\-]+)"'
+  - pattern-either:
+    - pattern-inside: |
+        "dependencies": {
+          ...
+        }
+    - pattern-inside: |
+        "devDependencies": {
+          ...
+        }
+    - pattern-inside: |
+        "optionalDependencies": {
+          ...
+        }
+    - pattern-inside: |
+        "peerDependencies": {
+          ...
+        }
+  - pattern-not-inside: |
+      "_shrinkwrap": {
+        ...
+      }
+  paths:
+    include:
+    - '*package.json'
+  message: Package dependencies with variant versions may lead to dependency hijack and confusion attacks. Better to specify an exact version or use package-lock.json for a specific version of the package.
+  languages:
+  - json
+  metadata:
+    category: security
+    vulnerability: Security Misconfiguration
+    owasp: A05:2021 - Security Misconfiguration
+    cwe:
+    - 'CWE-427: Uncontrolled Search Path Element'
+    references:
+    - https://security.snyk.io/vuln/SNYK-JS-COLORS-2331906
+    - https://medium.com/@alex.birsan/dependency-confusion-4a5d60fec610
+    - https://cwe.mitre.org/data/definitions/427.html
+    technology:
+    - npm
+    license: Commons Clause License Condition v1.0[LGPL-2.1-only]
+    subcategory:
+    - audit
+    likelihood: LOW
+    impact: LOW
+    confidence: LOW
+    mh_replaces: mh.opengrep.json.npm.security.package-dependencies-check.package-dependencies-check
+  severity: WARNING

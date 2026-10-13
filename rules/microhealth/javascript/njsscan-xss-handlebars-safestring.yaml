@@ -1,0 +1,78 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/xss/xss_templates.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/xss/rule-handlebars_safestring.yml
+# (mh.gitlab.rules_lgpl_javascript_xss_rule-handlebars-safestring, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+rules:
+- id: javascript.njsscan.xss.handlebars-safestring
+  mode: taint
+  pattern-sources:
+  - patterns:
+    - focus-metavariable: $REQ
+    - pattern: function ($REQ, $RES, ...) {...}
+    - metavariable-regex:
+        metavariable: $REQ
+        regex: ^(req|request)$
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  pattern-sinks:
+  - pattern-either:
+    - patterns:
+      - pattern-inside: |
+          $HB = require('handlebars')
+          ...
+      - pattern: new $HB.SafeString(...)
+    - patterns:
+      - pattern-inside: |
+          import $HB from "handlebars";
+          ...
+      - pattern: new $HB.SafeString(...)
+  pattern-sanitizers:
+  - pattern-either:
+    - patterns:
+      - pattern-inside: |
+          $HB = require('handlebars')
+          ...
+      - pattern: $HB.escapeExpression(...)
+    - patterns:
+      - pattern-inside: |
+          import $HB from "handlebars";
+          ...
+      - pattern: $HB.escapeExpression(...)
+  message: |
+    This application is using a vulnerable method `Handlebars.SafeString(...)`.
+    Handlebars SafeString method does not escape the data passed through it.
+    Untrusted user input passing through SafeString method can make the application
+    vulnerable to Cross-Site Scripting (XSS) attacks.
+
+    XSS attacks are a type of security breach that occurs when an attacker manages to
+    inject malicious scripts into web pages viewed by other users. These scripts can then
+    execute in the context of the victim's session, allowing the attacker to bypass access
+    controls and potentially access sensitive information or perform actions on behalf of the
+    user. It is important to encode the data depending on the specific context it is used in.
+
+    Consider using the `Handlebars.escapeExpression` method to escape user input while
+    constructing SafeString to avoid potential security concerns. Following is a secure code
+    example.
+    ```
+      var returnObj = new Handlebars.SafeString("<h1>Handlebars safe string</h1>" +  Handlebars.escapeExpression(req.query.message))
+      res.send(returnObj.string)
+    ```
+  languages:
+  - javascript
+  severity: WARNING
+  metadata:
+    owasp:
+    - A7:2017-Cross-Site Scripting (XSS)
+    - A03:2021-Injection
+    - A05:2025-Injection
+    cwe: CWE-79
+    shortDescription: Improper neutralization of input during web page generation (Cross-site Scripting)
+    security-severity: MEDIUM
+    category: security
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_xss_rule-handlebars-safestring

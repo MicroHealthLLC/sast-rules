@@ -1,0 +1,118 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/dos/regex_dos.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/dos/rule-regex_dos.yml
+# (mh.gitlab.rules_lgpl_javascript_dos_rule-regex-dos, disabled in overrides.yaml in favour of this copy).
+# Changes:
+# - The request-handler context `function ($REQ, $RES, ...)` matched any
+#   function of two or more parameters, so `parse(text, opts)` was "a handler".
+#   It now requires the request ^(req|request)$ and the response
+#   ^(res|resp|response|reply|h)$. The request name is written into the
+#   patterns, one branch per name: an unbound $REQ in
+#   `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+#   expression of every file and timed out on large ones.
+# - The original fired on any `.test()`/`.exec()` receiving request data
+#   without looking at the receiver or the pattern (`service.test(id)`,
+#   `/\s/.test(ch)`, anchored UUID/date validators). The receiver must now be
+#   a regular expression whose backtracking can grow with the input:
+#     * a literal that is not anchored at the start (`^`) and has an unbounded
+#       quantifier (`*`, `+`, `{n,}`), e.g. /<feed[\s>][^]*xmlns=/ over a body;
+#     * or any literal with a quantified group that itself holds a quantifier
+#       (`(a+)+`, `(\w+\s?)*`), anchored or not;
+#     * or a RegExp built at run time (its pattern cannot be judged);
+#     * or a variable assigned one of these earlier in the same function.
+#   A regex constant declared outside the handler is not followed (Opengrep
+#   cannot see across that scope); such calls are no longer reported.
+rules:
+- id: javascript.njsscan.dos.regex-dos
+  patterns:
+  - pattern-either:
+    - patterns:
+      - pattern-either:
+        - pattern-inside: function (req, $RES, ...) {...}
+        - pattern-inside: function $FUNC(req, $RES, ...) {...}
+        - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+        - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+        - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+      - metavariable-regex:
+          metavariable: $RES
+          regex: ^(res|resp|response|reply|h)$
+      - pattern-either:
+        - pattern: $REGEX.$M(<... req ...>)
+        - pattern: |
+            $INP = <... req ...>;
+            ...
+            $REGEX.$M(<... $INP ...>)
+    - patterns:
+      - pattern-either:
+        - pattern-inside: function (request, $RES, ...) {...}
+        - pattern-inside: function $FUNC(request, $RES, ...) {...}
+        - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+        - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+        - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+      - metavariable-regex:
+          metavariable: $RES
+          regex: ^(res|resp|response|reply|h)$
+      - pattern-either:
+        - pattern: $REGEX.$M(<... request ...>)
+        - pattern: |
+            $INP = <... request ...>;
+            ...
+            $REGEX.$M(<... $INP ...>)
+  - metavariable-regex:
+      metavariable: $M
+      regex: ^(test|exec)$
+  - pattern-either:
+    - patterns:
+      - pattern: $REGEX.$M(...)
+      - metavariable-pattern:
+          metavariable: $REGEX
+          pattern: /.../
+      - metavariable-regex:
+          metavariable: $REGEX
+          regex: ^(?:/(?!\^)(?:[^\\]|\\.)*?(?:[*+]|\{\d+,\})|.*\((?:[^()\\]|\\.)*[*+](?:[^()\\]|\\.)*\)(?:[*+]|\{\d+,\d*\}))
+    - patterns:
+      - pattern: $REGEX.$M(...)
+      - metavariable-pattern:
+          metavariable: $REGEX
+          pattern-either:
+          - pattern: new RegExp(...)
+          - pattern: RegExp(...)
+    - patterns:
+      - pattern-either:
+        - pattern-inside: |
+            $REGEX = $LIT;
+            ...
+        - pattern-inside: |
+            const $REGEX = $LIT;
+            ...
+        - pattern-inside: |
+            let $REGEX = $LIT;
+            ...
+        - pattern-inside: |
+            var $REGEX = $LIT;
+            ...
+      - pattern: $REGEX.$M(...)
+      - metavariable-pattern:
+          metavariable: $LIT
+          pattern-either:
+          - pattern: /.../
+          - pattern: new RegExp(...)
+          - pattern: RegExp(...)
+      - metavariable-regex:
+          metavariable: $LIT
+          regex: ^(?:(?:new\s+)?RegExp\b|/(?!\^)(?:[^\\]|\\.)*?(?:[*+]|\{\d+,\})|.*\((?:[^()\\]|\\.)*[*+](?:[^()\\]|\\.)*\)(?:[*+]|\{\d+,\d*\}))
+  message: |
+    Ensure that the regex used to compare with user supplied input is safe from regular expression denial of service.
+  languages:
+  - javascript
+  severity: WARNING
+  metadata:
+    owasp:
+    - A6:2017-Security Misconfiguration
+    - A05:2021-Security Misconfiguration
+    cwe: CWE-185
+    shortDescription: Incorrect regular expression
+    security-severity: MEDIUM
+    category: security
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_dos_rule-regex-dos

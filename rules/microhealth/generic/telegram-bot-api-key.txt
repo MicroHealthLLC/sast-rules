@@ -1,0 +1,9 @@
+# License: MIT (c) MicroHealth, LLC. Test cases for the rule beside this file (fake values).
+# ruleid: generic.secrets.telegram-bot-api-key
+TELEGRAM_TOKEN=1234567890:AAFq3Fq3Fq3Fq3Fq3Fq3Fq3Fq3Fq3Fq3Fq3
+# ruleid: generic.secrets.telegram-bot-api-key
+bot = "1234567890:AAFq3Fq3Fq3Fq3Fq3Fq3Fq3Fq3Fq3Fq3Fq3"
+# ok: generic.secrets.telegram-bot-api-key
+fingerprint: 'SHA256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+# ok: generic.secrets.telegram-bot-api-key
+fingerprint: 'SHA256:AAAAexampleexampleexampleexampleexampleAAAA',

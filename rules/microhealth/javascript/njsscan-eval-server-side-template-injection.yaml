@@ -1,0 +1,171 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/eval/server_side_template_injection.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/eval/rule-server_side_template_injection.yml
+# (mh.gitlab.rules_lgpl_javascript_eval_rule-server-side-template-injection, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.eval.server-side-template-injection
+  pattern-either:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: |
+          require('handlebars')
+          ...
+      - pattern-inside: |
+          require('pug')
+          ...
+      - pattern-inside: |
+          require('hamljs')
+          ...
+      - pattern-inside: |
+          require('ejs')
+          ...
+      - pattern-inside: |
+          require('squirrelly')
+          ...
+      - pattern-inside: |
+          require('eta')
+          ...
+    - pattern-either:
+      - pattern-inside: function (req, $RES, ...) {...}
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $HB.compile(..., <... req.$FOO ...>, ...)
+      - pattern: |
+          $HB.compile(..., <... req.$FOO.$BAR ...>, ...)
+      - pattern: |
+          $X = <... req.$FOO ...>;
+          ...
+          $HB.compile(..., <... $X ...>, ...)
+      - pattern: |
+          $X = <... req.$FOO.$BAR ...>;
+          ...
+          $HB.compile(..., <... $X ...>, ...)
+      - pattern: |
+          $X = $SOURCE.replace('...', <... req.$FOO ...>, ...)
+          ...
+          $HB.compile(..., <... $X ...>, ...)
+      - pattern: |
+          $X = $SOURCE.replace('...', <... req.$FOO.$BAR ...>, ...)
+          ...
+          $HB.compile(..., <... $X ...>, ...)
+      - pattern: |
+          $HB.Compile(..., <... req.$FOO ...>, ...)
+      - pattern: |
+          $HB.Compile(..., <... req.$FOO.$BAR ...>, ...)
+      - pattern: |
+          $X = <... req.$FOO ...>;
+          ...
+          $HB.Compile(..., <... $X ...>, ...)
+      - pattern: |
+          $X = <... req.$FOO.$BAR ...>;
+          ...
+          $HB.Compile(..., <... $X ...>, ...)
+      - pattern: |
+          $X = $SOURCE.replace('...', <... req.$FOO ...>, ...)
+          ...
+          $HB.Compile(..., <... $X ...>, ...)
+      - pattern: |
+          $X = $SOURCE.replace('...', <... req.$FOO.$BAR ...>, ...)
+          ...
+          $HB.Compile(..., <... $X ...>, ...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-either:
+      - pattern-inside: |
+          require('handlebars')
+          ...
+      - pattern-inside: |
+          require('pug')
+          ...
+      - pattern-inside: |
+          require('hamljs')
+          ...
+      - pattern-inside: |
+          require('ejs')
+          ...
+      - pattern-inside: |
+          require('squirrelly')
+          ...
+      - pattern-inside: |
+          require('eta')
+          ...
+    - pattern-either:
+      - pattern-inside: function (request, $RES, ...) {...}
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $HB.compile(..., <... request.$FOO ...>, ...)
+      - pattern: |
+          $HB.compile(..., <... request.$FOO.$BAR ...>, ...)
+      - pattern: |
+          $X = <... request.$FOO ...>;
+          ...
+          $HB.compile(..., <... $X ...>, ...)
+      - pattern: |
+          $X = <... request.$FOO.$BAR ...>;
+          ...
+          $HB.compile(..., <... $X ...>, ...)
+      - pattern: |
+          $X = $SOURCE.replace('...', <... request.$FOO ...>, ...)
+          ...
+          $HB.compile(..., <... $X ...>, ...)
+      - pattern: |
+          $X = $SOURCE.replace('...', <... request.$FOO.$BAR ...>, ...)
+          ...
+          $HB.compile(..., <... $X ...>, ...)
+      - pattern: |
+          $HB.Compile(..., <... request.$FOO ...>, ...)
+      - pattern: |
+          $HB.Compile(..., <... request.$FOO.$BAR ...>, ...)
+      - pattern: |
+          $X = <... request.$FOO ...>;
+          ...
+          $HB.Compile(..., <... $X ...>, ...)
+      - pattern: |
+          $X = <... request.$FOO.$BAR ...>;
+          ...
+          $HB.Compile(..., <... $X ...>, ...)
+      - pattern: |
+          $X = $SOURCE.replace('...', <... request.$FOO ...>, ...)
+          ...
+          $HB.Compile(..., <... $X ...>, ...)
+      - pattern: |
+          $X = $SOURCE.replace('...', <... request.$FOO.$BAR ...>, ...)
+          ...
+          $HB.Compile(..., <... $X ...>, ...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    Untrusted user input in templating engine's compile() function can result in Remote Code Execution via server side template injection.
+  languages:
+  - javascript
+  severity: ERROR
+  metadata:
+    cwe: CWE-94
+    shortDescription: Improper control of generation of code (Code Injection)
+    category: security
+    owasp:
+    - A1:2017-Injection
+    - A03:2021-Injection
+    - A05:2025-Injection
+    security-severity: CRITICAL
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_eval_rule-server-side-template-injection
