@@ -8,7 +8,7 @@ name: Security scan
 #   jobs:
 #     security:
 #       permissions: {contents: read, actions: read, security-events: write, id-token: write}
-#       uses: MicroHealthLLC/sast-rules/.github/workflows/security-scan.yml@<sha> # vYYYY.M.N
+#       uses: MicroHealthLLC/sast-rules/.github/workflows/security-scan.yml@main # the newest release
 #       with:
 #         aws_region: ${{ vars.AWS_REGION_EAST_1 }}
 #         s3_bucket: ${{ vars.SECURITY_REPORTS_S3_BUCKET }}
@@ -16,8 +16,9 @@ name: Security scan
 #       secrets: inherit
 #
 # The scanners are this repository's own reusable workflows, called at the
-# same commit (`./`), so pinning this file pins all of them, the rules and
-# the engines. Each one's reports go where Tueri Core ingests them
+# same commit (`./`), so the commit this file runs at fixes all of them, the
+# rules and the engines. Callers use `@main`: every scan change on main is a
+# release, so every run takes the newest one. Each one's reports go where Tueri Core ingests them
 # (<project>/sast/, trivy-fs/, trivy-image/, sbom/, zap-dast/); the combined
 # report goes to <project>/_security-scan/…, which ingest does not read: it
 # is the run's record, not a findings source.

@@ -5,7 +5,7 @@ name: SAST (Opengrep)
 #   jobs:
 #     sast:
 #       permissions: {contents: read, actions: read, security-events: write, id-token: write}
-#       uses: MicroHealthLLC/sast-rules/.github/workflows/opengrep.yml@<sha> # vYYYY.MM.N
+#       uses: MicroHealthLLC/sast-rules/.github/workflows/opengrep.yml@main # the newest release
 #       with:
 #         aws_region: ${{ vars.AWS_REGION_EAST_1 }}
 #         s3_bucket: ${{ vars.SECURITY_REPORTS_S3_BUCKET }}

@@ -1,8 +1,9 @@
 name: Release
 # Every push to main that changes what a scan runs (a bundle, the engine pin or
 # the shared workflow) becomes a release `vYYYY.MM.N`, with the bundles,
-# SHA256SUMS and NOTICE attached, and a pull request in every consumer
-# (consumers.yaml) moving its pin to it.
+# SHA256SUMS and NOTICE attached. Consumers call the scan `@main`, so their
+# next run takes it; a consumer that still pins a commit gets a pull request
+# (consumers.yaml) moving its pin.
 on:
   push:
     branches: [main]

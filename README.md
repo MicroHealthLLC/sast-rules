@@ -27,7 +27,7 @@ It is maintained by MicroHealth for MicroHealth's repositories.
 
 | Guarantee | How |
 |---|---|
-| The rules are exactly the ones reviewed | The caller pins this workflow by commit; the workflow reads that commit from the job's OIDC token and checks out the rules at it. `dist/<bundle>.yaml` must match `dist/SHA256SUMS`. Nothing is fetched from a rule registry. |
+| The rules are exactly the ones reviewed | The caller names this workflow `@main` (every scan change on `main` is a release, so `main` IS the newest release) or a commit; GitHub resolves that to one commit when the run starts, and the workflow reads that commit from the job's OIDC token and checks out the rules at it. `dist/<bundle>.yaml` must match `dist/SHA256SUMS`. Nothing is fetched from a rule registry. |
 | The engine is exactly the one reviewed | The Opengrep binary is downloaded from its GitHub release and must match the sha256 in `engine.json`, or the run stops. |
 | The scan cannot reach the network | It runs in a container with `--network none`. |
 | No source code in the build log | The engine's text output is discarded; results are only in the report files. |
@@ -62,7 +62,7 @@ permissions:
 jobs:
   security:
     permissions: {contents: read, actions: read, security-events: write, id-token: write}
-    uses: MicroHealthLLC/sast-rules/.github/workflows/security-scan.yml@<commit-sha> # vYYYY.M.N
+    uses: MicroHealthLLC/sast-rules/.github/workflows/security-scan.yml@main # the newest release, always
     with:
       aws_region: ${{ vars.AWS_REGION_EAST_1 }}
       s3_bucket: ${{ vars.SECURITY_REPORTS_S3_BUCKET }}
@@ -116,7 +116,7 @@ Each scanner is also its own reusable workflow (`opengrep.yml`, `trivy.yml`,
 
 ### Locally
 
-The same rules and engine, from the commit your workflow pins: copy
+The same rules and engine, at the commit your workflow runs (`@main` is resolved to its commit when the script starts): copy
 [`local/sast.sh`](local/sast.sh) into the repository (e.g. `scripts/sast.sh`)
 and run it, or wire it into `make`, a pre-push hook or a test script:
 
@@ -127,7 +127,7 @@ scripts/sast.sh --fail-on none --json sast.json
 ```
 
 It needs git, curl, python3, sha256sum and docker or nerdctl logged in to
-MicroHealth's ECR. It never needs editing: it reads the pin from
+MicroHealth's ECR. It never needs editing: it reads the reference (`@main` or a commit) from
 `.github/workflows/`.
 
 **Suppress a finding inline**, with the full rule id and the reason it does
@@ -218,12 +218,14 @@ with its reason, and a rule it narrows carries `refined`, with its reason.
    GitLab release, with the rules added, changed, retired and relicensed
    listed; a new Opengrep release; newer FIPS image digests.
 2. A MicroHealth maintainer reviews and merges it.
-3. `release.yml` tags `vYYYY.M.N`, publishes the bundles, `SHA256SUMS` and
-   `NOTICE.md`, and opens a pull request in every repository listed in
-   [`consumers.yaml`](consumers.yaml) moving its pin
-   (`scripts/bump_consumers.sh`).
-4. Each repository merges its pull request when it is ready to run the new
-   rules. Nothing changes in a repository without a reviewed merge.
+3. `release.yml` tags `vYYYY.M.N` and publishes the bundles, `SHA256SUMS`
+   and `NOTICE.md`. Every push to `main` that changes what a scan runs is a
+   release, so `main` is always the newest one.
+4. Every MicroHealth repository calls the scan `@main`, so its next run uses
+   the new release with nothing to merge: the review is step 2, here. A
+   repository that still pins a commit gets a pull request moving the pin
+   (`scripts/bump_consumers.sh`, [`consumers.yaml`](consumers.yaml)); one on
+   `@main` has no pin and is skipped.
 
 ## Repository security
 
