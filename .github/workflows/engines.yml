@@ -75,9 +75,9 @@ jobs:
            && grep 'GOFIPS140=v1.0.0' /tmp/buildinfo.txt >/dev/null \
            && "${GOPATH}/bin/trivy" --version > /tmp/version.txt \
            && grep "Version: ${TRIVY_VERSION}" /tmp/version.txt >/dev/null \
-           && mkdir -p /out && cp "${GOPATH}/bin/trivy" /tmp/buildinfo.txt /out/
+           && mkdir -p /tmp/out && cp "${GOPATH}/bin/trivy" /tmp/buildinfo.txt /tmp/out/
           FROM scratch
-          COPY --from=build /out/ /
+          COPY --from=build /tmp/out/ /
           DOCKERFILE
           cd "$RUNNER_TEMP/trivy"
           mv trivy "trivy-${VERSION}-linux-amd64-fips"
