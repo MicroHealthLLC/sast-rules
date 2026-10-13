@@ -1,0 +1,74 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.regexp-from-request
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      A value from the HTTP request (or a WebSocket message) is compiled as a
+      regular expression. A client can send a pattern with nested quantifiers
+      that backtracks for minutes and blocks the event loop for every user
+      (ReDoS), or a pattern that matches more than intended. Escape it first
+      (an escapeRegExp helper, lodash's _.escapeRegExp) or match it as a
+      plain string (includes, startsWith).
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [node.js, express, koa, fastify]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: MEDIUM
+      cwe: ["CWE-1333: Inefficient Regular Expression Complexity"]
+      owasp: ["A03:2021 - Injection"]
+      references:
+        - https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS
+    # Replaces mh.gitlab.javascript_dos_rule-non-literal-regexp and
+    # mh.opengrep.javascript.lang.security.audit.detect-non-literal-regexp,
+    # which report every RegExp built from a variable -- including ones built
+    # from the program's own constants and from escaped text. Here the
+    # pattern must come from a client. A ReDoS-prone LITERAL pattern is
+    # mh.opengrep.javascript.lang.security.audit.detect-redos's job.
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern: $REQ.$GETTER(...)
+          - metavariable-regex:
+              metavariable: $REQ
+              regex: ^(req|request|ctx|ctx\.request)$
+          - metavariable-regex:
+              metavariable: $GETTER
+              regex: ^(get|header|param)$
+      - patterns:
+          - pattern: $REQ.$FIELD
+          - metavariable-regex:
+              metavariable: $REQ
+              regex: ^(req|request|ctx|ctx\.request)$
+          - metavariable-regex:
+              metavariable: $FIELD
+              regex: ^(query|params|body|headers|cookies|signedCookies|url|originalUrl|path|files|file)$
+      - patterns:
+          - pattern: $EVENT.$FIELD
+          - metavariable-regex:
+              metavariable: $EVENT
+              regex: ^event$
+          - metavariable-regex:
+              metavariable: $FIELD
+              regex: ^(body|queryStringParameters|multiValueQueryStringParameters|pathParameters)$
+      - patterns:
+          - pattern-either:
+              - pattern-inside: '$WS.on("message", function ($DATA, ...) {...})'
+              - pattern-inside: '$WS.on("message", ($DATA, ...) => {...})'
+              - pattern-inside: '$WS.on("message", async ($DATA, ...) => {...})'
+          - focus-metavariable: $DATA
+          - pattern: $DATA
+    pattern-sanitizers:
+      - patterns:
+          - pattern: $F(...)
+          - metavariable-regex:
+              metavariable: $F
+              regex: (?i)(.*\.)?(escape(Reg(Ex|Exp)?|StringRegexp|Regex|Pattern)|quoteRegExp|regexEscape)$
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: new RegExp($PATTERN, ...)
+              - pattern: RegExp($PATTERN, ...)
+          - focus-metavariable: $PATTERN

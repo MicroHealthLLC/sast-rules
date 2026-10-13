@@ -7,6 +7,10 @@
 #   mh.gitlab.some-rule-id: "what was assessed and why it does not apply"
 # severity:
 #   mh.opengrep.some.rule: {to: WARNING, reason: "why"}
+# allow:   # a finding overlapping `not-regex` is dropped; the rule still runs
+#   - rules: [mh.opengrep.some.rule, mh.opengrep.some.prefix.*]
+#     not-regex: '...'
+#     reason: "what was assessed, and why a match of this regex is not a finding"
 disabled:
   mh.opengrep.generic.secrets.security.detected-aws-account-id.detected-aws-account-id: >-
     An AWS account ID is an identifier, not a credential (AWS: "account IDs
@@ -15,4 +19,68 @@ disabled:
     (295669632222.dkr.ecr...), 87 times in Tueri Core alone, burying real
     findings. Secret keys are still caught by the AWS access-key and secret
     rules in both upstream sources and by Trivy's secret scanner.
+  # --- Superseded by request-taint and narrower MicroHealth JavaScript/JSON rules (2026-10-13; findings sampled on TueriDev, every replacement tested with ruleid/ok cases) ---
+  mh.gitlab.javascript_pathtraversal_rule-non-literal-fs-filename: "superseded by mh.microhealth.javascript.path-traversal-from-request: more precise; the original reports every fs call whose path is not a string literal, so a file the program computes inside its own data folder is \"path traversal\"; 821 findings in TueriDev, none reachable from a client. The replacement is taint from request fields and WebSocket messages to the fs call, with basename and containment checks as sanitizers."
+  mh.opengrep.javascript.lang.security.audit.detect-non-literal-fs-filename.detect-non-literal-fs-filename: "superseded by mh.microhealth.javascript.path-traversal-from-request: more precise; the original the same \"any non-literal path\" audit as the GitLab rule (152 findings in TueriDev, none from a client); the replacement needs a value a client sent."
+  mh.opengrep.javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal: "superseded by mh.microhealth.javascript.path-traversal-from-request: more precise; the original treats every function parameter as attacker input and every path.join/resolve as a sink, with no file access needed (212 findings in TueriDev, e.g. path.join(homedir, \".local\", \"bin\")); the replacement needs request input to reach a file system call."
+  mh.gitlab.rules_lgpl_javascript_traversal_rule-join-resolve-path-traversal: "superseded by mh.microhealth.javascript.path-traversal-from-request: more precise; the original its source is the first parameter of ANY two-parameter function (it assumes `function (req, res)`), so `path.join(plan.homedir, \".profile\")` was reported; the replacement uses real request fields."
+  mh.gitlab.javascript_dos_rule-non-literal-regexp: "superseded by mh.microhealth.javascript.regexp-from-request: more precise; the original reports every RegExp built from a variable, including ones built from the program's own constants and from escaped text (53 findings in TueriDev, none from a client); the replacement needs the pattern to come from a request."
+  mh.opengrep.javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp: "superseded by mh.microhealth.javascript.regexp-from-request: more precise; the original the same \"any non-literal RegExp\" audit as the GitLab rule; ReDoS-prone LITERAL patterns stay covered by mh.opengrep.javascript.lang.security.audit.detect-redos."
+  mh.gitlab.rules_lgpl_javascript_dos_rule-regex-dos: "superseded by mh.microhealth.javascript.regexp-from-request: more precise; the original reports any regex .test/.exec on the first parameter of any two-parameter function, whether or not the regex can backtrack (55 findings in TueriDev: `(_, ctx)` helpers, `/^\\d{1,15}$/.test(id)`). A pattern a client controls is the replacement's job; a literal pattern that can backtrack catastrophically is mh.opengrep.javascript.lang.security.audit.detect-redos's, which analyses the regex itself."
+  mh.gitlab.rules_lgpl_javascript_ssrf_rule-node-ssrf: "superseded by mh.microhealth.javascript.ssrf-from-request: more precise; the original its source is the first parameter of ANY two-parameter function, so `(port, path) => fetch(...)` in a test and a CLI's documentation fetch were \"SSRF\"; the replacement is taint from request fields to fetch/axios/got/http(s) with allow-list checks as sanitizers."
+  mh.opengrep.javascript.lang.security.html-in-template-string.html-in-template-string: "superseded by mh.microhealth.javascript.html-template-unescaped: more precise; the original its test for HTML is any `<` followed by a letter, so usage text (`set <key> <value>`), file-name placeholders (`<chain>`) and HTML whose every value was already passed through escapeHtml were reported (71 in TueriDev); the replacement needs a real HTML element and an interpolated value that is not an escaping call or a number."
+  mh.opengrep.json.npm.security.package-dependencies-check.package-dependencies-check: "superseded by mh.microhealth.json.npm-dependency-mutable-source: more precise; the original reports every caret/tilde range; a range is pinned (with its integrity hash) by the committed lockfile and moves only in a reviewed lockfile change, so all 49 dependencies of a --frozen-lockfile repository were findings. The replacement reports the sources a lockfile cannot make reviewable: dist-tags, `*`, git branches, plain http."
+  mh.gitlab.javascript_timing_rule-possible-timing-attacks: "superseded by mh.microhealth.javascript.secret-compare-not-constant-time: more precise; the original excludes a null/undefined comparison only in a braced `if {...};`, so `if (token === null) return;` and `if (token === \"%s\")` were reported (11 in TueriDev, none comparing a secret with attacker input); the replacement excludes any comparison with a literal, null, undefined or typeof, and adds hmac/signature/digest."
+  mh.gitlab.rules_lgpl_javascript_crypto_rule-node-timing-attack: "superseded by mh.microhealth.javascript.secret-compare-not-constant-time: more precise; the original the same patterns as mh.gitlab.javascript_timing_rule-possible-timing-attacks (one report per line from each); see that entry."
+  mh.gitlab.rules_lgpl_javascript_crypto_rule-node-insecure-random-generator: "superseded by mh.microhealth.javascript.insecure-random-for-secret: more precise; the original reports every Math.random() call -- display ids, jitter, a greeting's choice (19 in TueriDev, none a secret); the replacement, like mh.microhealth.python.insecure-random-for-secret, reports it where the value is named as a token, password, nonce, salt, key or session id, and still reports crypto.pseudoRandomBytes always."
+  mh.opengrep.javascript.lang.security.detect-child-process.detect-child-process: "superseded by mh.microhealth.javascript.child-process-shell-command: more precise; the original reports every exec/spawn whose program is a function parameter, including spawn(file, argv, { shell: false }) -- the form its own message recommends, where there is no shell to inject into. The replacement reports what makes a command injectable: a non-constant command line run through a shell (exec/execSync, or spawn/execFile with `shell` set)."
+  mh.opengrep.problem-based-packs.insecure-transport.js-node.using-http-server.using-http-server: "superseded by mh.microhealth.javascript.http-server-non-loopback: more precise; the original reports any `http.<anything>(...)` call, including the loopback redirect server RFC 8252 section 7.3 REQUIRES of a native OAuth client; the replacement reports an http server that does not listen on 127.0.0.1, localhost or ::1."
+  mh.opengrep.javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket: "superseded by mh.microhealth.javascript.insecure-websocket-url: more precise; the original a text regex over the whole file: it reported `ws://` written in a comment and missed ws://[::1]; the replacement checks strings and templates that are code."
+  mh.opengrep.javascript.lang.security.audit.unsafe-dynamic-method.unsafe-dynamic-method: "superseded by mh.microhealth.javascript.dynamic-method-from-request: more precise; the original reports every obj[key](...) with a non-literal key -- dispatch tables keyed by the program's own command names, toast levels, language loaders (20 in TueriDev); the replacement needs the key to come from a request, with Object.hasOwn / Set.has / includes as sanitizers."
+  mh.opengrep.javascript.lang.security.insecure-object-assign.insecure-object-assign: "superseded by mh.microhealth.javascript.object-assign-parsed-json: more precise; the original reports Object.assign when parsed JSON reaches ANY argument, including the target and an object literal the program builds (`Object.assign(new Error(parsed.message), { kind })`), which cannot carry a __proto__ key into the copy; the replacement needs the parsed object itself as a source argument."
+  mh.opengrep.javascript.lang.security.audit.incomplete-sanitization.incomplete-sanitization: "superseded by mh.microhealth.javascript.incomplete-escape-replace: more precise; the original reports a one-character string replace() of `%`, `|`, `*`, `$`, brackets or quotes whatever it is for, so stripping the `%` from \"50%\" was \"incomplete sanitization\"; the replacement needs an escapable character (<, >, &, quotes, backslash) replaced by its escape."
+  mh.gitlab.rules_lgpl_javascript_eval_rule-yaml-deserialize: "superseded by mh.microhealth.javascript.js-yaml-unsafe-schema and mh.microhealth.json.npm-js-yaml-v3: more precise; the original reports every js-yaml load() as remote code execution (ERROR). Since js-yaml 4 (2021) load() uses the safe default schema and cannot build functions; the danger is a v3 install (json.npm-js-yaml-v3) or a schema that adds the JavaScript types back (javascript.js-yaml-unsafe-schema)."
+  mh.opengrep.yaml.github-actions.security.audit.unsafe-add-mask-workflow-command.unsafe-add-mask-workflow-command: >-
+    Reports every use of `::add-mask::`, GitHub's own and only mechanism for
+    keeping a value a workflow GENERATES (a keychain password, a decoded
+    certificate passphrase) out of the log. The bypass it describes,
+    `::stop-commands::`, needs someone who can already edit the workflow on a
+    branch with the same secrets, who can print the value directly; not
+    masking would be strictly worse. No change to the code it flags makes it
+    safer, so it is an audit note that can only be silenced line by line.
 severity: {}
+allow:
+  - rules: [mh.opengrep.generic.secrets.*]
+    not-regex: '(?m)^.*\bgitleaks:allow\b.*$'
+    reason: >-
+      `gitleaks:allow` on the line is gitleaks' own inline allow, and these
+      rules are its ported patterns (gitleaks/) or the same idea (security/).
+      Repositories mark reviewed test fixtures with it for the gitleaks job in
+      their CI; without this, the same fixture is allowed by one scanner and
+      a CRITICAL finding in the other. The marker is visible in review and in
+      the diff that adds it, as `nosemgrep` is.
+  - rules: [mh.opengrep.generic.secrets.gitleaks.aws-access-token.aws-access-token]
+    not-regex: '\b(?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z0-9]{9}EXAMPLE\b'
+    reason: >-
+      AWS publishes AKIAIOSFODNN7EXAMPLE (and keys ending EXAMPLE) as the
+      documentation key every example uses; it is not issued to anyone.
+      gitleaks' own aws-access-token rule allow-lists `.+EXAMPLE$`, and
+      mh.opengrep.generic.secrets.security.detected-aws-access-key-id-value
+      already drops "example". A real key ends in EXAMPLE with a probability
+      of about 1 in 32^7.
+  - rules: [mh.opengrep.generic.secrets.gitleaks.generic-api-key.generic-api-key]
+    not-regex: '(?i)\bclient_?id\b["'']?\s*(?:[:=]|=>)\s*["'']?[\w.\-]+'
+    reason: >-
+      An OAuth client identifier is public by design (RFC 6749 section 2.2;
+      it is printed in every authorization URL), so `clientId`/`client_id`
+      values were reported as API keys. `client_secret` is not matched by
+      this regex and is still reported.
+  - rules: [mh.opengrep.java.android.security.exported_activity.exported_activity]
+    not-regex: '(?s)<activity\b[^>]*>\s*<intent-filter>\s*<action android:name="android\.intent\.action\.MAIN"\s*/>\s*<category android:name="android\.intent\.category\.LAUNCHER"\s*/>\s*</intent-filter>\s*</activity>'
+    reason: >-
+      An activity whose ONLY intent filter is MAIN + LAUNCHER is the app's
+      entry point: Android requires it to be exported (android:exported is
+      mandatory and must be true for the launcher to start it since API 31)
+      and it receives only the launcher's empty MAIN intent. An activity with
+      any other intent filter -- a deep link, a share target -- is still
+      reported.

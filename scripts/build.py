@@ -7,7 +7,8 @@
 Inputs (all in this repository, nothing is fetched):
   sources.yaml     where each source came from and how its license is read
   licenses.yaml    which license may go in which bundle
-  overrides.yaml   rules we turn off or re-grade, each with its reason
+  overrides.yaml   rules we turn off, re-grade, or give an allow-list, each
+                   with its reason
                    (a source's `categories` keeps all but security rules out)
   upstream/<src>/  vendored upstream rule files, never edited by hand
   rules/<src>/     rules MicroHealth writes
@@ -112,6 +113,63 @@ def _numeric_security_severity(meta: dict) -> None:
         meta["security-severity"] = score
 
 
+def allow_entries(overrides: dict, ids, errors: list[str]) -> dict[str, list[dict]]:
+    """`overrides.yaml` `allow:` → {rule id: [entries]}.
+
+    An entry names rules by id, or by a prefix ending in `*`, and the
+    `not-regex` a finding is dropped for when its text overlaps a match.
+    Every entry must give its reason and match at least one rule.
+    """
+    by_rule: dict[str, list[dict]] = {}
+    for n, entry in enumerate(overrides.get("allow") or []):
+        where = f"overrides.yaml: allow[{n}]"
+        if not isinstance(entry, dict):
+            errors.append(f"{where} is not a mapping")
+            continue
+        if not str(entry.get("reason") or "").strip():
+            errors.append(f"{where} has no reason")
+        regex = entry.get("not-regex")
+        if not isinstance(regex, str) or not regex.strip():
+            errors.append(f"{where} has no not-regex")
+            continue
+        try:
+            re.compile(regex)
+        except re.error as exc:
+            errors.append(f"{where}: not-regex does not compile ({exc})")
+            continue
+        names = entry.get("rules")
+        if not isinstance(names, list) or not names:
+            errors.append(f"{where} names no rules")
+            continue
+        for name in names:
+            name = str(name)
+            hits = [i for i in ids if (i.startswith(name[:-1]) if name.endswith("*") else i == name)]
+            if not hits:
+                errors.append(f"{where}: {name} names no rule")
+            for rid in hits:
+                by_rule.setdefault(rid, []).append(entry)
+    return by_rule
+
+
+def apply_allow(rule: dict, entries: list[dict]) -> str | None:
+    """Add each entry's `pattern-not-regex` to `rule`. Returns an error, or None.
+
+    Only a search-mode rule can be narrowed this way; a taint rule has no
+    single place a not-regex belongs, so asking for one is an error.
+    """
+    if rule.get("mode", "search") != "search":
+        return f"{rule['id']}: allow applies to search-mode rules only"
+    nots = [{"pattern-not-regex": e["not-regex"]} for e in entries]
+    if "patterns" in rule:
+        rule["patterns"] = [*rule["patterns"], *nots]
+        return None
+    for key in ("pattern", "pattern-regex", "pattern-either"):
+        if key in rule:
+            rule["patterns"] = [{key: rule.pop(key)}, *nots]
+            return None
+    return f"{rule['id']}: no pattern to narrow"
+
+
 def rule_hash(rule: dict) -> str:
     return hashlib.sha256(json.dumps(rule, sort_keys=True).encode()).hexdigest()
 
@@ -189,6 +247,7 @@ def build(check: bool) -> int:
             errors.append(f"overrides.yaml: severity {rid} has no reason")
         if rid not in seen:
             errors.append(f"overrides.yaml: severity {rid} names no rule")
+    allow = allow_entries(overrides, seen, errors)
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1
@@ -201,6 +260,11 @@ def build(check: bool) -> int:
         rule["id"] = r["id"]
         if r["id"] in regraded:
             rule["severity"] = regraded[r["id"]]["to"]
+        if r["id"] in allow:
+            problem = apply_allow(rule, allow[r["id"]])
+            if problem:
+                print(f"overrides.yaml: {problem}", file=sys.stderr)
+                return 1
         meta = dict(rule.get("metadata") or {})
         _numeric_security_severity(meta)
         meta.update(
@@ -228,6 +292,8 @@ def build(check: bool) -> int:
             entry["reason"] = disabled[r["id"]]
         elif r["excluded"]:
             entry["reason"] = r["excluded"]
+        if r["id"] in allow:
+            entry["allow"] = [str(e["reason"]).strip() for e in allow[r["id"]]]
         lock_rules[r["id"]] = entry
     for rid, old in previous.get("rules", {}).items():
         if rid not in lock_rules:

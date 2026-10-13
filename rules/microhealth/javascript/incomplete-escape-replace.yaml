@@ -1,0 +1,36 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.incomplete-escape-replace
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      `$STR.replace($CHAR, $REPL)` escapes only the FIRST $CHAR: with a string
+      pattern, replace() stops after one match, so every later occurrence is
+      left as it was and the "escaped" text can still break out of its HTML,
+      attribute or string context. Use replaceAll(), a regular expression with
+      the g flag, or an escaping library.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [javascript]
+      confidence: HIGH
+      likelihood: MEDIUM
+      impact: MEDIUM
+      cwe: ["CWE-116: Improper Encoding or Escaping of Output"]
+      owasp: ["A03:2021 - Injection"]
+      references:
+        - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace
+    # Replaces mh.opengrep.javascript.lang.security.audit.incomplete-sanitization,
+    # which reports a one-character string replace() for `%`, `|`, `*`, `$`,
+    # brackets and quotes whatever it is for -- stripping the `%` from "50%"
+    # or the cursor marker `|` from a test string is parsing, not escaping.
+    # Here the character must be one that escaping exists for, and the
+    # replacement must look like its escape.
+    patterns:
+      - pattern: '$STR.replace(($CHAR: string), ($REPL: string))'
+      - metavariable-regex:
+          metavariable: $CHAR
+          regex: ^["'`](<|>|&|\\"|"|'|\\'|\\\\)["'`]$
+      - metavariable-regex:
+          metavariable: $REPL
+          regex: ^["'`](&[#\w]+;|\\\\.*|\\.+)["'`]$

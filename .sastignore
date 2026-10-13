@@ -2,3 +2,8 @@
 # their patterns are what the rules look for, not code that does it.
 upstream/
 dist/
+# Rule-test fixtures: deliberate vulnerable code (`ruleid:` lines) that
+# `opengrep scan --test` checks each MicroHealth rule against; never executed.
+rules/microhealth/javascript/*.ts
+rules/microhealth/javascript/*.js
+rules/microhealth/json/*.json

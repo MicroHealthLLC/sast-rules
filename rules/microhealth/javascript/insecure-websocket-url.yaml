@@ -1,0 +1,30 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.insecure-websocket-url
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      This WebSocket address uses ws://, which is unencrypted: every message on
+      it can be read or changed by anyone on the network path. Use wss://.
+      (ws:// to localhost, 127.0.0.1 or [::1] is not reported -- it never
+      leaves the machine.)
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [javascript, websocket]
+      confidence: HIGH
+      likelihood: MEDIUM
+      impact: MEDIUM
+      cwe: ["CWE-319: Cleartext Transmission of Sensitive Information"]
+      owasp: ["A02:2021 - Cryptographic Failures"]
+      references:
+        - https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_client_applications#security_considerations
+    # Replaces mh.opengrep.javascript.lang.security.detect-insecure-websocket,
+    # a plain-text regex over the whole file: it reported `ws://` written in a
+    # comment, and missed `ws://[::1]`. Here only a string or template that
+    # is code is checked.
+    patterns:
+      - pattern-either:
+          - pattern: '"..."'
+          - pattern: '`...`'
+      - pattern-regex: (?<=["'`])ws://(?!(localhost|127\.0\.0\.1|\[::1\])([:/]|["'`]|$))

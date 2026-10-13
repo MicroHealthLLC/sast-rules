@@ -1,0 +1,46 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.object-assign-parsed-json
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      An object parsed from JSON is copied with Object.assign. JSON.parse keeps
+      a `"__proto__"` key as an ordinary property, and Object.assign then SETS
+      it on the target -- replacing the target's prototype, so properties the
+      program checks (isAdmin, a default option) can appear from nowhere
+      (prototype pollution). Copy only the fields you expect, or parse with a
+      reviver that drops `__proto__`, `constructor` and `prototype`.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [javascript, node.js]
+      confidence: MEDIUM
+      likelihood: LOW
+      impact: MEDIUM
+      cwe: ["CWE-1321: Improperly Controlled Modification of Object Prototype Attributes ('Prototype Pollution')"]
+      owasp: ["A08:2021 - Software and Data Integrity Failures"]
+      references:
+        - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign
+    # Replaces mh.opengrep.javascript.lang.security.insecure-object-assign,
+    # which reports Object.assign wherever any parsed JSON reaches ANY of its
+    # arguments -- including the TARGET, and an object literal built by the
+    # program (`Object.assign(new Error(parsed.message), { kind: 'x' })`),
+    # neither of which can carry a `__proto__` key into the copy. Here the
+    # parsed value must be a SOURCE argument as it is.
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern: JSON.parse(...)
+          - pattern-not: JSON.parse("...", ...)
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: Object.assign($TARGET, $SRC, ...)
+              - pattern: Object.assign($TARGET, $A, $SRC, ...)
+              - pattern: Object.assign($TARGET, $A, $B, $SRC, ...)
+          # An object literal or a new object the program builds holds no
+          # parsed `__proto__` key of its own.
+          - metavariable-regex:
+              metavariable: $SRC
+              regex: (?s)^(?!\s*\{)(?!\s*new\s).+
+          - focus-metavariable: $SRC

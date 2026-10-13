@@ -1,0 +1,27 @@
+{
+  "name": "example",
+  "dependencies": {
+    "react": "^19.2.0",
+    "lodash": "4.17.21",
+    // ruleid: json.npm-dependency-mutable-source
+    "left-pad": "latest",
+    // ruleid: json.npm-dependency-mutable-source
+    "anything": "*",
+    // ruleid: json.npm-dependency-mutable-source
+    "fork": "github:someone/fork#main",
+    // ok: json.npm-dependency-mutable-source
+    "pinned-fork": "github:someone/fork#0123456789abcdef0123456789abcdef01234567",
+    // ok: json.npm-dependency-mutable-source
+    "workspace-lib": "workspace:*"
+  },
+  "devDependencies": {
+    // ruleid: json.npm-dependency-mutable-source
+    "tarball": "http://example.com/pkg.tgz",
+    // ok: json.npm-dependency-mutable-source
+    "vitest": "^5.0.2"
+  },
+  "peerDependencies": {
+    // ok: json.npm-dependency-mutable-source
+    "react": "*"
+  }
+}

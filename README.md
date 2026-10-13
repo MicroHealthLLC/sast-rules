@@ -182,6 +182,11 @@ with its reason.
 - **Never edit `upstream/`.** Turn a rule off or re-grade it in
   [`overrides.yaml`](overrides.yaml); a reason is required. Or copy it into
   `rules/microhealth/` and change the copy.
+- A search rule that is right except for one known shape of false positive
+  gets an `allow:` entry in `overrides.yaml` instead: a `not-regex` the build
+  adds as `pattern-not-regex` (a finding overlapping a match is dropped) and
+  its reason, which the lock records under the rule. The secret rules honour
+  gitleaks' own `gitleaks:allow` this way.
 - A new rule goes in `rules/microhealth/<language>/<name>.yaml`, with a test
   file of the same name beside it (`# ruleid:` and `# ok:` comments).
 - `python3 scripts/build.py` rebuilds `dist/` and the lock. CI fails if they
