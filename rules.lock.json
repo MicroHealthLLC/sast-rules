@@ -14,7 +14,7 @@
   "microhealth": {}
  },
  "bundles": {
-  "internal": 2147,
+  "internal": 2146,
   "product": 273
  },
  "rules": {
@@ -10739,10 +10739,9 @@
    "path": "upstream/opengrep/generic/secrets/security/detected-aws-account-id.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "33ba6a791e219ede66235835b57dff154decf8b99971207ebc9c0cfb3928c95c",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "An AWS account ID is an identifier, not a credential (AWS: \"account IDs are not considered secret\"); access needs credentials this rule never sees. It fired on every pinned MicroHealth FIPS image reference (295669632222.dkr.ecr...), 87 times in Tueri Core alone, burying real findings. Secret keys are still caught by the AWS access-key and secret rules in both upstream sources and by Trivy's secret scanner."
   },
   "mh.opengrep.generic.secrets.security.detected-aws-appsync-graphql-key.detected-aws-appsync-graphql-key": {
    "source": "opengrep",
