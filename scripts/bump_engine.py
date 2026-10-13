@@ -21,7 +21,10 @@ REPO = "opengrep/opengrep"
 
 
 def fetch(url: str) -> bytes:
+    if not url.startswith("https://"):
+        raise ValueError(f"refusing to fetch a non-https URL: {url}")
     req = urllib.request.Request(url, headers={"User-Agent": "sast-rules-bump"})
+    # noopengrep: python_urlopen_rule-urllib-urlopen, dynamic-urllib-use-detected — https enforced above; every URL is a fixed github.com prefix
     with urllib.request.urlopen(req, timeout=120) as resp:  # noqa: S310 (fixed https URL)
         return resp.read()
 
