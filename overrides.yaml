@@ -16,6 +16,10 @@
 #     exclude_paths: ["*.lock"]          # appended to its paths.exclude
 # Each refinement has a fixture in tests/refine/ (`ruleid:` and `ok:` lines)
 # that tests/refine/run.py checks against the built bundle.
+# allow:   # a finding overlapping `not-regex` is dropped; the rule still runs
+#   - rules: [mh.opengrep.some.rule, mh.opengrep.some.prefix.*]
+#     not-regex: '...'
+#     reason: "what was assessed, and why a match of this regex is not a finding"
 disabled:
   mh.opengrep.generic.secrets.security.detected-aws-account-id.detected-aws-account-id: >-
     An AWS account ID is an identifier, not a credential (AWS: "account IDs
@@ -225,6 +229,15 @@ disabled:
   mh.opengrep.go.lang.security.decompression_bomb.potential-dos-via-decompression-bomb: "superseded by mh.microhealth.go.decompression-without-limit: the original's io.LimitReader sanitizer focuses on the argument inside the call, so the call's result stays tainted and io.Copy(f, io.LimitReader(tr, n)) -- the fix its own message asks for -- is reported (verified on TueriCore's code/runner-go actions.go). The replacement sanitizes the bounded reader itself and adds io.ReadAll as a sink."
   mh.gitlab.go_filesystem_rule-decompression-bomb: "superseded by mh.microhealth.go.decompression-without-limit: same sanitizer defect as mh.opengrep.go.lang.security.decompression_bomb.potential-dos-via-decompression-bomb, which this rule duplicates line for line."
   mh.opengrep.python.flask.security.audit.directly-returned-format-string.directly-returned-format-string: "superseded by mh.microhealth.python.flask-returned-format-string: more precise; the original's sources (request.X.get(...)) and sinks (a formatted return) apply in every Python file, so TueriCore's FastAPI helpers that build a base URL from a header and return it into a JSON body (routers/cr26_reports.py, routers/oauth.py) were reported as Flask XSS. A returned string is an HTML response only in Flask; the replacement keeps the same sources and sinks in files that import Flask (verified: it still reports both Flask cases and not the FastAPI helper)."
+  # --- Superseded by request-taint and narrower MicroHealth JavaScript/JSON rules (2026-10-13; findings sampled on TueriDev, every replacement tested with ruleid/ok cases) ---
+  mh.gitlab.javascript_pathtraversal_rule-non-literal-fs-filename: "superseded by mh.microhealth.javascript.path-traversal-from-request: more precise; the original reports every fs call whose path is not a string literal, so a file the program computes inside its own data folder is \"path traversal\"; 821 findings in TueriDev, none reachable from a client. The replacement is taint from request fields and WebSocket messages to the fs call, with basename and containment checks as sanitizers."
+  mh.opengrep.javascript.lang.security.audit.detect-non-literal-fs-filename.detect-non-literal-fs-filename: "superseded by mh.microhealth.javascript.path-traversal-from-request: more precise; the original the same \"any non-literal path\" audit as the GitLab rule (152 findings in TueriDev, none from a client); the replacement needs a value a client sent."
+  mh.opengrep.javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal: "superseded by mh.microhealth.javascript.path-traversal-from-request: more precise; the original treats every function parameter as attacker input and every path.join/resolve as a sink, with no file access needed (212 findings in TueriDev, e.g. path.join(homedir, \".local\", \"bin\")); the replacement needs request input to reach a file system call."
+  mh.opengrep.javascript.lang.security.detect-child-process.detect-child-process: "superseded by mh.microhealth.javascript.child-process-shell-command: more precise; the original reports every exec/spawn whose program is a function parameter, including spawn(file, argv, { shell: false }) -- the form its own message recommends, where there is no shell to inject into. The replacement reports what makes a command injectable: a non-constant command line run through a shell (exec/execSync, or spawn/execFile with `shell` set)."
+  mh.opengrep.problem-based-packs.insecure-transport.js-node.using-http-server.using-http-server: "superseded by mh.microhealth.javascript.http-server-non-loopback: more precise; the original reports any `http.<anything>(...)` call, including the loopback redirect server RFC 8252 section 7.3 REQUIRES of a native OAuth client; the replacement reports an http server that does not listen on 127.0.0.1, localhost or ::1."
+  mh.opengrep.javascript.lang.security.audit.unsafe-dynamic-method.unsafe-dynamic-method: "superseded by mh.microhealth.javascript.dynamic-method-from-request: more precise; the original reports every obj[key](...) with a non-literal key -- dispatch tables keyed by the program's own command names, toast levels, language loaders (20 in TueriDev); the replacement needs the key to come from a request, with Object.hasOwn / Set.has / includes as sanitizers."
+  mh.opengrep.javascript.lang.security.audit.incomplete-sanitization.incomplete-sanitization: "superseded by mh.microhealth.javascript.incomplete-escape-replace: more precise; the original reports a one-character string replace() of `%`, `|`, `*`, `$`, brackets or quotes whatever it is for, so stripping the `%` from \"50%\" was \"incomplete sanitization\"; the replacement needs an escapable character (<, >, &, quotes, backslash) replaced by its escape."
+  mh.gitlab.rules_lgpl_javascript_eval_rule-yaml-deserialize: "superseded by mh.microhealth.javascript.js-yaml-unsafe-schema and mh.microhealth.json.npm-js-yaml-v3: more precise; the original reports every js-yaml load() as remote code execution (ERROR). Since js-yaml 4 (2021) load() uses the safe default schema and cannot build functions; the danger is a v3 install (json.npm-js-yaml-v3) or a schema that adds the JavaScript types back (javascript.js-yaml-unsafe-schema)."
 severity: {}
 refine:
   mh.opengrep.generic.secrets.gitleaks.stripe-access-token.stripe-access-token:
@@ -286,19 +299,14 @@ refine:
       - pattern-not: Action = "ecr:GetAuthorizationToken"
       - pattern-not: Action = ["ecr:GetAuthorizationToken"]
       - pattern-not: actions = ["ecr:GetAuthorizationToken"]
-  mh.opengrep.javascript.lang.security.audit.unsafe-dynamic-method.unsafe-dynamic-method:
+allow:
+  - rules: [mh.opengrep.generic.secrets.*, mh.microhealth.generic.*]
+    not-regex: '(?m)^.*\bgitleaks:allow\b.*$'
     reason: >-
-      A method name typed as a union of string literals (`method:
-      'queryObject' | 'queryArray'`) can only name those methods; the
-      compiler rejects any other value at every call site (1 hit in Gnosis,
-      a retry wrapper over two query methods). A key typed `string` or
-      `any` is still reported.
-    add:
-      - pattern-not-inside: |
-          (..., $X: "$A" | "$B", ...) => { ... }
-      - pattern-not-inside: |
-          (..., $X: "$A" | "$B" | "$C", ...) => { ... }
-      - pattern-not-inside: |
-          function $F(..., $X: "$A" | "$B", ...) { ... }
-      - pattern-not-inside: |
-          function $F(..., $X: "$A" | "$B" | "$C", ...) { ... }
+      `gitleaks:allow` on the line is gitleaks' own inline allow, and these
+      rules are its ported patterns (gitleaks/), the same idea (security/), or
+      MicroHealth replacements of either (mh.microhealth.generic.*).
+      Repositories mark reviewed test fixtures with it for the gitleaks job in
+      their CI; without this, the same fixture is allowed by one scanner and
+      a CRITICAL finding in the other. The marker is visible in review and in
+      the diff that adds it, as `nosemgrep` is.

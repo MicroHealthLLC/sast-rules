@@ -1,0 +1,109 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.path-traversal-from-request
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      A value from the HTTP request (or a WebSocket message) reaches a file
+      system path. A client can send `../` segments or an absolute path and read,
+      overwrite or delete a file outside the folder this handler means to serve.
+      Resolve the path against a fixed root and refuse it unless it is still
+      inside that root (path.resolve + path.relative, or a helper such as
+      isInside/safeJoin), or keep only path.basename() of it.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [node.js, express, koa, fastify, next.js]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      cwe: ["CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"]
+      owasp: ["A01:2021 - Broken Access Control"]
+      references:
+        - https://owasp.org/www-community/attacks/Path_Traversal
+        - https://nodejs.org/api/path.html#pathrelativefrom-to
+    # Replaces four rules whose findings were almost all noise in Node and
+    # Electron code: mh.gitlab.javascript_pathtraversal_rule-non-literal-fs-filename
+    # and mh.opengrep.javascript.lang.security.audit.detect-non-literal-fs-filename
+    # report EVERY fs call whose path is not a literal (a file the program
+    # computed from its own data folder included), and
+    # mh.opengrep.javascript.lang.security.audit.path-traversal.path-join-resolve-traversal
+    # and mh.gitlab.rules_lgpl_javascript_traversal_rule-join-resolve-path-traversal
+    # treat any function's parameters as attacker input. Here the source is
+    # what a client actually controls -- request fields and WebSocket messages --
+    # and the sink is the file system call that uses the path.
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern: $REQ.$GETTER(...)
+          - metavariable-regex:
+              metavariable: $REQ
+              regex: ^(req|request|ctx|ctx\.request)$
+          - metavariable-regex:
+              metavariable: $GETTER
+              regex: ^(get|header|param)$
+      - patterns:
+          - pattern: $REQ.$FIELD
+          - metavariable-regex:
+              metavariable: $REQ
+              regex: ^(req|request|ctx|ctx\.request)$
+          - metavariable-regex:
+              metavariable: $FIELD
+              regex: ^(query|params|body|headers|cookies|signedCookies|url|originalUrl|path|files|file)$
+      - patterns:
+          - pattern: $EVENT.$FIELD
+          - metavariable-regex:
+              metavariable: $EVENT
+              regex: ^event$
+          - metavariable-regex:
+              metavariable: $FIELD
+              regex: ^(body|queryStringParameters|multiValueQueryStringParameters|pathParameters)$
+      - patterns:
+          - pattern-either:
+              - pattern-inside: '$WS.on("message", function ($DATA, ...) {...})'
+              - pattern-inside: '$WS.on("message", ($DATA, ...) => {...})'
+              - pattern-inside: '$WS.on("message", async ($DATA, ...) => {...})'
+          - focus-metavariable: $DATA
+          - pattern: $DATA
+    pattern-sanitizers:
+      - pattern: path.basename(...)
+      - pattern: $P.basename(...)
+      # A containment check sanitises the path from that point on: the usual
+      # `if (!isInside(root, target)) throw ...` guard.
+      - by-side-effect: true
+        patterns:
+          - pattern: $F(..., $X)
+          - metavariable-regex:
+              metavariable: $F
+              regex: (?i)(.*\.)?(is|assert|ensure)(Inside|Contained|Within|SafePath)\w*$
+          - focus-metavariable: $X
+      - patterns:
+          - pattern: $F(...)
+          - metavariable-regex:
+              metavariable: $F
+              regex: (?i)(.*\.)?(safeJoin|resolveInside|sanitizeFilename|sanitizePath)$
+    pattern-sinks:
+      - patterns:
+          - pattern: $FS.$METHOD($PATH, ...)
+          - metavariable-regex:
+              metavariable: $FS
+              regex: ^(fs|fsp|fse|fs\.promises|fsPromises|promises|fsExtra)$
+          - metavariable-regex:
+              metavariable: $METHOD
+              regex: ^(readFile|readFileSync|writeFile|writeFileSync|appendFile|appendFileSync|createReadStream|createWriteStream|readdir|readdirSync|opendir|opendirSync|unlink|unlinkSync|rm|rmSync|rmdir|rmdirSync|mkdir|mkdirSync|stat|statSync|lstat|lstatSync|open|openSync|access|accessSync|exists|existsSync|copyFile|copyFileSync|rename|renameSync|cp|cpSync|readlink|readlinkSync|realpath|realpathSync|chmod|chmodSync|chown|chownSync|symlink|symlinkSync|truncate|truncateSync|outputFile|readJson|readJSON|writeJson|writeJSON|remove|removeSync|move|copy)$
+          - focus-metavariable: $PATH
+      - patterns:
+          - pattern: $FS.$METHOD($OTHER, $PATH, ...)
+          - metavariable-regex:
+              metavariable: $FS
+              regex: ^(fs|fsp|fse|fs\.promises|fsPromises|promises|fsExtra)$
+          - metavariable-regex:
+              metavariable: $METHOD
+              regex: ^(copyFile|copyFileSync|rename|renameSync|cp|cpSync|symlink|symlinkSync|move|copy)$
+          - focus-metavariable: $PATH
+      - patterns:
+          - pattern-either:
+              - pattern: $RES.sendFile($PATH, ...)
+              - pattern: $RES.download($PATH, ...)
+              - pattern: $RES.attachment($PATH)
+          - focus-metavariable: $PATH

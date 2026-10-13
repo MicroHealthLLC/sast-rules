@@ -1,0 +1,44 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.http-server-non-loopback
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      This server speaks plain HTTP and is not bound to the loopback address,
+      so anything it sends or receives -- cookies, tokens, form data -- crosses
+      the network unencrypted and can be read or changed on the way. Serve it
+      with https.createServer (or behind a TLS-terminating proxy), or, for a
+      local-only callback, listen on 127.0.0.1.
+    metadata:
+      category: security
+      subcategory: [audit]
+      technology: [node.js]
+      confidence: LOW
+      likelihood: LOW
+      impact: MEDIUM
+      cwe: ["CWE-319: Cleartext Transmission of Sensitive Information"]
+      owasp: ["A02:2021 - Cryptographic Failures"]
+      references:
+        - https://datatracker.ietf.org/doc/html/rfc8252#section-7.3
+    # Replaces mh.opengrep.problem-based-packs.insecure-transport.js-node.using-http-server.using-http-server,
+    # which reports every `http.<anything>(...)` call -- including the
+    # loopback redirect server an OAuth desktop/CLI client is REQUIRED to use
+    # (RFC 8252 section 7.3: http on 127.0.0.1 is the native-app redirect).
+    # Here a server that listens on a loopback address is not reported.
+    patterns:
+      - pattern-inside: |
+          $HTTP = require($MOD)
+          ...
+      - metavariable-regex:
+          metavariable: $MOD
+          regex: ^['"](node:)?http['"]$
+      - pattern: $HTTP.createServer(...)
+      - pattern-not-inside: |
+          $S = $HTTP.createServer(...);
+          ...
+          $S.listen($PORT, "=~/^(127\.0\.0\.1|localhost|::1)$/", ...);
+      - pattern-not-inside: |
+          $S = $HTTP.createServer(...);
+          ...
+          $S.listen({..., host: "=~/^(127\.0\.0\.1|localhost|::1)$/", ...}, ...);
+      - pattern-not-inside: '$HTTP.createServer(...).listen($PORT, "=~/^(127\.0\.0\.1|localhost|::1)$/", ...)'

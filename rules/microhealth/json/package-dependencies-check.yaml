@@ -13,10 +13,20 @@
 # an exact version (prerelease and build included), file:/link:/workspace:/
 # portal: paths, an npm: alias to an exact version, or an http(s) .tgz /
 # .tar.gz tarball URL (the lockfile pins its integrity).
+# Change (TueriDev): nor on a caret or tilde range of a full version (^1.2.3,
+# ~4.0.0, npm:x@^4.2.3). That is the spec every package manager writes by
+# default, it cannot cross a major version, and what is installed is the one
+# version the committed lockfile records with its integrity hash -- the
+# remedy this rule's own message names. TueriDev's rules REQUIRE caret ranges
+# with pnpm --frozen-lockfile, so all 95 of its dependencies were reported
+# and none could be "fixed" without breaking that rule. Open ranges (>=, ||,
+# hyphen), wildcards, partial versions, dist-tags and unpinned git specs --
+# which a lockfile refresh can move to anything -- are still reported.
 rules:
 - id: json.npm.package-dependencies-check
   patterns:
   - pattern-regex: '"[^"\n]+"\s*:\s*"(?!(?:file|link|workspace|portal):)(?!https?://[^"#\s]+\.(?:tgz|tar\.gz)")(?:[^"]*(?:[\^~<>*]|\|\||\s-\s)[^"]*|(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?(?:[xX]|\d+\.[xX](?:\.[\dxX]+)?|\d+\.\d+\.[xX])|(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?\d+(?:\.\d+)?|(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?[A-Za-z][\w.\-]*||(?:git(?:\+(?:ssh|https?|file))?://|git@|github:|gitlab:|bitbucket:|gist:)[^"#]*|https?://[^"#]*\.git|[\w.\-]+/[\w.\-]+)"'
+  - pattern-not-regex: '"[^"\n]+"\s*:\s*"(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?[\^~]\d+\.\d+\.\d+(?:-[0-9A-Za-z.\-]+)?(?:\+[0-9A-Za-z.\-]+)?"'
   - pattern-either:
     - pattern-inside: |
         "dependencies": {
@@ -41,7 +51,7 @@ rules:
   paths:
     include:
     - '*package.json'
-  message: Package dependencies with variant versions may lead to dependency hijack and confusion attacks. Better to specify an exact version or use package-lock.json for a specific version of the package.
+  message: Package dependencies with variant versions may lead to dependency hijack and confusion attacks. Better to specify an exact version, or a caret/tilde range of a full version pinned by a committed lockfile.
   languages:
   - json
   metadata:

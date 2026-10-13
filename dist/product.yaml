@@ -1,5 +1,5 @@
 # sast-rules bundle `product` — built by scripts/build.py; do not edit.
-# 290 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
+# 296 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
 # Licenses of the rules in this bundle: Apache-2.0, MIT.
 # Each rule's own license is its metadata.mh_license.
 # MODIFIED from the upstream rules (MicroHealth, LLC): each rule's id is
@@ -5857,139 +5857,6 @@ rules:
     mh_source: gitlab
     mh_upstream_id: javascript_eval_rule-eval-with-expression
     mh_license: MIT
-- id: mh.gitlab.javascript_pathtraversal_rule-non-literal-fs-filename
-  languages:
-  - typescript
-  - javascript
-  patterns:
-  - pattern-either:
-    - pattern-inside: 'import $MOD from $IMP
-
-        ...
-
-        '
-    - pattern-inside: '$MOD = require($IMP)
-
-        ...
-
-        '
-  - metavariable-comparison:
-      metavariable: $IMP
-      comparison: $IMP in ['fs', 'node:fs', 'fs/promises', 'node:fs/promises', 'fs-extra']
-  - pattern-not: $MOD.appendFile("...", ...)
-  - pattern-not: $MOD.appendFileSync("...", ...)
-  - pattern-not: $MOD.chmod("...", ...)
-  - pattern-not: $MOD.chmodSync("...", ...)
-  - pattern-not: $MOD.chown("...", ...)
-  - pattern-not: $MOD.chownSync("...", ...)
-  - pattern-not: $MOD.createReadStream("...", ...)
-  - pattern-not: $MOD.createWriteStream("...", ...)
-  - pattern-not: $MOD.exists("...", ...)
-  - pattern-not: $MOD.existsSync("...", ...)
-  - pattern-not: $MOD.lchmod("...", ...)
-  - pattern-not: $MOD.lchmodSync("...", ...)
-  - pattern-not: $MOD.lchown("...", ...)
-  - pattern-not: $MOD.lchownSync("...", ...)
-  - pattern-not: $MOD.link("...", "...", ...)
-  - pattern-not: $MOD.linkSync("...", "...", ...)
-  - pattern-not: $MOD.lstat("...", ...)
-  - pattern-not: $MOD.lstatSync("...", ...)
-  - pattern-not: $MOD.mkdir("...", ...)
-  - pattern-not: $MOD.mkdirSync("...", ...)
-  - pattern-not: $MOD.open("...", ...)
-  - pattern-not: $MOD.openSync("...", ...)
-  - pattern-not: $MOD.readdir("...", ...)
-  - pattern-not: $MOD.readdirSync("...", ...)
-  - pattern-not: $MOD.readFile("...", ...)
-  - pattern-not: $MOD.readFileSync("...", ...)
-  - pattern-not: $MOD.readlink("...", ...)
-  - pattern-not: $MOD.readlinkSync("...", ...)
-  - pattern-not: $MOD.realpath("...", ...)
-  - pattern-not: $MOD.realpathSync("...", ...)
-  - pattern-not: $MOD.rename("...", "...", ...)
-  - pattern-not: $MOD.renameSync("...", "...", ...)
-  - pattern-not: $MOD.rmdir("...", ...)
-  - pattern-not: $MOD.rmdirSync("...", ...)
-  - pattern-not: $MOD.stat("...", ...)
-  - pattern-not: $MOD.statSync("...", ...)
-  - pattern-not: $MOD.symlink("...", "...", ...)
-  - pattern-not: $MOD.symlinkSync("...", "...", ...)
-  - pattern-not: $MOD.truncate("...", ...)
-  - pattern-not: $MOD.truncateSync("...", ...)
-  - pattern-not: $MOD.unlink("...", ...)
-  - pattern-not: $MOD.unlinkSync("...", ...)
-  - pattern-not: $MOD.unwatchFile("...", ...)
-  - pattern-not: $MOD.utimes("...", ...)
-  - pattern-not: $MOD.utimesSync("...", ...)
-  - pattern-not: $MOD.watch("...", ...)
-  - pattern-not: $MOD.watchFile("...", ...)
-  - pattern-not: $MOD.writeFile("...", ...)
-  - pattern-not: $MOD.writeFileSync("...", ...)
-  - pattern-either:
-    - pattern: $MOD.appendFile(...)
-    - pattern: $MOD.appendFileSync(...)
-    - pattern: $MOD.chmod(...)
-    - pattern: $MOD.chmodSync(...)
-    - pattern: $MOD.chown(...)
-    - pattern: $MOD.chownSync(...)
-    - pattern: $MOD.createReadStream(...)
-    - pattern: $MOD.createWriteStream(...)
-    - pattern: $MOD.exists(...)
-    - pattern: $MOD.existsSync(...)
-    - pattern: $MOD.lchmod(...)
-    - pattern: $MOD.lchmodSync(...)
-    - pattern: $MOD.lchown(...)
-    - pattern: $MOD.lchownSync(...)
-    - pattern: $MOD.link(...)
-    - pattern: $MOD.linkSync(...)
-    - pattern: $MOD.lstat(...)
-    - pattern: $MOD.lstatSync(...)
-    - pattern: $MOD.mkdir(...)
-    - pattern: $MOD.mkdirSync(...)
-    - pattern: $MOD.open(...)
-    - pattern: $MOD.openSync(...)
-    - pattern: $MOD.readdir(...)
-    - pattern: $MOD.readdirSync(...)
-    - pattern: $MOD.readFile(...)
-    - pattern: $MOD.readFileSync(...)
-    - pattern: $MOD.readlink(...)
-    - pattern: $MOD.readlinkSync(...)
-    - pattern: $MOD.realpath(...)
-    - pattern: $MOD.realpathSync(...)
-    - pattern: $MOD.rename(...)
-    - pattern: $MOD.renameSync(...)
-    - pattern: $MOD.rmdir(...)
-    - pattern: $MOD.rmdirSync(...)
-    - pattern: $MOD.stat(...)
-    - pattern: $MOD.statSync(...)
-    - pattern: $MOD.symlink(...)
-    - pattern: $MOD.symlinkSync(...)
-    - pattern: $MOD.truncate(...)
-    - pattern: $MOD.truncateSync(...)
-    - pattern: $MOD.unlink(...)
-    - pattern: $MOD.unlinkSync(...)
-    - pattern: $MOD.unwatchFile(...)
-    - pattern: $MOD.utimes(...)
-    - pattern: $MOD.utimesSync(...)
-    - pattern: $MOD.watch(...)
-    - pattern: $MOD.watchFile(...)
-    - pattern: $MOD.writeFile(...)
-    - pattern: $MOD.writeFileSync(...)
-  message: "The application dynamically constructs file or path information. If the path\ninformation comes from user-supplied input, it could be abused to read sensitive files,\naccess other users' data, or aid in exploitation to gain further system access.\n\nUser input should never be used in constructing paths or files for interacting\nwith the filesystem. This includes filenames supplied by user uploads or downloads.\nIf possible, consider hashing user input or using unique values and\nuse `path.normalize` to resolve and validate the path information\nprior to processing any file functionality.\n\nExample using `path.normalize` and not allowing direct user input:\n```\n// User input, saved only as a reference\n// id is a randomly generated UUID to be used as the filename\nconst userData = {userFilename: userSuppliedFilename, id: crypto.randomUUID()};\n// Restrict all file processing to this directory only\nconst basePath = '/app/restricted/';\n\n// Create the full path, but only use our random generated id as the filename\nconst joinedPath = path.join(basePath, userData.id);\n// Normalize path, removing any '..'\nconst fullPath = path.normalize(joinedPath);\n// Verify the fullPath is contained within our basePath\nif (!fullPath.startsWith(basePath)) {\n    console.log(\"Invalid path specified!\");\n}\n// Process / work with file\n// ...\n```\n\nFor more information on path traversal issues see OWASP:\nhttps://owasp.org/www-community/attacks/Path_Traversal\n"
-  metadata:
-    shortDescription: Improper limitation of a pathname to a restricted directory ('Path Traversal')
-    cwe: CWE-22
-    owasp:
-    - A5:2017-Broken Access Control
-    - A01:2021-Broken Access Control
-    - A01:2025-Broken Access Control
-    security-severity: '5.5'
-    category: security
-    mh_upstream_security_severity: Medium
-    mh_source: gitlab
-    mh_upstream_id: javascript_pathtraversal_rule-non-literal-fs-filename
-    mh_license: MIT
-  severity: WARNING
 - id: mh.gitlab.javascript_random_rule-pseudo-random-bytes
   languages:
   - javascript
@@ -13255,6 +13122,7 @@ rules:
   patterns:
   - pattern-regex: \b(?:A3T[A-Z0-9]|AKIA|ABIA|ACCA|AGPA|AIDA|AIPA|ANPA|ANVA|AROA|APKA|ASCA|ASIA)[A-Z0-9]{16}\b
   - pattern-not-regex: \b(?:A3T[A-Z0-9]|AKIA|ABIA|ACCA|AGPA|AIDA|AIPA|ANPA|ANVA|AROA|APKA|ASCA|ASIA)[A-Z0-9]{9}EXAMPLE\b
+  - pattern-not-regex: (?m)^.*\bgitleaks:allow\b.*$
 - id: mh.microhealth.generic.gcp-service-account-key
   languages:
   - regex
@@ -13277,9 +13145,11 @@ rules:
     mh_source: microhealth
     mh_upstream_id: generic.gcp-service-account-key
     mh_license: MIT
-  pattern-either:
-  - pattern-regex: '["'']type["'']\s*:\s*["'']service_account["''][\s\S]{0,4000}?["'']private_key["'']\s*:\s*["'']-----BEGIN (?:RSA )?PRIVATE KEY-----(?:\\n|\n)[A-Za-z0-9+/]{40,}'
-  - pattern-regex: '["'']private_key["'']\s*:\s*["'']-----BEGIN (?:RSA )?PRIVATE KEY-----(?:\\n|\n)[A-Za-z0-9+/]{40,}[\s\S]{0,4000}?["'']type["'']\s*:\s*["'']service_account["'']'
+  patterns:
+  - pattern-either:
+    - pattern-regex: '["'']type["'']\s*:\s*["'']service_account["''][\s\S]{0,4000}?["'']private_key["'']\s*:\s*["'']-----BEGIN (?:RSA )?PRIVATE KEY-----(?:\\n|\n)[A-Za-z0-9+/]{40,}'
+    - pattern-regex: '["'']private_key["'']\s*:\s*["'']-----BEGIN (?:RSA )?PRIVATE KEY-----(?:\\n|\n)[A-Za-z0-9+/]{40,}[\s\S]{0,4000}?["'']type["'']\s*:\s*["'']service_account["'']'
+  - pattern-not-regex: (?m)^.*\bgitleaks:allow\b.*$
 - id: mh.microhealth.generic.jwt-token
   languages:
   - regex
@@ -13305,6 +13175,7 @@ rules:
   patterns:
   - pattern-regex: \beyJ[A-Za-z0-9_-]{14,}\.[A-Za-z0-9_-]{13,}(?:\.[A-Za-z0-9_-]+)?
   - pattern-not-regex: \beyJ[A-Za-z0-9_-]*\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6[A-Za-z0-9_-]{28}Iiwicm9sZSI6ImFub24i[A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]+)?
+  - pattern-not-regex: (?m)^.*\bgitleaks:allow\b.*$
 - id: mh.microhealth.go.decompression-without-limit
   languages:
   - go
@@ -13486,6 +13357,163 @@ rules:
         - pattern-inside: unix.$SYSCALL(..., uintptr(unsafe.Pointer($X)), ...)
         - pattern-inside: windows.$SYSCALL(..., uintptr(unsafe.Pointer($X)), ...)
         - pattern-inside: $PROC.Call(..., uintptr(unsafe.Pointer($X)), ...)
+- id: mh.microhealth.javascript.child-process-shell-command
+  languages:
+  - javascript
+  - typescript
+  severity: ERROR
+  message: 'This command line is run through a shell and is not a constant. Any part of it that comes from input -- a file name, a branch, a model''s output -- can carry `;`, `|`, `$(...)` or a quote and run a second command (OS command injection). Run the program directly with an argument array (execFile / spawn without `shell: true`), so every argument reaches it exactly as given.'
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - node.js
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-78: Improper Neutralization of Special Elements used in an OS Command (''OS Command Injection'')'
+    owasp:
+    - A03:2021 - Injection
+    references:
+    - https://nodejs.org/api/child_process.html#spawning-bat-and-cmd-files-on-windows
+    - https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html
+    mh_source: microhealth
+    mh_upstream_id: javascript.child-process-shell-command
+    mh_license: MIT
+  patterns:
+  - pattern-either:
+    - pattern-inside: '$CP = require(''child_process'')
+
+        ...
+
+        '
+    - pattern-inside: '$CP = require(''node:child_process'')
+
+        ...
+
+        '
+    - pattern-inside: 'import * as $CP from ''child_process''
+
+        ...
+
+        '
+    - pattern-inside: 'import $CP from ''child_process''
+
+        ...
+
+        '
+    - pattern-inside: 'import * as $CP from ''node:child_process''
+
+        ...
+
+        '
+    - pattern-inside: 'import $CP from ''node:child_process''
+
+        ...
+
+        '
+  - pattern-either:
+    - patterns:
+      - pattern-either:
+        - pattern: $CP.exec($CMD, ...)
+        - pattern: $CP.execSync($CMD, ...)
+      - pattern-not: $CP.$EXEC("...", ...)
+    - patterns:
+      - pattern-either:
+        - pattern: '$CP.$RUN($CMD, $ARGS, {..., shell: $SHELL, ...}, ...)'
+        - pattern: '$CP.$RUN($CMD, {..., shell: $SHELL, ...}, ...)'
+      - metavariable-regex:
+          metavariable: $RUN
+          regex: ^(spawn|spawnSync|execFile|execFileSync)$
+      - metavariable-pattern:
+          metavariable: $SHELL
+          patterns:
+          - pattern: $V
+          - pattern-not: 'false'
+          - pattern-not: undefined
+      - pattern-not: $CP.$RUN("...", ["...", ...], ...)
+      - pattern-not: $CP.$RUN("...", {...}, ...)
+- id: mh.microhealth.javascript.dynamic-method-from-request
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  message: A value from the HTTP request (or a WebSocket message) picks which method or function is called (`obj[name](...)`). A client can name one you did not mean to expose -- `constructor`, `__proto__`, `toString`, or any other method on the object -- and call it with arguments it chooses. Look the name up in an allow-list (a Map, or a check with Object.hasOwn on a plain object you built for this) before calling it.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - javascript
+    - node.js
+    confidence: MEDIUM
+    likelihood: LOW
+    impact: HIGH
+    cwe:
+    - 'CWE-94: Improper Control of Generation of Code (''Code Injection'')'
+    owasp:
+    - A03:2021 - Injection
+    references:
+    - https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html
+    mh_source: microhealth
+    mh_upstream_id: javascript.dynamic-method-from-request
+    mh_license: MIT
+  mode: taint
+  pattern-sources:
+  - patterns:
+    - pattern: $REQ.$GETTER(...)
+    - metavariable-regex:
+        metavariable: $REQ
+        regex: ^(req|request|ctx|ctx\.request)$
+    - metavariable-regex:
+        metavariable: $GETTER
+        regex: ^(get|header|param)$
+  - patterns:
+    - pattern: $REQ.$FIELD
+    - metavariable-regex:
+        metavariable: $REQ
+        regex: ^(req|request|ctx|ctx\.request)$
+    - metavariable-regex:
+        metavariable: $FIELD
+        regex: ^(query|params|body|headers|cookies|signedCookies|url|originalUrl|path|files|file)$
+  - patterns:
+    - pattern: $EVENT.$FIELD
+    - metavariable-regex:
+        metavariable: $EVENT
+        regex: ^event$
+    - metavariable-regex:
+        metavariable: $FIELD
+        regex: ^(body|queryStringParameters|multiValueQueryStringParameters|pathParameters)$
+  - patterns:
+    - pattern-either:
+      - pattern-inside: $WS.on("message", function ($DATA, ...) {...})
+      - pattern-inside: $WS.on("message", ($DATA, ...) => {...})
+      - pattern-inside: $WS.on("message", async ($DATA, ...) => {...})
+    - focus-metavariable: $DATA
+    - pattern: $DATA
+  pattern-sanitizers:
+  - by-side-effect: true
+    patterns:
+    - pattern-either:
+      - pattern: Object.hasOwn($OBJ, $X)
+      - pattern: $OBJ.hasOwnProperty($X)
+      - pattern: $SET.has($X)
+      - pattern: $LIST.includes($X)
+    - focus-metavariable: $X
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern: $OBJ[$KEY](...)
+      - pattern: '$FN = $OBJ[$KEY];
+
+          ...
+
+          $FN(...);
+
+          '
+    - focus-metavariable: $KEY
 - id: mh.microhealth.javascript.express-sendfile-request-path
   languages:
   - javascript
@@ -13605,6 +13633,87 @@ rules:
       - pattern: $W.document.writeln($SINK, ...)
       - pattern: $RANGE.createContextualFragment($SINK)
     - focus-metavariable: $SINK
+- id: mh.microhealth.javascript.http-server-non-loopback
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  message: This server speaks plain HTTP and is not bound to the loopback address, so anything it sends or receives -- cookies, tokens, form data -- crosses the network unencrypted and can be read or changed on the way. Serve it with https.createServer (or behind a TLS-terminating proxy), or, for a local-only callback, listen on 127.0.0.1.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - node.js
+    confidence: LOW
+    likelihood: LOW
+    impact: MEDIUM
+    cwe:
+    - 'CWE-319: Cleartext Transmission of Sensitive Information'
+    owasp:
+    - A02:2021 - Cryptographic Failures
+    references:
+    - https://datatracker.ietf.org/doc/html/rfc8252#section-7.3
+    mh_source: microhealth
+    mh_upstream_id: javascript.http-server-non-loopback
+    mh_license: MIT
+  patterns:
+  - pattern-inside: '$HTTP = require($MOD)
+
+      ...
+
+      '
+  - metavariable-regex:
+      metavariable: $MOD
+      regex: ^['"](node:)?http['"]$
+  - pattern: $HTTP.createServer(...)
+  - pattern-not-inside: '$S = $HTTP.createServer(...);
+
+      ...
+
+      $S.listen($PORT, "=~/^(127\.0\.0\.1|localhost|::1)$/", ...);
+
+      '
+  - pattern-not-inside: '$S = $HTTP.createServer(...);
+
+      ...
+
+      $S.listen({..., host: "=~/^(127\.0\.0\.1|localhost|::1)$/", ...}, ...);
+
+      '
+  - pattern-not-inside: $HTTP.createServer(...).listen($PORT, "=~/^(127\.0\.0\.1|localhost|::1)$/", ...)
+- id: mh.microhealth.javascript.incomplete-escape-replace
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  message: '`$STR.replace($CHAR, $REPL)` escapes only the FIRST $CHAR: with a string pattern, replace() stops after one match, so every later occurrence is left as it was and the "escaped" text can still break out of its HTML, attribute or string context. Use replaceAll(), a regular expression with the g flag, or an escaping library.'
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - javascript
+    confidence: HIGH
+    likelihood: MEDIUM
+    impact: MEDIUM
+    cwe:
+    - 'CWE-116: Improper Encoding or Escaping of Output'
+    owasp:
+    - A03:2021 - Injection
+    references:
+    - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace
+    mh_source: microhealth
+    mh_upstream_id: javascript.incomplete-escape-replace
+    mh_license: MIT
+  patterns:
+  - pattern: '$STR.replace(($CHAR: string), ($REPL: string))'
+  - metavariable-regex:
+      metavariable: $CHAR
+      regex: ^["'`](<|>|&|\\"|"|'|\\'|\\\\)["'`]$
+  - metavariable-regex:
+      metavariable: $REPL
+      regex: ^["'`](&[#\w]+;|\\\\.*|\\.+)["'`]$
 - id: mh.microhealth.javascript.insecure-random-for-secret
   languages:
   - javascript
@@ -13685,6 +13794,36 @@ rules:
   - metavariable-regex:
       metavariable: $URL
       regex: (?i)^ws://(?!(?:localhost|127(?:\.\d{1,3}){3}|\[::1\])(?:[:/?#]|$))
+- id: mh.microhealth.javascript.js-yaml-unsafe-schema
+  languages:
+  - javascript
+  - typescript
+  severity: ERROR
+  message: YAML is loaded with a schema that builds JavaScript functions and regular expressions (`!!js/function`, `!!js/regexp`). A document from outside the program can then define code that runs when it is used. Load with the default schema (js-yaml 4's load(), or v3's safeLoad()).
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - js-yaml
+    confidence: HIGH
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-502: Deserialization of Untrusted Data'
+    owasp:
+    - A08:2021 - Software and Data Integrity Failures
+    references:
+    - https://github.com/nodeca/js-yaml/blob/master/migrate_v3_to_v4.md
+    mh_source: microhealth
+    mh_upstream_id: javascript.js-yaml-unsafe-schema
+    mh_license: MIT
+  pattern-either:
+  - pattern: $YAML.DEFAULT_FULL_SCHEMA
+  - pattern: require("js-yaml-js-types")
+  - pattern: import $T from "js-yaml-js-types"
+  - pattern: import * as $T from "js-yaml-js-types"
+  - pattern: import {...} from "js-yaml-js-types"
 - id: mh.microhealth.javascript.json-parse-into-object-assign
   languages:
   - javascript
@@ -13799,6 +13938,108 @@ rules:
         metavariable: $U
         regex: ^(?!`https?://[^/`$]+/|`/[^/`$]|["']https?://[^/"']+/|["']/[^/"'])
     - focus-metavariable: $U
+- id: mh.microhealth.javascript.path-traversal-from-request
+  languages:
+  - javascript
+  - typescript
+  severity: ERROR
+  message: A value from the HTTP request (or a WebSocket message) reaches a file system path. A client can send `../` segments or an absolute path and read, overwrite or delete a file outside the folder this handler means to serve. Resolve the path against a fixed root and refuse it unless it is still inside that root (path.resolve + path.relative, or a helper such as isInside/safeJoin), or keep only path.basename() of it.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - node.js
+    - express
+    - koa
+    - fastify
+    - next.js
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-22: Improper Limitation of a Pathname to a Restricted Directory (''Path Traversal'')'
+    owasp:
+    - A01:2021 - Broken Access Control
+    references:
+    - https://owasp.org/www-community/attacks/Path_Traversal
+    - https://nodejs.org/api/path.html#pathrelativefrom-to
+    mh_source: microhealth
+    mh_upstream_id: javascript.path-traversal-from-request
+    mh_license: MIT
+  mode: taint
+  pattern-sources:
+  - patterns:
+    - pattern: $REQ.$GETTER(...)
+    - metavariable-regex:
+        metavariable: $REQ
+        regex: ^(req|request|ctx|ctx\.request)$
+    - metavariable-regex:
+        metavariable: $GETTER
+        regex: ^(get|header|param)$
+  - patterns:
+    - pattern: $REQ.$FIELD
+    - metavariable-regex:
+        metavariable: $REQ
+        regex: ^(req|request|ctx|ctx\.request)$
+    - metavariable-regex:
+        metavariable: $FIELD
+        regex: ^(query|params|body|headers|cookies|signedCookies|url|originalUrl|path|files|file)$
+  - patterns:
+    - pattern: $EVENT.$FIELD
+    - metavariable-regex:
+        metavariable: $EVENT
+        regex: ^event$
+    - metavariable-regex:
+        metavariable: $FIELD
+        regex: ^(body|queryStringParameters|multiValueQueryStringParameters|pathParameters)$
+  - patterns:
+    - pattern-either:
+      - pattern-inside: $WS.on("message", function ($DATA, ...) {...})
+      - pattern-inside: $WS.on("message", ($DATA, ...) => {...})
+      - pattern-inside: $WS.on("message", async ($DATA, ...) => {...})
+    - focus-metavariable: $DATA
+    - pattern: $DATA
+  pattern-sanitizers:
+  - pattern: path.basename(...)
+  - pattern: $P.basename(...)
+  - by-side-effect: true
+    patterns:
+    - pattern: $F(..., $X)
+    - metavariable-regex:
+        metavariable: $F
+        regex: (?i)(.*\.)?(is|assert|ensure)(Inside|Contained|Within|SafePath)\w*$
+    - focus-metavariable: $X
+  - patterns:
+    - pattern: $F(...)
+    - metavariable-regex:
+        metavariable: $F
+        regex: (?i)(.*\.)?(safeJoin|resolveInside|sanitizeFilename|sanitizePath)$
+  pattern-sinks:
+  - patterns:
+    - pattern: $FS.$METHOD($PATH, ...)
+    - metavariable-regex:
+        metavariable: $FS
+        regex: ^(fs|fsp|fse|fs\.promises|fsPromises|promises|fsExtra)$
+    - metavariable-regex:
+        metavariable: $METHOD
+        regex: ^(readFile|readFileSync|writeFile|writeFileSync|appendFile|appendFileSync|createReadStream|createWriteStream|readdir|readdirSync|opendir|opendirSync|unlink|unlinkSync|rm|rmSync|rmdir|rmdirSync|mkdir|mkdirSync|stat|statSync|lstat|lstatSync|open|openSync|access|accessSync|exists|existsSync|copyFile|copyFileSync|rename|renameSync|cp|cpSync|readlink|readlinkSync|realpath|realpathSync|chmod|chmodSync|chown|chownSync|symlink|symlinkSync|truncate|truncateSync|outputFile|readJson|readJSON|writeJson|writeJSON|remove|removeSync|move|copy)$
+    - focus-metavariable: $PATH
+  - patterns:
+    - pattern: $FS.$METHOD($OTHER, $PATH, ...)
+    - metavariable-regex:
+        metavariable: $FS
+        regex: ^(fs|fsp|fse|fs\.promises|fsPromises|promises|fsExtra)$
+    - metavariable-regex:
+        metavariable: $METHOD
+        regex: ^(copyFile|copyFileSync|rename|renameSync|cp|cpSync|symlink|symlinkSync|move|copy)$
+    - focus-metavariable: $PATH
+  - patterns:
+    - pattern-either:
+      - pattern: $RES.sendFile($PATH, ...)
+      - pattern: $RES.download($PATH, ...)
+      - pattern: $RES.attachment($PATH)
+    - focus-metavariable: $PATH
 - id: mh.microhealth.javascript.react-unsanitized-inner-html
   languages:
   - javascript
@@ -13945,6 +14186,66 @@ rules:
       ...
 
       '
+  - pattern-not-inside: '$V = React.useMemo(() => DOMPurify.sanitize(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => sanitizeSvg(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => sanitizeHtml(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => sanitizeMarkup(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => $C ? DOMPurify.sanitize(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => $C ? sanitizeSvg(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => $C ? sanitizeHtml(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => $C ? sanitizeMarkup(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => { ... return DOMPurify.sanitize(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => { ... return sanitizeSvg(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => { ... return sanitizeHtml(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => { ... return sanitizeMarkup(...); }, ...);
+
+      ...
+
+      '
 - id: mh.microhealth.javascript.regexp-from-untrusted-input
   languages:
   - javascript
@@ -14040,7 +14341,10 @@ rules:
     - pattern: $O !== $S
   - metavariable-regex:
       metavariable: $O
-      regex: (?i)^(?!(?:[\w.]*\.)?(?:password|passwd|pass|secret|client_?secret|token|access_?token|auth_?token|api_?key|apikey|api_?secret|hmac|signature|service_?role_?key|service_?key)$)
+      regex: (?i)^(?!(?![\w$?.\[\]'"-]*(?:provided|given|input|incoming|received|supplied|request|req\b|header|query|body|param|cookie))[\w$?.]*(?:password|passwd|pass|secret|token|api_?key|apikey|api_?secret|hmac|signature|hash|service_?role_?key|service_?key)$)
+  - metavariable-regex:
+      metavariable: $O
+      regex: (?i)^(?!(?:[\w$?.]*\.)?(?:confirm\w*|\w*confirm(?:ation)?\w*|again|\w*again|repeat\w*|\w*repeat(?:ed)?|re_?type\w*|\w*retyped|re_?enter\w*|\w*reentered)$)
   - metavariable-regex:
       metavariable: $S
       regex: (?i)^(\w*\.)?(password|passwd|pass|secret|client_?secret|token|access_?token|auth_?token|api_?key|apikey|api_?secret|hmac|signature|service_?role_?key|service_?key)$
@@ -14196,6 +14500,45 @@ rules:
         metavariable: $U
         regex: ^(?!`https?://[^/`$]+/|["']https?://[^/"']+/)
     - focus-metavariable: $U
+- id: mh.microhealth.json.npm-js-yaml-v3
+  languages:
+  - json
+  severity: WARNING
+  message: js-yaml 3 is installed. Its load() uses the full schema by default and builds JavaScript functions from `!!js/function` in the document, so loading YAML from outside the program can run its code. Upgrade to js-yaml 4, where load() is safe (safeLoad was removed; call load()).
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - js-yaml
+    - npm
+    confidence: HIGH
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-502: Deserialization of Untrusted Data'
+    owasp:
+    - A08:2021 - Software and Data Integrity Failures
+    references:
+    - https://github.com/nodeca/js-yaml/blob/master/migrate_v3_to_v4.md
+    mh_source: microhealth
+    mh_upstream_id: json.npm-js-yaml-v3
+    mh_license: MIT
+  patterns:
+  - pattern-either:
+    - pattern-inside: '"dependencies": {...}
+
+        '
+    - pattern-inside: '"devDependencies": {...}
+
+        '
+    - pattern-inside: '"optionalDependencies": {...}
+
+        '
+  - pattern-regex: '"js-yaml"\s*:\s*"[\^~>=<\s]*[0-3](\.[\dx*]+)*(\s|")'
+  paths:
+    include:
+    - '*package.json'
 - id: mh.microhealth.nginx.host-header-in-response
   languages:
   - regex

@@ -1,0 +1,33 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.js-yaml-unsafe-schema
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      YAML is loaded with a schema that builds JavaScript functions and regular
+      expressions (`!!js/function`, `!!js/regexp`). A document from outside
+      the program can then define code that runs when it is used. Load with
+      the default schema (js-yaml 4's load(), or v3's safeLoad()).
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [js-yaml]
+      confidence: HIGH
+      likelihood: MEDIUM
+      impact: HIGH
+      cwe: ["CWE-502: Deserialization of Untrusted Data"]
+      owasp: ["A08:2021 - Software and Data Integrity Failures"]
+      references:
+        - https://github.com/nodeca/js-yaml/blob/master/migrate_v3_to_v4.md
+    # With json.npm-js-yaml-v3, replaces
+    # mh.gitlab.rules_lgpl_javascript_eval_rule-yaml-deserialize, which reports
+    # every js-yaml load(). Since js-yaml 4 (2021) load() uses the safe default
+    # schema and cannot create functions; the danger is a v3 install, whose
+    # load() can (json.npm-js-yaml-v3 reports that), or a schema that adds
+    # the JavaScript types back (this rule).
+    pattern-either:
+      - pattern: $YAML.DEFAULT_FULL_SCHEMA
+      - pattern: require("js-yaml-js-types")
+      - pattern: import $T from "js-yaml-js-types"
+      - pattern: import * as $T from "js-yaml-js-types"
+      - pattern: import {...} from "js-yaml-js-types"

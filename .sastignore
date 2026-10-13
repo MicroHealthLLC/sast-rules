@@ -48,3 +48,8 @@ rules/microhealth/go/decompression-without-limit.go
 rules/microhealth/go/sql-built-from-strings.go
 rules/microhealth/python/flask-returned-format-string.py
 rules/microhealth/dockerfile/last-user-root.dockerfile
+# Rule-test fixtures: deliberate vulnerable code (`ruleid:` lines) that
+# `opengrep scan --test` checks each MicroHealth rule against; never executed.
+rules/microhealth/javascript/*.ts
+rules/microhealth/javascript/*.js
+rules/microhealth/json/*.json

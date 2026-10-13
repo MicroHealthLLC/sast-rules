@@ -28,3 +28,43 @@ export function split(text: string) {
   if (apiKey === null) return raw;
   return raw;
 }
+
+// A generation counter named `token`, compared with the current one.
+let activeIndexToken = 0;
+export function onBatch(token: number) {
+  // ok: javascript.secret-compare-not-constant-time
+  if (token !== activeIndexToken) return;
+  activeIndexToken = token;
+}
+
+declare const inFlight: { token: string } | null;
+export function reuse(token: string) {
+  // ok: javascript.secret-compare-not-constant-time
+  return inFlight?.token === token;
+}
+
+declare const configuredSignature: string;
+export function unchanged(signature: string) {
+  // ok: javascript.secret-compare-not-constant-time
+  return signature === configuredSignature;
+}
+
+export function mismatch(confirm: string, password: string) {
+  // ok: javascript.secret-compare-not-constant-time
+  return confirm !== password;
+}
+
+declare const providedToken: string;
+export function verify(token: string, req: { headers: Record<string, string> }) {
+  // ruleid: javascript.secret-compare-not-constant-time
+  if (providedToken === token) return true;
+  // ruleid: javascript.secret-compare-not-constant-time
+  return req.headers.authorization === token;
+}
+
+export function prompted(password: string, again: string, passwordRepeat: string) {
+  // ok: javascript.secret-compare-not-constant-time
+  if (again !== password) return false;
+  // ok: javascript.secret-compare-not-constant-time
+  return passwordRepeat === password;
+}

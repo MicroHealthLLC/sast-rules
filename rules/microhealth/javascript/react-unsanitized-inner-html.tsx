@@ -1,5 +1,5 @@
 // Rule-test fixture for javascript.react-unsanitized-inner-html; never executed.
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import DOMPurify from "dompurify";
 
 declare function sanitizeSvg(s: string): string;
@@ -65,3 +65,21 @@ export function ChartStyle({ id, colors }: { id: string; colors: [string, string
 }
 
 declare function renderMarkdown(s: string): string;
+
+export function ShikiBlock({ html }: { html: string | null }) {
+  const safeHtml = React.useMemo(() => html ? DOMPurify.sanitize(html) : null, [html]);
+  // ok: javascript.react-unsanitized-inner-html
+  return safeHtml ? <div className="shiki" dangerouslySetInnerHTML={{ __html: safeHtml }} /> : null;
+}
+
+export function SvgBlock({ svg }: { svg: string }) {
+  const clean = React.useMemo(() => DOMPurify.sanitize(svg), [svg]);
+  // ok: javascript.react-unsanitized-inner-html
+  return <div dangerouslySetInnerHTML={{ __html: clean }} />;
+}
+
+export function RawMemo({ md }: { md: string }) {
+  const html = React.useMemo(() => renderMarkdown(md), [md]);
+  // ruleid: javascript.react-unsanitized-inner-html
+  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+}

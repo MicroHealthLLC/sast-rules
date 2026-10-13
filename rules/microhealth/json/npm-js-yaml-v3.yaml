@@ -1,0 +1,35 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: json.npm-js-yaml-v3
+    languages: [json]
+    severity: WARNING
+    message: >-
+      js-yaml 3 is installed. Its load() uses the full schema by default and
+      builds JavaScript functions from `!!js/function` in the document, so
+      loading YAML from outside the program can run its code. Upgrade to
+      js-yaml 4, where load() is safe (safeLoad was removed; call load()).
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [js-yaml, npm]
+      confidence: HIGH
+      likelihood: MEDIUM
+      impact: HIGH
+      cwe: ["CWE-502: Deserialization of Untrusted Data"]
+      owasp: ["A08:2021 - Software and Data Integrity Failures"]
+      references:
+        - https://github.com/nodeca/js-yaml/blob/master/migrate_v3_to_v4.md
+    # With javascript.js-yaml-unsafe-schema, replaces
+    # mh.gitlab.rules_lgpl_javascript_eval_rule-yaml-deserialize (see that rule).
+    patterns:
+      - pattern-either:
+          - pattern-inside: |
+              "dependencies": {...}
+          - pattern-inside: |
+              "devDependencies": {...}
+          - pattern-inside: |
+              "optionalDependencies": {...}
+      - pattern-regex: '"js-yaml"\s*:\s*"[\^~>=<\s]*[0-3](\.[\dx*]+)*(\s|")'
+    paths:
+      include:
+        - '*package.json'

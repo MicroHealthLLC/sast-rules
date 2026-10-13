@@ -9,6 +9,10 @@
 # The upstream pattern-nots meant to drop those carry a trailing `;` and never
 # match, so `if (token !== null) {...}` fired. The other side ($X) must now be
 # something other than a literal.
+# Change (TueriDev): $X may not itself be a secret-named value the program
+# holds (`token !== activeIndexToken`, a generation counter; `hash ===
+# storedHash`) unless its name says it came from a request, header, query,
+# body, param, cookie or input; nor a password's confirmation field.
 rules:
 - id: javascript.njsscan.crypto.node-timing-attack
   patterns:
@@ -496,6 +500,12 @@ rules:
   - metavariable-regex:
       metavariable: $X
       regex: ^(?!(?:null|undefined|true|false|NaN|-?\d+(?:\.\d+)?|'[^']*'|"[^"]*"|`[^`$]*`)$)
+  - metavariable-regex:
+      metavariable: $X
+      regex: '(?i)^(?!(?![\w$?.\[\]''"-]*(?:provided|given|input|incoming|received|supplied|request|req\b|header|query|body|param|cookie))[\w$?.]*(?:password|passwd|pass|secret|token|api_?key|apikey|api_?secret|hmac|signature|hash|service_?role_?key|service_?key)$)'
+  - metavariable-regex:
+      metavariable: $X
+      regex: '(?i)^(?!(?:[\w$?.]*\.)?(?:confirm\w*|\w*confirm(?:ation)?\w*|again|\w*again|repeat\w*|\w*repeat(?:ed)?|re_?type\w*|\w*retyped|re_?enter\w*|\w*reentered)$)'
   message: |
     'String comparisons using ''==='', ''!=='', ''!='' and ''=='' is vulnerable to timing attacks. More info: https://snyk.io/blog/node-js-timing-attack-ccc-ctf/'
   languages:

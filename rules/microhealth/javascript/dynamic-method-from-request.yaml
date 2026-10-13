@@ -1,0 +1,78 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.dynamic-method-from-request
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      A value from the HTTP request (or a WebSocket message) picks which method
+      or function is called (`obj[name](...)`). A client can name one you did
+      not mean to expose -- `constructor`, `__proto__`, `toString`, or any
+      other method on the object -- and call it with arguments it chooses.
+      Look the name up in an allow-list (a Map, or a check with
+      Object.hasOwn on a plain object you built for this) before calling it.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [javascript, node.js]
+      confidence: MEDIUM
+      likelihood: LOW
+      impact: HIGH
+      cwe: ["CWE-94: Improper Control of Generation of Code ('Code Injection')"]
+      owasp: ["A03:2021 - Injection"]
+      references:
+        - https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html
+    # Replaces mh.opengrep.javascript.lang.security.audit.unsafe-dynamic-method,
+    # which reports every `obj[key](...)` whose key is not a literal --
+    # dispatch tables keyed by the program's own command names, toast levels,
+    # language loaders. Here the key must come from a client.
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern: $REQ.$GETTER(...)
+          - metavariable-regex:
+              metavariable: $REQ
+              regex: ^(req|request|ctx|ctx\.request)$
+          - metavariable-regex:
+              metavariable: $GETTER
+              regex: ^(get|header|param)$
+      - patterns:
+          - pattern: $REQ.$FIELD
+          - metavariable-regex:
+              metavariable: $REQ
+              regex: ^(req|request|ctx|ctx\.request)$
+          - metavariable-regex:
+              metavariable: $FIELD
+              regex: ^(query|params|body|headers|cookies|signedCookies|url|originalUrl|path|files|file)$
+      - patterns:
+          - pattern: $EVENT.$FIELD
+          - metavariable-regex:
+              metavariable: $EVENT
+              regex: ^event$
+          - metavariable-regex:
+              metavariable: $FIELD
+              regex: ^(body|queryStringParameters|multiValueQueryStringParameters|pathParameters)$
+      - patterns:
+          - pattern-either:
+              - pattern-inside: '$WS.on("message", function ($DATA, ...) {...})'
+              - pattern-inside: '$WS.on("message", ($DATA, ...) => {...})'
+              - pattern-inside: '$WS.on("message", async ($DATA, ...) => {...})'
+          - focus-metavariable: $DATA
+          - pattern: $DATA
+    pattern-sanitizers:
+      - by-side-effect: true
+        patterns:
+          - pattern-either:
+              - pattern: Object.hasOwn($OBJ, $X)
+              - pattern: $OBJ.hasOwnProperty($X)
+              - pattern: $SET.has($X)
+              - pattern: $LIST.includes($X)
+          - focus-metavariable: $X
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: $OBJ[$KEY](...)
+              - pattern: |
+                  $FN = $OBJ[$KEY];
+                  ...
+                  $FN(...);
+          - focus-metavariable: $KEY

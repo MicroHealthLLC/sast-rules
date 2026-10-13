@@ -190,6 +190,11 @@ with its reason, and a rule it narrows carries `refined`, with its reason.
   Each one needs a fixture in `tests/refine/` naming the rule's full `mh.*`
   id on `ruleid:` / `ok:` lines; `tests/refine/run.py` checks them against the
   built bundle.
+- A search rule whose one known false positive is a text shape gets an
+  `allow:` entry instead: a `not-regex` the build adds as `pattern-not-regex`
+  (a finding overlapping a match is dropped) to every rule it names, by id or
+  by an id prefix ending in `*`. The secret rules honour gitleaks' own
+  `gitleaks:allow` this way.
 - `overrides.yaml` and the other configuration files must not repeat a key:
   YAML would keep only the last, so the build refuses it.
 - A new rule goes in `rules/microhealth/<language>/<name>.yaml`, with a test

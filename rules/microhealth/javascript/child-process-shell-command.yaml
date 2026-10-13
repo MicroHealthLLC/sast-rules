@@ -1,0 +1,71 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.child-process-shell-command
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      This command line is run through a shell and is not a constant. Any part
+      of it that comes from input -- a file name, a branch, a model's output --
+      can carry `;`, `|`, `$(...)` or a quote and run a second command
+      (OS command injection). Run the program directly with an argument array
+      (execFile / spawn without `shell: true`), so every argument reaches it
+      exactly as given.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [node.js]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      cwe: ["CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"]
+      owasp: ["A03:2021 - Injection"]
+      references:
+        - https://nodejs.org/api/child_process.html#spawning-bat-and-cmd-files-on-windows
+        - https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html
+    # Replaces mh.opengrep.javascript.lang.security.detect-child-process,
+    # which reports every exec/spawn whose program comes from a function
+    # parameter -- including spawn(file, argv, { shell: false }), the form its
+    # own message recommends, where no shell exists to inject into. What makes
+    # a command injectable is the SHELL: exec/execSync always use one, and
+    # spawn/execFile use one only when `shell` is set.
+    patterns:
+      - pattern-either:
+          - pattern-inside: |
+              $CP = require('child_process')
+              ...
+          - pattern-inside: |
+              $CP = require('node:child_process')
+              ...
+          - pattern-inside: |
+              import * as $CP from 'child_process'
+              ...
+          - pattern-inside: |
+              import $CP from 'child_process'
+              ...
+          - pattern-inside: |
+              import * as $CP from 'node:child_process'
+              ...
+          - pattern-inside: |
+              import $CP from 'node:child_process'
+              ...
+      - pattern-either:
+          - patterns:
+              - pattern-either:
+                  - pattern: $CP.exec($CMD, ...)
+                  - pattern: $CP.execSync($CMD, ...)
+              - pattern-not: $CP.$EXEC("...", ...)
+          - patterns:
+              - pattern-either:
+                  - pattern: '$CP.$RUN($CMD, $ARGS, {..., shell: $SHELL, ...}, ...)'
+                  - pattern: '$CP.$RUN($CMD, {..., shell: $SHELL, ...}, ...)'
+              - metavariable-regex:
+                  metavariable: $RUN
+                  regex: ^(spawn|spawnSync|execFile|execFileSync)$
+              - metavariable-pattern:
+                  metavariable: $SHELL
+                  patterns:
+                    - pattern: $V
+                    - pattern-not: 'false'
+                    - pattern-not: 'undefined'
+              - pattern-not: '$CP.$RUN("...", ["...", ...], ...)'
+              - pattern-not: '$CP.$RUN("...", {...}, ...)'
