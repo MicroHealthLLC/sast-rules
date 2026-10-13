@@ -30197,6 +30197,71 @@ rules:
         metavariable: $ALG
         regex: ^(?i)(md5|md4|blake2b|blake2s|ripemd160)$
     - pattern-not: hashlib.new(..., usedforsecurity=False, ...)
+- id: mh.microhealth.python.flask-returned-format-string
+  languages:
+  - python
+  severity: WARNING
+  message: This Flask code returns a string built from request input with formatting or concatenation. Flask sends a returned string as an HTML response, so markup in the input runs in the reader's browser (cross-site scripting). Render a template (autoescaped), escape with markupsafe.escape, or return JSON.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - python
+    - flask
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: MEDIUM
+    cwe:
+    - 'CWE-79: Improper Neutralization of Input During Web Page Generation (''Cross-site Scripting'')'
+    owasp:
+    - A03:2021 - Injection
+    references:
+    - https://flask.palletsprojects.com/en/stable/security/#cross-site-scripting-xss
+    mh_source: microhealth
+    mh_upstream_id: python.flask-returned-format-string
+    mh_license: MIT
+  mode: taint
+  pattern-sources:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: 'import flask
+
+          ...
+
+          '
+      - pattern-inside: 'from flask import $NAME
+
+          ...
+
+          '
+    - pattern-either:
+      - patterns:
+        - pattern-inside: "@$APP.route(...)\ndef $FUNC(..., $PARAM, ...):\n  ...\n"
+        - pattern: $PARAM
+      - pattern: request.$ATTR.get(...)
+      - pattern: request.$ATTR(...)
+      - pattern: request.$ATTR[...]
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: 'import flask
+
+          ...
+
+          '
+      - pattern-inside: 'from flask import $NAME
+
+          ...
+
+          '
+    - pattern-not-inside: return "..."
+    - pattern-either:
+      - pattern: return "...".format(...)
+      - pattern: return "..." % ...
+      - pattern: return "..." + ...
+      - pattern: return ... + "..."
+      - pattern: return f"...{...}..."
 - id: mh.opengrep.ai.csharp.detect-openai.detect-openai
   languages:
   - csharp
@@ -81456,87 +81521,6 @@ rules:
   severity: WARNING
   languages:
   - python
-- id: mh.opengrep.python.flask.security.audit.directly-returned-format-string.directly-returned-format-string
-  message: Detected Flask route directly returning a formatted string. This is subject to cross-site scripting if user input can reach the string. Consider using the template engine instead and rendering pages with 'render_template()'.
-  metadata:
-    cwe:
-    - 'CWE-79: Improper Neutralization of Input During Web Page Generation (''Cross-site Scripting'')'
-    owasp:
-    - A07:2017 - Cross-Site Scripting (XSS)
-    - A03:2021 - Injection
-    category: security
-    technology:
-    - flask
-    references:
-    - https://owasp.org/Top10/A03_2021-Injection
-    cwe2022-top25: true
-    cwe2021-top25: true
-    subcategory:
-    - vuln
-    likelihood: HIGH
-    impact: MEDIUM
-    confidence: MEDIUM
-    mh_source: opengrep
-    mh_upstream_id: directly-returned-format-string
-    mh_license: LGPL-2.1-only+Commons-Clause
-  languages:
-  - python
-  severity: WARNING
-  mode: taint
-  pattern-sources:
-  - pattern-either:
-    - patterns:
-      - pattern-inside: "@$APP.route(...)\ndef $FUNC(..., $PARAM, ...):\n  ...\n"
-      - pattern: $PARAM
-    - pattern: 'request.$FUNC.get(...)
-
-        '
-    - pattern: 'request.$FUNC(...)
-
-        '
-    - pattern: request.$FUNC[...]
-  pattern-sinks:
-  - patterns:
-    - pattern-not-inside: return "..."
-    - pattern-either:
-      - pattern: return "...".format(...)
-      - pattern: return "..." % ...
-      - pattern: return "..." + ...
-      - pattern: return ... + "..."
-      - pattern: return f"...{...}..."
-      - patterns:
-        - pattern: return $X
-        - pattern-either:
-          - pattern-inside: '$X = "...".format(...)
-
-              ...
-
-              '
-          - pattern-inside: '$X = "..." % ...
-
-              ...
-
-              '
-          - pattern-inside: '$X = "..." + ...
-
-              ...
-
-              '
-          - pattern-inside: '$X = ... + "..."
-
-              ...
-
-              '
-          - pattern-inside: '$X = f"...{...}..."
-
-              ...
-
-              '
-        - pattern-not-inside: '$X = "..."
-
-            ...
-
-            '
 - id: mh.opengrep.python.flask.security.audit.flask-cors-misconfiguration.flask-cors-misconfiguration
   message: Setting 'support_credentials=True' together with 'origin="*"' is a CORS misconfiguration that can allow third party origins to read sensitive data. Using this configuration, flask_cors will dynamically reflects the Origin of each request in the Access-Control-Allow-Origin header, allowing all origins and allowing cookies and credentials to be sent along with request. It is recommended to specify allowed origins instead of using "*" when setting 'support_credentials=True'.
   languages:

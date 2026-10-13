@@ -1,5 +1,5 @@
 # sast-rules bundle `product` — built by scripts/build.py; do not edit.
-# 278 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
+# 279 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
 # Attributions and licenses: NOTICE.md (shipped beside this file).
 rules:
 - id: mh.gitlab.csharp_cookies_rule-CookieWithoutHttpOnlyFlag
@@ -13820,3 +13820,68 @@ rules:
         metavariable: $ALG
         regex: ^(?i)(md5|md4|blake2b|blake2s|ripemd160)$
     - pattern-not: hashlib.new(..., usedforsecurity=False, ...)
+- id: mh.microhealth.python.flask-returned-format-string
+  languages:
+  - python
+  severity: WARNING
+  message: This Flask code returns a string built from request input with formatting or concatenation. Flask sends a returned string as an HTML response, so markup in the input runs in the reader's browser (cross-site scripting). Render a template (autoescaped), escape with markupsafe.escape, or return JSON.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - python
+    - flask
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: MEDIUM
+    cwe:
+    - 'CWE-79: Improper Neutralization of Input During Web Page Generation (''Cross-site Scripting'')'
+    owasp:
+    - A03:2021 - Injection
+    references:
+    - https://flask.palletsprojects.com/en/stable/security/#cross-site-scripting-xss
+    mh_source: microhealth
+    mh_upstream_id: python.flask-returned-format-string
+    mh_license: MIT
+  mode: taint
+  pattern-sources:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: 'import flask
+
+          ...
+
+          '
+      - pattern-inside: 'from flask import $NAME
+
+          ...
+
+          '
+    - pattern-either:
+      - patterns:
+        - pattern-inside: "@$APP.route(...)\ndef $FUNC(..., $PARAM, ...):\n  ...\n"
+        - pattern: $PARAM
+      - pattern: request.$ATTR.get(...)
+      - pattern: request.$ATTR(...)
+      - pattern: request.$ATTR[...]
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: 'import flask
+
+          ...
+
+          '
+      - pattern-inside: 'from flask import $NAME
+
+          ...
+
+          '
+    - pattern-not-inside: return "..."
+    - pattern-either:
+      - pattern: return "...".format(...)
+      - pattern: return "..." % ...
+      - pattern: return "..." + ...
+      - pattern: return ... + "..."
+      - pattern: return f"...{...}..."

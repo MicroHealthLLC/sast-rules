@@ -15,7 +15,7 @@
  },
  "bundles": {
   "internal": 2590,
-  "product": 278
+  "product": 279
  },
  "rules": {
   "mh.gitlab.c_access_rule-RpcImpersonateClient-ImpersonateLoggedOnUser": {
@@ -6830,6 +6830,18 @@
    "path": "rules/microhealth/python/fips-non-approved-hash.yaml",
    "license": "MIT",
    "sha256": "5940eca1fb59ebc4e3a4ed21c9b9fe5bc63ab44aa3836802159d4a1a2b1679d9",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.python.flask-returned-format-string": {
+   "source": "microhealth",
+   "upstream_id": "python.flask-returned-format-string",
+   "path": "rules/microhealth/python/flask-returned-format-string.yaml",
+   "license": "MIT",
+   "sha256": "58900a0b792324f19bc73a22aea6b1e9727172ce31a90937bedb8d891c0e18fd",
    "bundles": [
     "internal",
     "product"
@@ -18862,10 +18874,9 @@
    "path": "upstream/opengrep/python/flask/security/audit/directly-returned-format-string.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "0ed9f9793e1c59bddad1a7405e0f8c7bd2f1e5cacc6fc4c89e4f56c3ada0a5be",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "superseded by mh.microhealth.python.flask-returned-format-string: more precise; the original's sources (request.X.get(...)) and sinks (a formatted return) apply in every Python file, so TueriCore's FastAPI helpers that build a base URL from a header and return it into a JSON body (routers/cr26_reports.py, routers/oauth.py) were reported as Flask XSS. A returned string is an HTML response only in Flask; the replacement keeps the same sources and sinks in files that import Flask (verified: it still reports both Flask cases and not the FastAPI helper)."
   },
   "mh.opengrep.python.flask.security.audit.flask-cors-misconfiguration.flask-cors-misconfiguration": {
    "source": "opengrep",

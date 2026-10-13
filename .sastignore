@@ -7,3 +7,4 @@ rules/microhealth/go/file-mode-too-permissive.go
 rules/microhealth/go/dir-mode-too-permissive.go
 rules/microhealth/go/decompression-without-limit.go
 rules/microhealth/go/sql-built-from-strings.go
+rules/microhealth/python/flask-returned-format-string.py
