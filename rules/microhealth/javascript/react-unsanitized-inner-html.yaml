@@ -26,9 +26,21 @@ rules:
       # same component (15 of 15 hits in TueriCXO were sanitised). This rule
       # stays quiet only when the sanitiser call is visible: at the attribute,
       # or in the const (plain, conditional or useMemo) the attribute reads.
+      #
+      # A <style> element is not reported (Gnosis: shadcn's ChartStyle, which
+      # writes CSS custom properties from the chart config). The browser
+      # parses a <style>'s innerHTML as RAWTEXT, so a value cannot open a tag
+      # or a script there; the most it can do is restyle the page. The one
+      # place that does not hold is server rendering, where React writes the
+      # string into the HTML verbatim and a `</style>` would close the
+      # element: a server-rendered <style> fed from request data needs review
+      # by hand.
     patterns:
       - pattern: |
           <$EL dangerouslySetInnerHTML={{__html: $X}} />
+      - metavariable-regex:
+          metavariable: $EL
+          regex: ^(?!style$)
       - pattern-not: |
           <$EL dangerouslySetInnerHTML={{__html: "..."}} />
       - pattern-not: |

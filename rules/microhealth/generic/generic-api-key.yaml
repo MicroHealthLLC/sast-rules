@@ -51,6 +51,10 @@ rules:
     - '*bundle.js'
     - '*pnpm-lock*'
     - '*Podfile.lock'
+    # Every other lockfile (deno.lock, yarn.lock, Gemfile.lock, poetry.lock, …):
+    # its values are integrity hashes, and a path such as `auth_cipher.js` puts
+    # the keyword in front of one (8 hits in Gnosis's deno.lock files).
+    - '*.lock'
     - '*/openssl/*.h'
     - '*.xcscmblueprint'
   patterns:

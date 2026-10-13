@@ -175,13 +175,22 @@ move must never change it.
 [`rules.lock.json`](rules.lock.json) lists every rule ever shipped: source,
 upstream path, license, content hash, bundles and status. A rule that leaves
 upstream stays listed as `retired`; a rule MicroHealth turns off is `disabled`,
-with its reason.
+with its reason, and a rule it narrows carries `refined`, with its reason.
 
 ## Changing rules (MicroHealth)
 
 - **Never edit `upstream/`.** Turn a rule off or re-grade it in
   [`overrides.yaml`](overrides.yaml); a reason is required. Or copy it into
   `rules/microhealth/` and change the copy.
+- A rule that is right in general but wrong in one case is **refined** in
+  `overrides.yaml`: `add` appends narrowing clauses (`pattern-not`,
+  `pattern-not-inside`, `pattern-not-regex`, …) to its `patterns`, and
+  `exclude_paths` adds path exclusions. A refinement can only narrow a rule.
+  Each one needs a fixture in `tests/refine/` naming the rule's full `mh.*`
+  id on `ruleid:` / `ok:` lines; `tests/refine/run.py` checks them against the
+  built bundle.
+- `overrides.yaml` and the other configuration files must not repeat a key:
+  YAML would keep only the last, so the build refuses it.
 - A new rule goes in `rules/microhealth/<language>/<name>.yaml`, with a test
   file of the same name beside it (`# ruleid:` and `# ok:` comments).
 - Every rule file there starts with a `# License:` header, read per file as
@@ -192,7 +201,7 @@ with its reason.
   disabled in `overrides.yaml` with a reason naming the copy.
 - `python3 scripts/build.py` rebuilds `dist/` and the lock. CI fails if they
   were not rebuilt, if any rule does not load in the pinned engine, or if a
-  rule test fails.
+  rule test or a refinement fixture fails.
 - GitLab's `security-severity` words (`Low`, `High`) become the numbers GitHub
   code scanning requires; the original is kept as
   `metadata.mh_upstream_security_severity`.

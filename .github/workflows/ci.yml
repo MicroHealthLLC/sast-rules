@@ -50,6 +50,10 @@ jobs:
           docker run --rm --network none -u "$(id -u)" -e HOME=/tmp \
             -v "$RUNNER_TEMP:/t" -v "$PWD:/repo:ro" -w /repo --entrypoint /t/opengrep sast-tools:fips \
             scan --test rules/microhealth
+          # The refined upstream rules, as the bundle ships them, against tests/refine/.
+          docker run --rm --network none -u "$(id -u)" -e HOME=/tmp -e OPENGREP=/t/opengrep \
+            -v "$RUNNER_TEMP:/t" -v "$PWD:/repo" -w /repo --entrypoint python3 sast-tools:fips \
+            tests/refine/run.py
 
   self-scan:
     name: Security scan, end to end

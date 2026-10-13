@@ -1,12 +1,14 @@
 # sast-rules bundle `product` — built by scripts/build.py; do not edit.
-# 286 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
+# 288 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
 # Licenses of the rules in this bundle: Apache-2.0, MIT.
 # Each rule's own license is its metadata.mh_license.
 # MODIFIED from the upstream rules (MicroHealth, LLC): each rule's id is
 # prefixed `mh.<source>.`, metadata.mh_source / mh_upstream_id / mh_license
 # are added, a word in metadata.security-severity is replaced by a number
 # (the original kept as mh_upstream_security_severity), and overrides.yaml
-# is applied. Nothing else is changed. The date of each change is the date
+# is applied: a `refine` entry adds narrowing clauses or path exclusions
+# to a rule, its reason recorded as the rule's `refined` in rules.lock.json.
+# Nothing else is changed. The date of each change is the date
 # of the sast-rules commit that built this file; the unmodified upstream
 # files and the build are in https://github.com/MicroHealthLLC/sast-rules.
 # Attributions: NOTICE.md; full license texts: licenses/ (both shipped
@@ -9311,31 +9313,6 @@ rules:
   - pattern: xml.etree.cElementTree.iterparse(...)
   - pattern: xml.etree.cElementTree.XMLParser(...)
   severity: WARNING
-- id: mh.gitlab.python_xml_rule-element
-  languages:
-  - python
-  message: "The application was found using the `xml.etree` package for processing XML.\nPythons default xml processors suffer from various XML parsing vulnerabilities\nand care must be taken when handling XML data. Additionally, depending on the\nversion of Python, more critical vulnerabilities such as eXternal XML Entity\ninjection maybe exploitable.\n\nThe `etree` package suffers from the following security risks as of Python 3.7.1:\n* Billion laughs / exponential entity expansion - May allow an adversary to cause\n  a Denial of Service (DoS) against the application parsing arbitrary XML.\n* Quadratic blowup entity expansion - Similar to above, but requires a larger input\n  to cause the Denial of Service.\n\nTo remediate the above issues, consider using the\n[defusedxml](https://pypi.org/project/defusedxml/)\nlibrary when processing untrusted XML.\n\nExample parsing an XML document using defusedxml:\n```\nfrom defusedxml.ElementTree import parse\n\n# Parse the inventory.xml file\net = parse('inventory.xml')\n# Get the root element\nroot = et.getroot()\n# Work with the root element\n# ...\n```\n\nFor more information on the various XML parsers and their vulnerabilities please see:\n- https://docs.python.org/3/library/xml.html#xml-vulnerabilities\n\nFor more information on XML security see OWASP's guide:\n- https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html#python\n"
-  metadata:
-    cwe: CWE-611
-    owasp:
-    - A4:2017-XML External Entities (XXE)
-    - A05:2021-Security Misconfiguration
-    - A02:2025-Security Misconfiguration
-    category: security
-    shortDescription: Improper restriction of XML external entity reference
-    security-severity: '5.5'
-    mh_upstream_security_severity: Medium
-    mh_source: gitlab
-    mh_upstream_id: python_xml_rule-element
-    mh_license: MIT
-  pattern-either:
-  - patterns:
-    - pattern: xml.etree.ElementTree.fromstring(...)
-    - pattern-not: xml.etree.ElementTree.fromstring("...")
-  - pattern: xml.etree.ElementTree.parse(...)
-  - pattern: xml.etree.ElementTree.iterparse(...)
-  - pattern: xml.etree.ElementTree.XMLParser(...)
-  severity: WARNING
 - id: mh.gitlab.python_xml_rule-etree
   languages:
   - python
@@ -13687,6 +13664,81 @@ rules:
       - pattern: Object.assign($TARGET, $SRC, ...)
       - pattern: Object.assign($TARGET, $OTHER, ..., $SRC, ...)
     - focus-metavariable: $SRC
+- id: mh.microhealth.javascript.open-redirect-from-url-input
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  message: A value read from the page URL (query string, fragment, referrer or window.name) decides where the browser is sent. A link to this page with that value set can bounce a user to any site while showing this site's address first (open redirect, a phishing aid), or run script with a `javascript:` URL. Redirect only to a relative path that starts with a single `/`, or to a URL whose origin is checked against an allow-list.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - browser
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: MEDIUM
+    cwe:
+    - 'CWE-601: URL Redirection to Untrusted Site (''Open Redirect'')'
+    owasp:
+    - A01:2021 - Broken Access Control
+    references:
+    - https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html
+    mh_source: microhealth
+    mh_upstream_id: javascript.open-redirect-from-url-input
+    mh_license: MIT
+  options:
+    taint_intrafile: true
+  mode: taint
+  pattern-sources:
+  - pattern-either:
+    - pattern: location.search
+    - pattern: location.hash
+    - pattern: window.location.search
+    - pattern: window.location.hash
+    - pattern: document.location.search
+    - pattern: document.location.hash
+    - pattern: document.URL
+    - pattern: document.documentURI
+    - pattern: document.referrer
+    - pattern: window.name
+    - pattern: new URLSearchParams(...)
+    - pattern: new URL(location.href).searchParams
+    - pattern: new URL(window.location.href).searchParams
+    - pattern: useSearchParams()
+    - pattern: useLocation().search
+    - pattern: useLocation().hash
+  pattern-sanitizers:
+  - pattern: encodeURIComponent(...)
+  - by-side-effect: true
+    patterns:
+    - pattern-either:
+      - pattern: $AL.includes($X)
+      - pattern: $AL.has($X)
+      - pattern: $CHECK($X, ...)
+      - pattern: $OBJ.$CHECK($X, ...)
+    - metavariable-regex:
+        metavariable: $CHECK
+        regex: (?i)^(includes|has|(assert|validate|check|ensure|verify|is|guard|safe)\w*(url|uri|redirect|path|origin|host|allowed|safe|internal|relative)\w*)$
+    - focus-metavariable: $X
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern: location.href = $U
+      - pattern: window.location.href = $U
+      - pattern: document.location.href = $U
+      - pattern: location = $U
+      - pattern: window.location = $U
+      - pattern: location.assign($U)
+      - pattern: window.location.assign($U)
+      - pattern: location.replace($U)
+      - pattern: window.location.replace($U)
+      - pattern: window.open($U, ...)
+    - metavariable-regex:
+        metavariable: $U
+        regex: ^(?!`https?://[^/`$]+/|`/[^/`$]|["']https?://[^/"']+/|["']/[^/"'])
+    - focus-metavariable: $U
 - id: mh.microhealth.javascript.react-unsanitized-inner-html
   languages:
   - javascript
@@ -13715,6 +13767,9 @@ rules:
   - pattern: '<$EL dangerouslySetInnerHTML={{__html: $X}} />
 
       '
+  - metavariable-regex:
+      metavariable: $EL
+      regex: ^(?!style$)
   - pattern-not: '<$EL dangerouslySetInnerHTML={{__html: "..."}} />
 
       '
@@ -13969,6 +14024,118 @@ rules:
   - pattern-not: true !== $S
   - pattern-not: $S !== false
   - pattern-not: false !== $S
+- id: mh.microhealth.javascript.ssrf-request-to-fetch
+  languages:
+  - javascript
+  - typescript
+  severity: ERROR
+  message: Data from the incoming request reaches the URL of an outbound request made by this server. A caller who chooses that URL can make the server read internal services or the cloud metadata endpoint (169.254.169.254) on their behalf (server-side request forgery). Check the URL against an allow-list, or resolve its host and refuse loopback, private, link-local and metadata addresses before the request (and do not follow redirects without checking each hop).
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - javascript
+    - typescript
+    - deno
+    - express
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-918: Server-Side Request Forgery (SSRF)'
+    owasp:
+    - A10:2021 - Server-Side Request Forgery (SSRF)
+    references:
+    - https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html
+    mh_source: microhealth
+    mh_upstream_id: javascript.ssrf-request-to-fetch
+    mh_license: MIT
+  options:
+    taint_intrafile: true
+    taint_assume_safe_functions: true
+  mode: taint
+  pattern-sources:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: 'function $F(..., $REQ: Request, ...) { ... }
+
+          '
+      - pattern-inside: '($REQ: Request, ...) => { ... }
+
+          '
+      - pattern-inside: 'Deno.serve(..., ($REQ, ...) => { ... })
+
+          '
+      - pattern-inside: 'serve(($REQ, ...) => { ... }, ...)
+
+          '
+    - pattern-either:
+      - pattern: $REQ.json()
+      - pattern: $REQ.formData()
+      - pattern: $REQ.text()
+      - pattern: $REQ.url
+      - pattern: $REQ.headers.get(...)
+  - patterns:
+    - pattern-either:
+      - pattern-inside: 'function $F($REQ, $RES, ...) { ... }
+
+          '
+      - pattern-inside: 'function ($REQ, $RES, ...) { ... }
+
+          '
+      - pattern-inside: '($REQ, $RES, ...) => { ... }
+
+          '
+    - metavariable-regex:
+        metavariable: $REQ
+        regex: ^(req|request)$
+    - pattern-either:
+      - pattern: $REQ.query
+      - pattern: $REQ.body
+      - pattern: $REQ.params
+      - pattern: $REQ.headers
+      - pattern: $REQ.cookies
+      - pattern: $REQ.get(...)
+      - pattern: $REQ.header(...)
+  pattern-propagators:
+  - pattern: $TO = new URL($FROM, ...)
+    from: $FROM
+    to: $TO
+  pattern-sanitizers:
+  - pattern: encodeURIComponent(...)
+  - pattern-regex: '`https?://[A-Za-z0-9.-]+(:\d+)?/[^`]*`'
+  - by-side-effect: true
+    patterns:
+    - pattern-either:
+      - pattern: $AL.includes($X)
+      - pattern: $AL.has($X)
+      - pattern: $CHECK($X, ...)
+      - pattern: $OBJ.$CHECK($X, ...)
+    - metavariable-regex:
+        metavariable: $CHECK
+        regex: (?i)^(includes|has|(assert|validate|check|ensure|verify|is|guard)\w*(url|uri|host|origin|endpoint|outbound|public|allowed|safe)\w*)$
+    - focus-metavariable: $X
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern: fetch($U, ...)
+      - pattern: new Request($U, ...)
+      - pattern: axios($U, ...)
+      - pattern: axios.$VERB($U, ...)
+      - pattern: got($U, ...)
+      - pattern: got.$VERB($U, ...)
+      - patterns:
+        - pattern-either:
+          - pattern: $HTTP.get($U, ...)
+          - pattern: $HTTP.request($U, ...)
+        - metavariable-regex:
+            metavariable: $HTTP
+            regex: ^(https?|http2|needle|superagent|undici|ky)$
+    - metavariable-regex:
+        metavariable: $U
+        regex: ^(?!`https?://[^/`$]+/|["']https?://[^/"']+/)
+    - focus-metavariable: $U
 - id: mh.microhealth.nginx.host-header-in-response
   languages:
   - regex
@@ -14067,6 +14234,64 @@ rules:
         metavariable: $ALG
         regex: ^(?i)(md5|md4|blake2b|blake2s|ripemd160)$
     - pattern-not: hashlib.new(..., usedforsecurity=False, ...)
+- id: mh.microhealth.terraform.iam-data-read-unscoped
+  languages:
+  - hcl
+  severity: WARNING
+  message: This IAM statement allows reading data ($ACTION) on every resource (`Resource = "*"`). Whoever holds the role can read every secret, parameter, object or database snapshot the account can reach, not only the ones this workload needs. List the ARNs the workload reads.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - terraform
+    - aws
+    confidence: HIGH
+    likelihood: LOW
+    impact: HIGH
+    cwe:
+    - 'CWE-732: Incorrect Permission Assignment for Critical Resource'
+    owasp:
+    - A01:2021 - Broken Access Control
+    references:
+    - https://cloudsplaining.readthedocs.io/en/latest/glossary/data-exfiltration/
+    mh_source: microhealth
+    mh_upstream_id: terraform.iam-data-read-unscoped
+    mh_license: MIT
+  patterns:
+  - pattern-either:
+    - patterns:
+      - pattern-either:
+        - pattern-inside: '{..., Resource = "*", ...}
+
+            '
+        - pattern-inside: '{..., Resource = [..., "*", ...], ...}
+
+            '
+      - pattern-not-inside: '{..., Effect = "Deny", ...}
+
+          '
+      - pattern: Action = $ACTION
+    - patterns:
+      - pattern-inside: "statement {\n  ...\n  resources = [..., \"*\", ...]\n  ...\n}\n"
+      - pattern-not-inside: "statement {\n  ...\n  effect = \"Deny\"\n  ...\n}\n"
+      - pattern: actions = $ACTION
+  - metavariable-pattern:
+      metavariable: $ACTION
+      pattern-either:
+      - pattern: '"s3:GetObject"'
+      - pattern: '"s3:*"'
+      - pattern: '"ssm:GetParameter"'
+      - pattern: '"ssm:GetParameters"'
+      - pattern: '"ssm:GetParametersByPath"'
+      - pattern: '"ssm:GetParameter*"'
+      - pattern: '"ssm:*"'
+      - pattern: '"secretsmanager:GetSecretValue"'
+      - pattern: '"secretsmanager:*"'
+      - pattern: '"rds:CopyDBSnapshot"'
+      - pattern: '"rds:CreateDBSnapshot"'
+      - pattern: '"rds:*"'
+      - pattern: '"*"'
 - id: mh.microhealth.yaml.github-actions-add-mask-expression
   languages:
   - regex

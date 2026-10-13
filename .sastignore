@@ -34,3 +34,9 @@ rules/microhealth/json/package-dependencies-check.json
 rules/microhealth/generic/aws-access-key-id.txt
 rules/microhealth/javascript/insecure-websocket-url.ts
 rules/microhealth/javascript/insecure-random-for-secret.ts
+rules/microhealth/javascript/ssrf-request-to-fetch.ts
+rules/microhealth/javascript/open-redirect-from-url-input.ts
+rules/microhealth/terraform/iam-data-read-unscoped.tf
+# Fixtures for the refinements in overrides.yaml (tests/refine/run.py): deliberate
+# placeholder keys, open ports and IAM grants; never executed or deployed.
+tests/refine/

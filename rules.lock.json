@@ -15,7 +15,7 @@
  },
  "bundles": {
   "internal": 2141,
-  "product": 286
+  "product": 288
  },
  "rules": {
   "mh.gitlab.c_access_rule-RpcImpersonateClient-ImpersonateLoggedOnUser": {
@@ -4117,11 +4117,9 @@
    "path": "upstream/gitlab/python/xml/rule-element.yml",
    "license": "MIT",
    "sha256": "b5af233660d60927daeeba602882830cb3f28edf13b7cecada470ae97d8aaaab",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Reports every xml.etree.ElementTree parse. The Python documentation's XML-vulnerability table lists ElementTree as not vulnerable to external entity expansion, and, with expat 2.4.1 or later (every supported Python build, including the FIPS Python images), not vulnerable to billion-laughs or quadratic blow-up either; defusedxml, which the rule recommends, documents the same. The parsers that remain unsafe (lxml with entity resolution, xmlrpc decompression) have their own rules."
   },
   "mh.gitlab.python_xml_rule-etree": {
    "source": "gitlab",
@@ -6772,7 +6770,7 @@
    "upstream_id": "generic.secrets.generic-api-key",
    "path": "rules/microhealth/generic/generic-api-key.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "19df190277b4fd99f0f2432a64a8d4b37069bd8592909992f9beaedc843af5f1",
+   "sha256": "1964b49f4160af831778b9162128cc038f20824a9e56d700f4249bc8a6b0e8f5",
    "bundles": [
     "internal"
    ],
@@ -7267,12 +7265,24 @@
    ],
    "status": "active"
   },
+  "mh.microhealth.javascript.open-redirect-from-url-input": {
+   "source": "microhealth",
+   "upstream_id": "javascript.open-redirect-from-url-input",
+   "path": "rules/microhealth/javascript/open-redirect-from-url-input.yaml",
+   "license": "MIT",
+   "sha256": "e05e30bb558c40e0e435f1fb91606d2f619dc8bb0110e2546c0673bef79c46ec",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
   "mh.microhealth.javascript.react-unsanitized-inner-html": {
    "source": "microhealth",
    "upstream_id": "javascript.react-unsanitized-inner-html",
    "path": "rules/microhealth/javascript/react-unsanitized-inner-html.yaml",
    "license": "MIT",
-   "sha256": "aee5add4760058c09e5e9d33b63351078e8d8d6de6c5ba34a51e04e2e840dcbe",
+   "sha256": "009bb1b6ab9c37eff3f429f8b6c93de5cdf2cabc5670a588b0577947b009be9a",
    "bundles": [
     "internal",
     "product"
@@ -7297,6 +7307,18 @@
    "path": "rules/microhealth/javascript/secret-compare-not-constant-time.yaml",
    "license": "MIT",
    "sha256": "948247213e0fc4eea42c32655135acd4087c987f2de35bbc0bfd48ec12425504",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.ssrf-request-to-fetch": {
+   "source": "microhealth",
+   "upstream_id": "javascript.ssrf-request-to-fetch",
+   "path": "rules/microhealth/javascript/ssrf-request-to-fetch.yaml",
+   "license": "MIT",
+   "sha256": "6b2b53531397e3b84bdeb75ca3d85d63853e4a50877b12bf8ab7d20f8b07fd56",
    "bundles": [
     "internal",
     "product"
@@ -7344,6 +7366,18 @@
    "path": "rules/microhealth/python/fips-non-approved-hash.yaml",
    "license": "MIT",
    "sha256": "5940eca1fb59ebc4e3a4ed21c9b9fe5bc63ab44aa3836802159d4a1a2b1679d9",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.terraform.iam-data-read-unscoped": {
+   "source": "microhealth",
+   "upstream_id": "terraform.iam-data-read-unscoped",
+   "path": "rules/microhealth/terraform/iam-data-read-unscoped.yaml",
+   "license": "MIT",
+   "sha256": "1ae089eb19dbe87f52e87844a4c7444c57aac15e7749dca6fe1af4c29c720c56",
    "bundles": [
     "internal",
     "product"
@@ -11078,11 +11112,12 @@
    "upstream_id": "stripe-access-token",
    "path": "upstream/opengrep/generic/secrets/gitleaks/stripe-access-token.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "75d45e9d07fd49ee80383101aaea4cb6c03bdd686b32a9613e9fa0666388e2e2",
+   "sha256": "19a35cce172e309b6e34716cd13d6aa09cffe28ecd9bf12b4031ab1cc2394b3e",
    "bundles": [
     "internal"
    ],
-   "status": "active"
+   "status": "active",
+   "refined": "Reports the documentation placeholder `sk_live_xxxxxxxxxxxxxxxx` (3 hits in Gnosis's API reference). A key body made only of x, 0 or * is a placeholder; generic-api-key already skips such runs. Any key with real characters is still reported."
   },
   "mh.opengrep.generic.secrets.gitleaks.sumologic-access-id.sumologic-access-id": {
    "source": "opengrep",
@@ -14590,10 +14625,9 @@
    "path": "upstream/opengrep/javascript/browser/security/open-redirect-from-function.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "f02105ab2d18a70e3d9419e3ed26bf1ebaa63f2be65135a63b85a2eeeadaf289",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Its taint source is any parameter of any function, so a click handler building `${config.edgeFunctionUrl}/\u2026?id=${row.id}` was an open redirect (2 of 2 in Gnosis, both a fixed origin). Replaced by mh.microhealth.javascript.open-redirect-from-url-input: the query string, fragment, referrer or window.name reaching a navigation."
   },
   "mh.opengrep.javascript.browser.security.open-redirect.js-open-redirect": {
    "source": "opengrep",
@@ -15697,11 +15731,12 @@
    "upstream_id": "unsafe-dynamic-method",
    "path": "upstream/opengrep/javascript/lang/security/audit/unsafe-dynamic-method.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "59b2e657b8e4b926da0520785ac71c269c5ff0a311da969bf7f14372e0773ceb",
+   "sha256": "bcc648303e123fbe8a960bf974c647ef67513c11ab0f011aec0a944e4debf78e",
    "bundles": [
     "internal"
    ],
-   "status": "active"
+   "status": "active",
+   "refined": "A method name typed as a union of string literals (`method: 'queryObject' | 'queryArray'`) can only name those methods; the compiler rejects any other value at every call site (1 hit in Gnosis, a retry wrapper over two query methods). A key typed `string` or `any` is still reported."
   },
   "mh.opengrep.javascript.lang.security.audit.unsafe-formatstring.unsafe-formatstring": {
    "source": "opengrep",
@@ -24318,11 +24353,12 @@
    "upstream_id": "aws-ec2-security-group-allows-public-ingress",
    "path": "upstream/opengrep/terraform/aws/security/aws-ec2-security-group-allows-public-ingress.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "7040ad8d11fc8efebe3f814a5c988a45c9cb5fc3ed1f1a11499fa357dd643d08",
+   "sha256": "81ab3abf4d1a8041f58fc48dc13b3d78ed8b81f507392ee47694d9dce0ec1f2a",
    "bundles": [
     "internal"
    ],
-   "status": "active"
+   "status": "active",
+   "refined": "A public web endpoint (an internet-facing load balancer) has to accept ports 80 and 443 from anywhere; that is its design, not a finding (2 of 2 in Gnosis: the ALB's HTTP-redirect and HTTPS listeners). Any other port open to the internet (SSH, a database, a range) is still reported."
   },
   "mh.opengrep.terraform.aws.security.aws-ec2-security-group-rule-missing-description.aws-ec2-security-group-rule-missing-description": {
    "source": "opengrep",
@@ -27569,11 +27605,12 @@
    "upstream_id": "no-iam-creds-exposure",
    "path": "upstream/opengrep/terraform/lang/security/iam/no-iam-creds-exposure.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "8513929ee36b57c15dfa1beb8ebe7a26737e06f8705007789743b360d1a285e4",
+   "sha256": "d71b220d6e1e7a7b93f184fd0b71ec2109409555718b3a3e68305a1b42c232b9",
    "bundles": [
     "internal"
    ],
-   "status": "active"
+   "status": "active",
+   "refined": "ecr:GetAuthorizationToken returns a registry login that carries only the caller's own ECR permissions (it grants nothing the role cannot already do), and AWS accepts it only on Resource \"*\". Every ECS task execution role that pulls from ECR needs it (it is in AWS's managed AmazonECSTaskExecutionRolePolicy). A statement whose only action it is is no longer reported; every other credential action still is."
   },
   "mh.opengrep.terraform.lang.security.iam.no-iam-data-exfiltration.no-iam-data-exfiltration": {
    "source": "opengrep",
@@ -27581,10 +27618,9 @@
    "path": "upstream/opengrep/terraform/lang/security/iam/no-iam-data-exfiltration.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "0a90548ed258ba158aa5ea09e720fcb41e010d248273d818ee8677859d9961a3",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Checks whether ANY statement of a policy has `Resource = \"*\"`, then reports the data actions of EVERY statement, so a GetSecretValue scoped to named secret ARNs was reported because another statement granted ecr:GetAuthorizationToken (which AWS only accepts on \"*\"). Replaced by mh.microhealth.terraform.iam-data-read-unscoped, which reads the action and the resource from the same statement."
   },
   "mh.opengrep.terraform.lang.security.iam.no-iam-priv-esc-funcs.no-iam-priv-esc-funcs": {
    "source": "opengrep",
@@ -28365,11 +28401,12 @@
    "upstream_id": "run-as-non-root-security-context-pod-level",
    "path": "upstream/opengrep/yaml/kubernetes/security/run-as-non-root-security-context-pod-level.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "a89cb6d5318d58cf560c00674ae5668498781adc528d11973e8edfe76dc4b8d4",
+   "sha256": "748efac353eecbee10bca01bf8c0925a2d1df5d805aa0711b78b795632c69124",
    "bundles": [
     "internal"
    ],
-   "status": "active"
+   "status": "active",
+   "refined": "Its \"already set\" check only recognises a pod securityContext whose sole key is runAsNonRoot, so `securityContext: {runAsNonRoot: true, runAsUser: 10001, \u2026}` was reported as missing it (2 of 2 in Gnosis's k8s manifests). This accepts runAsNonRoot among other keys."
   },
   "mh.opengrep.yaml.kubernetes.security.run-as-non-root-unsafe-value.run-as-non-root-unsafe-value": {
    "source": "opengrep",

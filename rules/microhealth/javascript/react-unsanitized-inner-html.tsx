@@ -58,4 +58,10 @@ export function Literal() {
   return <style dangerouslySetInnerHTML={{ __html: "body{margin:0}" }} />;
 }
 
+export function ChartStyle({ id, colors }: { id: string; colors: [string, string][] }) {
+  const css = colors.map(([k, c]) => `  --color-${k}: ${c};`).join("\n");
+  // ok: javascript.react-unsanitized-inner-html
+  return <style dangerouslySetInnerHTML={{ __html: `[data-chart=${id}] {\n${css}\n}` }} />;
+}
+
 declare function renderMarkdown(s: string): string;

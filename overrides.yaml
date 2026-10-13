@@ -1,12 +1,21 @@
-# Rules we turn off or re-grade. Every entry carries its reason: a suppression
-# without a reason is a lie a security tool tells itself. Upstream files are
-# never edited; the override is applied when the bundles are built, and the
-# lock file keeps the rule listed as `disabled` with this reason.
+# Rules we turn off, re-grade or refine. Every entry carries its reason: a
+# suppression without a reason is a lie a security tool tells itself. Upstream
+# files are never edited; the override is applied when the bundles are built,
+# and the lock file keeps the rule listed as `disabled` (or `refined`) with
+# this reason. A section appears ONCE: the build refuses a duplicate key, which
+# YAML would otherwise resolve by silently dropping the first.
 #
 # disabled:
 #   mh.gitlab.some-rule-id: "what was assessed and why it does not apply"
 # severity:
 #   mh.opengrep.some.rule: {to: WARNING, reason: "why"}
+# refine:            # narrow a rule that is right in general, wrong in one case
+#   mh.opengrep.some.rule:
+#     reason: "the case it reports wrongly, and why that case is safe"
+#     add: [{pattern-not: "..."}]        # appended to the rule's `patterns`
+#     exclude_paths: ["*.lock"]          # appended to its paths.exclude
+# Each refinement has a fixture in tests/refine/ (`ruleid:` and `ok:` lines)
+# that tests/refine/run.py checks against the built bundle.
 disabled:
   mh.opengrep.generic.secrets.security.detected-aws-account-id.detected-aws-account-id: >-
     An AWS account ID is an identifier, not a credential (AWS: "account IDs
@@ -185,4 +194,101 @@ disabled:
     Math.random() whose result is bound to, or returned by, a name that says
     it must not be guessed (token, secret, nonce, salt, session, key, ...),
     and crypto.pseudoRandomBytes() wherever it appears.
+  mh.opengrep.javascript.browser.security.open-redirect-from-function.js-open-redirect-from-function: >-
+    Its taint source is any parameter of any function, so a click handler
+    building `${config.edgeFunctionUrl}/…?id=${row.id}` was an open redirect
+    (2 of 2 in Gnosis, both a fixed origin). Replaced by
+    mh.microhealth.javascript.open-redirect-from-url-input: the query
+    string, fragment, referrer or window.name reaching a navigation.
+  mh.opengrep.terraform.lang.security.iam.no-iam-data-exfiltration.no-iam-data-exfiltration: >-
+    Checks whether ANY statement of a policy has `Resource = "*"`, then
+    reports the data actions of EVERY statement, so a GetSecretValue scoped
+    to named secret ARNs was reported because another statement granted
+    ecr:GetAuthorizationToken (which AWS only accepts on "*"). Replaced by
+    mh.microhealth.terraform.iam-data-read-unscoped, which reads the action
+    and the resource from the same statement.
+  mh.gitlab.python_xml_rule-element: >-
+    Reports every xml.etree.ElementTree parse. The Python documentation's
+    XML-vulnerability table lists ElementTree as not vulnerable to external
+    entity expansion, and, with expat 2.4.1 or later (every supported
+    Python build, including the FIPS Python images), not vulnerable to
+    billion-laughs or quadratic blow-up either; defusedxml, which the rule
+    recommends, documents the same. The parsers that remain unsafe (lxml
+    with entity resolution, xmlrpc decompression) have their own rules.
 severity: {}
+refine:
+  mh.opengrep.generic.secrets.gitleaks.stripe-access-token.stripe-access-token:
+    reason: >-
+      Reports the documentation placeholder `sk_live_xxxxxxxxxxxxxxxx` (3
+      hits in Gnosis's API reference). A key body made only of x, 0 or *
+      is a placeholder; generic-api-key already skips such runs. Any key
+      with real characters is still reported.
+    add:
+      - pattern-not-regex: (?i)\b(?:sk|rk)_(?:test|live|prod)_(?:x+|0+|\*+)\b
+  mh.opengrep.yaml.kubernetes.security.run-as-non-root-security-context-pod-level.run-as-non-root-security-context-pod-level:
+    reason: >-
+      Its "already set" check only recognises a pod securityContext whose
+      sole key is runAsNonRoot, so `securityContext: {runAsNonRoot: true,
+      runAsUser: 10001, …}` was reported as missing it (2 of 2 in Gnosis's
+      k8s manifests). This accepts runAsNonRoot among other keys.
+    add:
+      - pattern-not-inside: |
+          spec:
+            ...
+            securityContext:
+              ...
+              runAsNonRoot: true
+              ...
+            ...
+  mh.opengrep.terraform.aws.security.aws-ec2-security-group-allows-public-ingress.aws-ec2-security-group-allows-public-ingress:
+    reason: >-
+      A public web endpoint (an internet-facing load balancer) has to accept
+      ports 80 and 443 from anywhere; that is its design, not a finding (2
+      of 2 in Gnosis: the ALB's HTTP-redirect and HTTPS listeners). Any
+      other port open to the internet (SSH, a database, a range) is still
+      reported.
+    add:
+      - pattern-not: |
+          ingress {
+            ...
+            from_port = 443
+            ...
+            to_port = 443
+            ...
+          }
+      - pattern-not: |
+          ingress {
+            ...
+            from_port = 80
+            ...
+            to_port = 80
+            ...
+          }
+  mh.opengrep.terraform.lang.security.iam.no-iam-creds-exposure.no-iam-creds-exposure:
+    reason: >-
+      ecr:GetAuthorizationToken returns a registry login that carries only
+      the caller's own ECR permissions (it grants nothing the role cannot
+      already do), and AWS accepts it only on Resource "*". Every ECS task
+      execution role that pulls from ECR needs it (it is in AWS's managed
+      AmazonECSTaskExecutionRolePolicy). A statement whose only action it
+      is is no longer reported; every other credential action still is.
+    add:
+      - pattern-not: Action = "ecr:GetAuthorizationToken"
+      - pattern-not: Action = ["ecr:GetAuthorizationToken"]
+      - pattern-not: actions = ["ecr:GetAuthorizationToken"]
+  mh.opengrep.javascript.lang.security.audit.unsafe-dynamic-method.unsafe-dynamic-method:
+    reason: >-
+      A method name typed as a union of string literals (`method:
+      'queryObject' | 'queryArray'`) can only name those methods; the
+      compiler rejects any other value at every call site (1 hit in Gnosis,
+      a retry wrapper over two query methods). A key typed `string` or
+      `any` is still reported.
+    add:
+      - pattern-not-inside: |
+          (..., $X: "$A" | "$B", ...) => { ... }
+      - pattern-not-inside: |
+          (..., $X: "$A" | "$B" | "$C", ...) => { ... }
+      - pattern-not-inside: |
+          function $F(..., $X: "$A" | "$B", ...) { ... }
+      - pattern-not-inside: |
+          function $F(..., $X: "$A" | "$B" | "$C", ...) { ... }
