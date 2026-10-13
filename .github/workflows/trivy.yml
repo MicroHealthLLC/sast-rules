@@ -171,6 +171,34 @@ jobs:
         with:
           registries: ${{ inputs.image_registries != '' && format('295669632222,{0}', inputs.image_registries) || '295669632222' }}
 
+      # Trivy unpacks every layer of an image to scan it. A CUDA image does not
+      # fit in the root disk a hosted runner leaves free (~14 GB), and the scan
+      # failed with "no space left on device" on one run and passed on a rerun
+      # depending on the VM. So, before anything is downloaded: on a
+      # GitHub-hosted runner, an image scan deletes the preinstalled toolchains
+      # this job never uses, and every scan puts its scratch space and cache on
+      # whichever disk has the most room (a hosted runner's /mnt is ~70 GB). A
+      # self-hosted runner is never cleaned: those directories are not ours.
+      - name: Disk for the scan
+        id: disk
+        env:
+          HOSTED: ${{ runner.environment == 'github-hosted' }}
+        run: |
+          df -h / /mnt "$RUNNER_TEMP" 2>/dev/null || true
+          if [ "$HOSTED" = true ] && [ "$KIND" = image ]; then
+            sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+              /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/share/swift /usr/local/share/powershell
+            docker system prune -af >/dev/null 2>&1 || true
+          fi
+          avail() { k="$(df -Pk "$1" 2>/dev/null | awk 'NR==2 {print $4}')"; echo "${k:-0}"; }
+          scratch="$RUNNER_TEMP/trivy-work"
+          if [ "$HOSTED" = true ] && [ -d /mnt ] && [ "$(avail /mnt)" -gt "$(avail "$RUNNER_TEMP")" ]; then
+            sudo mkdir -p /mnt/trivy-work && sudo chown "$(id -u):$(id -g)" /mnt/trivy-work && scratch=/mnt/trivy-work
+          fi
+          mkdir -p "$scratch/tmp" "$scratch/cache"
+          echo "scratch=$scratch" >> "$GITHUB_OUTPUT"
+          echo "Trivy scratch: $scratch ($(( $(avail "$scratch") / 1048576 )) GB free)" | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Trivy (the FIPS build engine.json pins)
         run: |
           [ "$(uname -m)" = x86_64 ] || { echo "::error::The FIPS Trivy build is linux/amd64 only"; exit 1; }
@@ -214,14 +242,14 @@ jobs:
         id: scan
         env:
           SBOM: ${{ inputs.sbom }}
+          SCRATCH: ${{ steps.disk.outputs.scratch }}
         run: |
-          out="$RUNNER_TEMP/out"; mkdir -p "$out" "$RUNNER_TEMP/trivy-cache"
+          out="$RUNNER_TEMP/out"; mkdir -p "$out"
           common=(--cache-dir /cache --skip-version-check --no-progress --timeout 40m)
           envf=(); [ -s "$RUNNER_TEMP/img/env" ] && envf=(--env-file "$RUNNER_TEMP/img/env")
-          mkdir -p "$RUNNER_TEMP/trivy-tmp"
           run() { docker run --rm -e HOME=/tmp -e TMPDIR=/scratch "${envf[@]}" -v "$PWD/src:/src" \
-                    -v "$RUNNER_TEMP/trivy-tmp:/scratch" \
-                    -v "$out:/out" -v "$RUNNER_TEMP/trivy-cache:/cache" -w /src sast-trivy:fips trivy "$@"; }
+                    -v "$SCRATCH/tmp:/scratch" \
+                    -v "$out:/out" -v "$SCRATCH/cache:/cache" -w /src sast-trivy:fips trivy "$@"; }
           if [ "$KIND" = repo ]; then
             ignore=(); [ -f src/.trivyignore ] && ignore=(--ignorefile .trivyignore)
             run fs "${common[@]}" "${ignore[@]}" --format json --output /out/trivy-fs.json \
