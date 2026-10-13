@@ -1,0 +1,148 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/dos/regex_dos.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/dos/rule-regex_dos.yml
+# (mh.gitlab.rules_lgpl_javascript_dos_rule-regex-dos, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.dos.regex-dos
+  pattern-either:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function (req, $RES, ...) {...}
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $REGEX.test(<... req ...>)
+      - pattern: |
+          $REGEX.test(<... req.$QUERY ...>)
+      - pattern: |
+          $REGEX.test(<... req.$BODY.$PARAM ...>)
+      - pattern: |
+          $INP = <... req ...>;
+          ...
+          $REGEX.test(<... $INP ...>)
+      - pattern: |
+          $INP = <... req.$QUERY ...>;
+          ...
+          $REGEX.test(<... $INP ...>)
+      - pattern: |
+          $INP = <... req.$BODY.$PARAM ...>;
+          ...
+          $REGEX.test(<... $INP ...>)
+      - pattern: |
+          /.../g.exec(<... req ...>)
+      - pattern: |
+          /.../g.exec(<... req.$QUERY ...>)
+      - pattern: |
+          /.../.exec(<... req.$BODY.$PARAM ...>)
+      - pattern: |
+          $INP = <... req ...>;
+          ...
+          /.../.exec(<... $INP ...>)
+      - pattern: |
+          $INP = <... req.$QUERY ...>;
+          ...
+          /.../.exec(<... $INP ...>)
+      - pattern: |
+          $INP = <... req.$BODY.$PARAM ...>;
+          ...
+          /.../.exec(<... $INP ...>)
+      - pattern: |
+          $RE = /.../;
+          ...
+          $RE.exec(<... req ...>)
+      - pattern: |
+          $RE = /.../;
+          ...
+          $RE.exec(<... req.$QUERY ...>)
+      - pattern: |
+          $RE = /.../;
+          ...
+          $RE.exec(<... req.$BODY.$PARAM ...>)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function (request, $RES, ...) {...}
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $REGEX.test(<... request ...>)
+      - pattern: |
+          $REGEX.test(<... request.$QUERY ...>)
+      - pattern: |
+          $REGEX.test(<... request.$BODY.$PARAM ...>)
+      - pattern: |
+          $INP = <... request ...>;
+          ...
+          $REGEX.test(<... $INP ...>)
+      - pattern: |
+          $INP = <... request.$QUERY ...>;
+          ...
+          $REGEX.test(<... $INP ...>)
+      - pattern: |
+          $INP = <... request.$BODY.$PARAM ...>;
+          ...
+          $REGEX.test(<... $INP ...>)
+      - pattern: |
+          /.../g.exec(<... request ...>)
+      - pattern: |
+          /.../g.exec(<... request.$QUERY ...>)
+      - pattern: |
+          /.../.exec(<... request.$BODY.$PARAM ...>)
+      - pattern: |
+          $INP = <... request ...>;
+          ...
+          /.../.exec(<... $INP ...>)
+      - pattern: |
+          $INP = <... request.$QUERY ...>;
+          ...
+          /.../.exec(<... $INP ...>)
+      - pattern: |
+          $INP = <... request.$BODY.$PARAM ...>;
+          ...
+          /.../.exec(<... $INP ...>)
+      - pattern: |
+          $RE = /.../;
+          ...
+          $RE.exec(<... request ...>)
+      - pattern: |
+          $RE = /.../;
+          ...
+          $RE.exec(<... request.$QUERY ...>)
+      - pattern: |
+          $RE = /.../;
+          ...
+          $RE.exec(<... request.$BODY.$PARAM ...>)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    Ensure that the regex used to compare with user supplied input is safe from regular expression denial of service.
+  languages:
+  - javascript
+  severity: WARNING
+  metadata:
+    owasp:
+    - A6:2017-Security Misconfiguration
+    - A05:2021-Security Misconfiguration
+    cwe: CWE-185
+    shortDescription: Incorrect regular expression
+    security-severity: MEDIUM
+    category: security
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_dos_rule-regex-dos

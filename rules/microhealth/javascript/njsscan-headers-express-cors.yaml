@@ -1,0 +1,73 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/headers/header_cors_star.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/headers/rule-express_cors.yml
+# (mh.gitlab.rules_lgpl_javascript_headers_rule-express-cors, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.headers.express-cors
+  pattern-either:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function (req, $RES, ...) {...}
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $APP.options('*', cors(...))
+      - pattern: |
+          $RES.set("=~/access-control-allow-origin/i", '*', ...)
+      - pattern: |
+          $RES.set(..., { "=~/access-control-allow-origin/i" : '*' }, ...)
+      - pattern: |
+          $RES.header("=~/access-control-allow-origin/i", '*', ...)
+      - pattern: |
+          $RES.writeHead(..., {"=~/access-control-allow-origin/i": '*' }, ...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function (request, $RES, ...) {...}
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $APP.options('*', cors(...))
+      - pattern: |
+          $RES.set("=~/access-control-allow-origin/i", '*', ...)
+      - pattern: |
+          $RES.set(..., { "=~/access-control-allow-origin/i" : '*' }, ...)
+      - pattern: |
+          $RES.header("=~/access-control-allow-origin/i", '*', ...)
+      - pattern: |
+          $RES.writeHead(..., {"=~/access-control-allow-origin/i": '*' }, ...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    Access-Control-Allow-Origin response header is set to "*". This will disable CORS Same Origin Policy restrictions.
+  languages:
+  - javascript
+  severity: WARNING
+  metadata:
+    owasp:
+    - A5:2017-Broken Access Control
+    - A05:2021-Security Misconfiguration
+    - A02:2025-Security Misconfiguration
+    cwe: CWE-942
+    shortDescription: Permissive cross-domain policy with untrusted domains
+    security-severity: MEDIUM
+    category: security
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_headers_rule-express-cors

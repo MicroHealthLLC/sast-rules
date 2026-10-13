@@ -1,0 +1,125 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/headers/header_injection.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/headers/rule-generic_header_injection.yml
+# (mh.gitlab.rules_lgpl_javascript_headers_rule-generic-header-injection, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.headers.generic-header-injection
+  pattern-either:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function (req, $RES, ...) {...}
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $INP = req.$QUERY;
+          ...
+          $RES.set(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = req.$QUERY.$VAR;
+          ...
+          $RES.set(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = req.$VAR;
+          ...
+          $RES.set(..., { $X: <... $INP ...>}, ...)
+      - pattern: |
+          $INP = req.$QUERY.$FOO;
+          ...
+          $RES.set(..., { $X: <... $INP ...>}, ...)
+      - pattern: |
+          $INP = req.$VAR;
+          ...
+          $RES.writeHead(..., { $X: <... $INP ...> }, ...)
+      - pattern: |
+          $INP = req.$QUERY.$FOO;
+          ...
+          $RES.writeHead(..., { $X: <... $INP ...> }, ...)
+      - pattern: |
+          $RES.set(..., <... req.$QUERY ...>, ...)
+      - pattern: |
+          $RES.set(..., <... req.$QUERY.$VAR ...>, ...)
+      - pattern: |
+          $RES.set(..., { $X: <... req.$VAR ...>}, ...)
+      - pattern: |
+          $RES.set(..., { $X: <... req.$QUERY.$FOO ...>}, ...)
+      - pattern: |
+          $RES.writeHead(..., { $X: <... req.$VAR ...> }, ...)
+      - pattern: |
+          $RES.writeHead(..., { $X: <... req.$QUERY.$FOO ...> }, ...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function (request, $RES, ...) {...}
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $INP = request.$QUERY;
+          ...
+          $RES.set(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = request.$QUERY.$VAR;
+          ...
+          $RES.set(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = request.$VAR;
+          ...
+          $RES.set(..., { $X: <... $INP ...>}, ...)
+      - pattern: |
+          $INP = request.$QUERY.$FOO;
+          ...
+          $RES.set(..., { $X: <... $INP ...>}, ...)
+      - pattern: |
+          $INP = request.$VAR;
+          ...
+          $RES.writeHead(..., { $X: <... $INP ...> }, ...)
+      - pattern: |
+          $INP = request.$QUERY.$FOO;
+          ...
+          $RES.writeHead(..., { $X: <... $INP ...> }, ...)
+      - pattern: |
+          $RES.set(..., <... request.$QUERY ...>, ...)
+      - pattern: |
+          $RES.set(..., <... request.$QUERY.$VAR ...>, ...)
+      - pattern: |
+          $RES.set(..., { $X: <... request.$VAR ...>}, ...)
+      - pattern: |
+          $RES.set(..., { $X: <... request.$QUERY.$FOO ...>}, ...)
+      - pattern: |
+          $RES.writeHead(..., { $X: <... request.$VAR ...> }, ...)
+      - pattern: |
+          $RES.writeHead(..., { $X: <... request.$QUERY.$FOO ...> }, ...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    Untrusted user input in response header will result in HTTP Header Injection or Response Splitting Attacks.
+  languages:
+  - javascript
+  severity: ERROR
+  metadata:
+    owasp:
+    - A1:2017-Injection
+    - A03:2021-Injection
+    - A05:2025-Injection
+    cwe: CWE-644
+    shortDescription: Improper neutralization of HTTP headers for scripting syntax
+    security-severity: CRITICAL
+    category: security
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_headers_rule-generic-header-injection

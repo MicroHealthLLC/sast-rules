@@ -1,0 +1,69 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/headers/header_xss_protection.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/headers/rule-header_xss_generic.yml
+# (mh.gitlab.rules_lgpl_javascript_headers_rule-header-xss-generic, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.headers.header-xss-generic
+  pattern-either:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function (req, $RES, ...) {...}
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $RES.header("=~/x-xss-protection/i", 0, ...)
+      - pattern: |
+          $RES.set("=~/x-xss-protection/i", 0, ...)
+      - pattern: |
+          $RES.set(..., { "=~/x-xss-protection/i" : 0 }, ...)
+      - pattern: |
+          $RES.writeHead(..., {"=~/x-xss-protection/i": 0 }, ...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function (request, $RES, ...) {...}
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $RES.header("=~/x-xss-protection/i", 0, ...)
+      - pattern: |
+          $RES.set("=~/x-xss-protection/i", 0, ...)
+      - pattern: |
+          $RES.set(..., { "=~/x-xss-protection/i" : 0 }, ...)
+      - pattern: |
+          $RES.writeHead(..., {"=~/x-xss-protection/i": 0 }, ...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    X-XSS-Protection header is set to 0. This will disable the browser's XSS Filter.
+  languages:
+  - javascript
+  severity: WARNING
+  metadata:
+    owasp:
+    - A6:2017-Security Misconfiguration
+    - A05:2021-Security Misconfiguration
+    - A06:2025-Insecure Design
+    cwe: CWE-358
+    shortDescription: Improperly implemented security check for standard
+    security-severity: MEDIUM
+    category: security
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_headers_rule-header-xss-generic

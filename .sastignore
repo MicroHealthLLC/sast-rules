@@ -19,3 +19,11 @@ rules/microhealth/nginx/host-header-in-response.conf
 rules/microhealth/nginx/proxy-pass-request-variable.conf
 rules/microhealth/yaml/github-actions-add-mask-expression.test.yml
 rules/microhealth/javascript/regexp-from-untrusted-input.ts
+# Rule-test fixtures for the MicroHealth copies of upstream rules: deliberate
+# vulnerable request handlers and fake secrets that `opengrep scan --test` checks
+# the rules against; never executed.
+rules/microhealth/javascript/njsscan-*.js
+rules/microhealth/generic/telegram-bot-api-key.txt
+rules/microhealth/generic/private-key.txt
+rules/microhealth/generic/generic-api-key.txt
+rules/microhealth/html/missing-integrity.html

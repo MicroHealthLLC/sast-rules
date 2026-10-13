@@ -1,0 +1,111 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/xml/xxe_expat.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/xml/rule-xxe_expat.yml
+# (mh.gitlab.rules_lgpl_javascript_xml_rule-xxe-expat, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.xml.xxe-expat
+  pattern-either:
+  - patterns:
+    - pattern-inside: |
+        require('node-expat')
+        ...
+    - pattern-either:
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern-inside: |
+          $PARSER = new $EXPAT.Parser(...)
+          ...
+      - pattern-inside: |
+          $PARSER = new Parser(...)
+          ...
+    - pattern-either:
+      - pattern: $PARSER.parse(<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PARSER.parse(<... req.$BODY ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PARSER.parse(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PARSER.parse(<... $INPUT ...>,...)
+      - pattern: $PARSER.write(<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PARSER.write(<... req.$BODY ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PARSER.write(<... $INPUT ...>,...)
+      - pattern: |-
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PARSER.write(<... $INPUT ...>,...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-inside: |
+        require('node-expat')
+        ...
+    - pattern-either:
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern-inside: |
+          $PARSER = new $EXPAT.Parser(...)
+          ...
+      - pattern-inside: |
+          $PARSER = new Parser(...)
+          ...
+    - pattern-either:
+      - pattern: $PARSER.parse(<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PARSER.parse(<... request.$BODY ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PARSER.parse(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PARSER.parse(<... $INPUT ...>,...)
+      - pattern: $PARSER.write(<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PARSER.write(<... request.$BODY ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PARSER.write(<... $INPUT ...>,...)
+      - pattern: |-
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PARSER.write(<... $INPUT ...>,...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    Make sure that unverified user data can not reach the XML Parser, as it can result in XML External or Internal Entity (XXE) Processing vulnerabilities.
+  metadata:
+    owasp:
+    - A4:2017-XML External Entities (XXE)
+    - A05:2021-Security Misconfiguration
+    - A02:2025-Security Misconfiguration
+    cwe: CWE-611
+    shortDescription: Improper restriction of XML external entity reference
+    security-severity: CRITICAL
+    category: security
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_xml_rule-xxe-expat
+  severity: ERROR
+  languages:
+  - javascript
