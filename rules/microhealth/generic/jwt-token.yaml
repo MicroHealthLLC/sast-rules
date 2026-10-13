@@ -1,0 +1,30 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: generic.jwt-token
+    languages: [regex]
+    severity: ERROR
+    message: >-
+      A JSON Web Token is in the source. A signed token is a bearer credential
+      until it expires: remove it, load it from configuration at run time, and
+      revoke or rotate whatever signed it.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [jwt, secrets]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      cwe: ["CWE-798: Use of Hard-coded Credentials"]
+      references:
+        - https://supabase.com/docs/guides/api/api-keys
+      # Replaces mh.opengrep.generic.secrets.security.detected-jwt-token and
+      # mh.opengrep.generic.secrets.gitleaks.jwt (which reported every token
+      # twice). One exception, by content: a Supabase ANON key, whose payload is
+      # {"iss":"supabase","ref":"<20-char project ref>","role":"anon",...}.
+      # Supabase publishes it to every browser by design; it admits a caller
+      # only to row-level security as `anon`. The exclusion pins the base64 of
+      # the fixed claims around the ref, so a service_role key, or any other
+      # issuer's or role's token, is still reported.
+    patterns:
+      - pattern-regex: \beyJ[A-Za-z0-9_-]{14,}\.[A-Za-z0-9_-]{13,}(?:\.[A-Za-z0-9_-]+)?
+      - pattern-not-regex: \beyJ[A-Za-z0-9_-]*\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6[A-Za-z0-9_-]{28}Iiwicm9sZSI6ImFub24i[A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]+)?

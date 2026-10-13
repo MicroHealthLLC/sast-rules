@@ -4,3 +4,18 @@ upstream/
 dist/
 # Rule-test fixture: deliberate md5/blake2b calls that `opengrep scan --test` checks the FIPS hash rule against; never executed.
 rules/microhealth/python/fips-non-approved-hash.py
+# Rule-test fixtures for the MicroHealth rules: each holds deliberate `ruleid:` cases
+# (fake keys, synthetic tokens, unsafe calls) that `opengrep scan --test` checks; never executed.
+rules/microhealth/android/exported-activity.xml
+rules/microhealth/bash/ifs-global.sh
+rules/microhealth/generic/gcp-service-account-key.txt
+rules/microhealth/generic/jwt-token.txt
+rules/microhealth/javascript/express-sendfile-request-path.js
+rules/microhealth/javascript/html-string-to-dom-sink.ts
+rules/microhealth/javascript/json-parse-into-object-assign.ts
+rules/microhealth/javascript/react-unsanitized-inner-html.tsx
+rules/microhealth/javascript/secret-compare-not-constant-time.ts
+rules/microhealth/nginx/host-header-in-response.conf
+rules/microhealth/nginx/proxy-pass-request-variable.conf
+rules/microhealth/yaml/github-actions-add-mask-expression.test.yml
+rules/microhealth/javascript/regexp-from-untrusted-input.ts

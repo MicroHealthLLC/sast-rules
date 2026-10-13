@@ -1,0 +1,101 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.react-unsanitized-inner-html
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      dangerouslySetInnerHTML receives markup that was not visibly sanitised.
+      React's escaping is off for this element, so any script, event handler
+      or javascript: URL in the value runs in the page (XSS). Pass the value
+      through DOMPurify (DOMPurify.sanitize or a project wrapper such as
+      sanitizeSvg / sanitizeHtml) where it is used, or render it as text.
+    metadata:
+      category: security
+      subcategory: [audit]
+      technology: [react]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      cwe: ["CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')"]
+      owasp: ["A03:2021 - Injection"]
+      references:
+        - https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html
+      # Replaces mh.gitlab.javascript_react_rule-dangerouslysetinnerhtml and
+      # mh.opengrep.typescript.react.security.audit.react-dangerouslysetinnerhtml,
+      # which reported every use, including values produced by DOMPurify in the
+      # same component (15 of 15 hits in TueriCXO were sanitised). This rule
+      # stays quiet only when the sanitiser call is visible: at the attribute,
+      # or in the const (plain, conditional or useMemo) the attribute reads.
+    patterns:
+      - pattern: |
+          <$EL dangerouslySetInnerHTML={{__html: $X}} />
+      - pattern-not: |
+          <$EL dangerouslySetInnerHTML={{__html: "..."}} />
+      - pattern-not: |
+          <$EL dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(...)}} />
+      - pattern-not: |
+          <$EL dangerouslySetInnerHTML={{__html: sanitizeSvg(...)}} />
+      - pattern-not: |
+          <$EL dangerouslySetInnerHTML={{__html: sanitizeHtml(...)}} />
+      - pattern-not: |
+          <$EL dangerouslySetInnerHTML={{__html: sanitizeMarkup(...)}} />
+      - pattern-not-inside: |
+          $V = DOMPurify.sanitize(...);
+          ...
+      - pattern-not-inside: |
+          $V = sanitizeSvg(...);
+          ...
+      - pattern-not-inside: |
+          $V = sanitizeHtml(...);
+          ...
+      - pattern-not-inside: |
+          $V = sanitizeMarkup(...);
+          ...
+      - pattern-not-inside: |
+          $V = $C ? DOMPurify.sanitize(...) : $ALT;
+          ...
+      - pattern-not-inside: |
+          $V = $C ? sanitizeSvg(...) : $ALT;
+          ...
+      - pattern-not-inside: |
+          $V = $C ? sanitizeHtml(...) : $ALT;
+          ...
+      - pattern-not-inside: |
+          $V = $C ? sanitizeMarkup(...) : $ALT;
+          ...
+      - pattern-not-inside: |
+          $V = useMemo(() => DOMPurify.sanitize(...), ...);
+          ...
+      - pattern-not-inside: |
+          $V = useMemo(() => sanitizeSvg(...), ...);
+          ...
+      - pattern-not-inside: |
+          $V = useMemo(() => sanitizeHtml(...), ...);
+          ...
+      - pattern-not-inside: |
+          $V = useMemo(() => sanitizeMarkup(...), ...);
+          ...
+      - pattern-not-inside: |
+          $V = useMemo(() => $C ? DOMPurify.sanitize(...) : $ALT, ...);
+          ...
+      - pattern-not-inside: |
+          $V = useMemo(() => $C ? sanitizeSvg(...) : $ALT, ...);
+          ...
+      - pattern-not-inside: |
+          $V = useMemo(() => $C ? sanitizeHtml(...) : $ALT, ...);
+          ...
+      - pattern-not-inside: |
+          $V = useMemo(() => $C ? sanitizeMarkup(...) : $ALT, ...);
+          ...
+      - pattern-not-inside: |
+          $V = useMemo(() => { ... return DOMPurify.sanitize(...); }, ...);
+          ...
+      - pattern-not-inside: |
+          $V = useMemo(() => { ... return sanitizeSvg(...); }, ...);
+          ...
+      - pattern-not-inside: |
+          $V = useMemo(() => { ... return sanitizeHtml(...); }, ...);
+          ...
+      - pattern-not-inside: |
+          $V = useMemo(() => { ... return sanitizeMarkup(...); }, ...);
+          ...

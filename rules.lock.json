@@ -14,8 +14,8 @@
   "microhealth": {}
  },
  "bundles": {
-  "internal": 2146,
-  "product": 273
+  "internal": 2143,
+  "product": 283
  },
  "rules": {
   "mh.gitlab.c_access_rule-RpcImpersonateClient-ImpersonateLoggedOnUser": {
@@ -2419,11 +2419,9 @@
    "path": "upstream/gitlab/javascript/dos/rule-non-literal-regexp.yml",
    "license": "MIT",
    "sha256": "8c141ed0847f095c45bec40f9b1a76883de5c391271a919aecfbaea7cef212fd",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Reports every RegExp built from anything but a literal, including module constants and values already escaped (30 hits in TueriCXO, none a user-written pattern). Replaced, together with detect-non-literal-regexp, by mh.microhealth.javascript.regexp-from-untrusted-input: request, URL and form input compiled into a RegExp without escaping."
   },
   "mh.gitlab.javascript_eval_rule-eval-with-expression": {
    "source": "gitlab",
@@ -2478,11 +2476,9 @@
    "path": "upstream/gitlab/javascript/react/rule-dangerouslysetinnerhtml.yml",
    "license": "MIT",
    "sha256": "a217a0678da19db3ef86a19952a06c26454a9559748d5b539629828825aacb37",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Reports every dangerouslySetInnerHTML, including values produced by DOMPurify in the same component (10 of 10 sanitised in TueriCXO). Replaced by mh.microhealth.javascript.react-unsanitized-inner-html, which reports only a value whose sanitiser call is not visible at the attribute or in the const it reads."
   },
   "mh.gitlab.javascript_require_rule-non-literal-require": {
    "source": "gitlab",
@@ -2502,11 +2498,9 @@
    "path": "upstream/gitlab/javascript/timing/rule-possible-timing-attacks.yml",
    "license": "MIT",
    "sha256": "99cff33f30b86f7c4ef9b2b13047904cdd516f83bc922240d7c247de2a23f6c6",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Also reports a secret-named variable compared with a literal (`if (token === \"\") continue;` while splitting a list), which reveals nothing about any secret. Replaced by mh.microhealth.javascript.secret-compare-not-constant-time: a secret compared with a value that is neither a literal nor another secret we hold, in any expression (not only `if`)."
   },
   "mh.gitlab.javascript_xss_rule-mustache-escape": {
    "source": "gitlab",
@@ -6750,12 +6744,168 @@
    ],
    "status": "active"
   },
+  "mh.microhealth.android.exported-activity": {
+   "source": "microhealth",
+   "upstream_id": "android.exported-activity",
+   "path": "rules/microhealth/android/exported-activity.yaml",
+   "license": "MIT",
+   "sha256": "70caac97599618f442216b931ff96bfd65a37cadb80e42970fd6e8607034bba5",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.bash.ifs-global": {
+   "source": "microhealth",
+   "upstream_id": "bash.ifs-global",
+   "path": "rules/microhealth/bash/ifs-global.yaml",
+   "license": "MIT",
+   "sha256": "6de0b98cca1b1e9b445fa24d52c1d15aee2429d73d8658302f7821168e55e2bd",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.generic.gcp-service-account-key": {
+   "source": "microhealth",
+   "upstream_id": "generic.gcp-service-account-key",
+   "path": "rules/microhealth/generic/gcp-service-account-key.yaml",
+   "license": "MIT",
+   "sha256": "17eba10439c44d463a3ebfa19122d94f11164ed8073d7732002b26803bc6b087",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.generic.jwt-token": {
+   "source": "microhealth",
+   "upstream_id": "generic.jwt-token",
+   "path": "rules/microhealth/generic/jwt-token.yaml",
+   "license": "MIT",
+   "sha256": "8d268008a5af882771d03446133c947e3f7e88cdd428ce9412ab694967f67318",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.express-sendfile-request-path": {
+   "source": "microhealth",
+   "upstream_id": "javascript.express-sendfile-request-path",
+   "path": "rules/microhealth/javascript/express-sendfile-request-path.yaml",
+   "license": "MIT",
+   "sha256": "d9ef7a1041279758aeef3510c699d99d5aa876091525325d7f31aeaa941b33f1",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.html-string-to-dom-sink": {
+   "source": "microhealth",
+   "upstream_id": "javascript.html-string-to-dom-sink",
+   "path": "rules/microhealth/javascript/html-string-to-dom-sink.yaml",
+   "license": "MIT",
+   "sha256": "4e5ff2f15278d7a1a94c001ed31f4c9f5a8ff3aaf132ba7596b4b7c94038e7a5",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.json-parse-into-object-assign": {
+   "source": "microhealth",
+   "upstream_id": "javascript.json-parse-into-object-assign",
+   "path": "rules/microhealth/javascript/json-parse-into-object-assign.yaml",
+   "license": "MIT",
+   "sha256": "6eb8c520a60553efccd7313dc201d3d638367b1ebe4dec09bb77a61952e3e347",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.react-unsanitized-inner-html": {
+   "source": "microhealth",
+   "upstream_id": "javascript.react-unsanitized-inner-html",
+   "path": "rules/microhealth/javascript/react-unsanitized-inner-html.yaml",
+   "license": "MIT",
+   "sha256": "aee5add4760058c09e5e9d33b63351078e8d8d6de6c5ba34a51e04e2e840dcbe",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.regexp-from-untrusted-input": {
+   "source": "microhealth",
+   "upstream_id": "javascript.regexp-from-untrusted-input",
+   "path": "rules/microhealth/javascript/regexp-from-untrusted-input.yaml",
+   "license": "MIT",
+   "sha256": "d05a7625e8b5240ad070a7c01ae99288fd7af40b5b328b938ff959a1864e085e",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.javascript.secret-compare-not-constant-time": {
+   "source": "microhealth",
+   "upstream_id": "javascript.secret-compare-not-constant-time",
+   "path": "rules/microhealth/javascript/secret-compare-not-constant-time.yaml",
+   "license": "MIT",
+   "sha256": "948247213e0fc4eea42c32655135acd4087c987f2de35bbc0bfd48ec12425504",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.nginx.host-header-in-response": {
+   "source": "microhealth",
+   "upstream_id": "nginx.host-header-in-response",
+   "path": "rules/microhealth/nginx/host-header-in-response.yaml",
+   "license": "MIT",
+   "sha256": "a1d310829db3e3ec60c0fd9e994b111d8c44a744a5506f16bda01c06da2bd16f",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.nginx.proxy-pass-request-variable": {
+   "source": "microhealth",
+   "upstream_id": "nginx.proxy-pass-request-variable",
+   "path": "rules/microhealth/nginx/proxy-pass-request-variable.yaml",
+   "license": "MIT",
+   "sha256": "d7d3eade48cb72d13cf3d069235dbd91064183fa7c425d671547d7e846d868e4",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
   "mh.microhealth.python.fips-non-approved-hash": {
    "source": "microhealth",
    "upstream_id": "python.fips-non-approved-hash",
    "path": "rules/microhealth/python/fips-non-approved-hash.yaml",
    "license": "MIT",
    "sha256": "5940eca1fb59ebc4e3a4ed21c9b9fe5bc63ab44aa3836802159d4a1a2b1679d9",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.yaml.github-actions-add-mask-expression": {
+   "source": "microhealth",
+   "upstream_id": "yaml.github-actions-add-mask-expression",
+   "path": "rules/microhealth/yaml/github-actions-add-mask-expression.yaml",
+   "license": "MIT",
+   "sha256": "996939f5105c931fd764c5b56d36d80fceb14ddb2b2135cb3deddb2326fe7f24",
    "bundles": [
     "internal",
     "product"
@@ -7261,10 +7411,9 @@
    "path": "upstream/opengrep/bash/lang/security/ifs-tampering.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "bc69a60a5e01e81333b3e533f5f087ca5c3eebabbaea2da33f7a535d09b981a9",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Reports every `IFS=`, including the scoped forms its own message recommends (inside `$( \u2026 )`, a subshell, or after `local IFS`). Replaced by mh.microhealth.bash.ifs-global."
   },
   "mh.opengrep.c.lang.correctness.c-string-equality.c-string-equality": {
    "source": "opengrep",
@@ -8726,10 +8875,9 @@
    "path": "upstream/opengrep/generic/nginx/security/missing-internal.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "21e86766ce603ed989518e1439948d1a490a6c396cc89b8a76428cf11dc82f7f",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Reports every proxy_pass to a variable without `internal`, including `set $upstream \"<configured origin>\"; proxy_pass $upstream;`, whose variable comes from configuration (it only makes nginx re-resolve DNS); `internal` would break a public reverse proxy. Replaced by mh.microhealth.nginx.proxy-pass-request-variable, which reports a client-controlled variable in the destination's scheme or authority."
   },
   "mh.opengrep.generic.nginx.security.missing-ssl-version.missing-ssl-version": {
    "source": "opengrep",
@@ -8759,10 +8907,9 @@
    "path": "upstream/opengrep/generic/nginx/security/request-host-used.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "d00330e20c1823ca03d561998bbcdf992cc2a6830c10a0d93c22bf0ab8ee7ae2",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Reports every `$host` / `$http_host`, including `proxy_set_header Host $host`, which only forwards the request's own Host upstream. Replaced by mh.microhealth.nginx.host-header-in-response: Host reflected in a redirect, header or Location this server sends."
   },
   "mh.opengrep.generic.secrets.gitleaks.adafruit-api-key.adafruit-api-key": {
    "source": "opengrep",
@@ -9738,10 +9885,9 @@
    "path": "upstream/opengrep/generic/secrets/gitleaks/jwt.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "e603c7b15397bcb07c29a46ae052787e2d83a879d360f11878c69eb53016875e",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Duplicate of detected-jwt-token (the same tokens, reported twice); replaced with it by mh.microhealth.generic.jwt-token (see above)."
   },
   "mh.opengrep.generic.secrets.gitleaks.kraken-access-token.kraken-access-token": {
    "source": "opengrep",
@@ -10739,9 +10885,10 @@
    "path": "upstream/opengrep/generic/secrets/security/detected-aws-account-id.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "33ba6a791e219ede66235835b57dff154decf8b99971207ebc9c0cfb3928c95c",
-   "bundles": [],
-   "status": "disabled",
-   "reason": "An AWS account ID is an identifier, not a credential (AWS: \"account IDs are not considered secret\"); access needs credentials this rule never sees. It fired on every pinned MicroHealth FIPS image reference (295669632222.dkr.ecr...), 87 times in Tueri Core alone, burying real findings. Secret keys are still caught by the AWS access-key and secret rules in both upstream sources and by Trivy's secret scanner."
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
   },
   "mh.opengrep.generic.secrets.security.detected-aws-appsync-graphql-key.detected-aws-appsync-graphql-key": {
    "source": "opengrep",
@@ -10892,10 +11039,9 @@
    "path": "upstream/opengrep/generic/secrets/security/detected-google-gcm-service-account.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "61adc41e0dbb6c6d1f9bfa66402a625e29f0af053a097eb41923a9a72ee92491",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Matched the `\"type\": \"service_account\"` marker alone, so it reported form placeholders and documentation that show the shape of a key file (3 of 3 hits in TueriCXO, all UI placeholders). The marker is not a credential; the private key is. Replaced by mh.microhealth.generic.gcp-service-account-key, which requires the marker AND a private key with key material in the same file. A bare PEM private key is still caught by the private-key rules of both upstream sources and by Trivy."
   },
   "mh.opengrep.generic.secrets.security.detected-google-oauth-access-token.detected-google-oauth-access-token": {
    "source": "opengrep",
@@ -10947,10 +11093,9 @@
    "path": "upstream/opengrep/generic/secrets/security/detected-jwt-token.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "0935de2523d1c709ff740a5f8789ef67eaf46751c27a72afd6d62ee36f05e591",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.generic.jwt-token. This rule and gitleaks.jwt reported every token twice, and both reported the public Supabase ANON key (role=anon, shipped to every browser by design) in migrations that can never be edited (9 + 9 hits in TueriCXO, all anon keys). The replacement keeps the same token shape and exempts only a payload whose fixed claims are iss=supabase and role=anon; a service_role key or any other token is still reported."
   },
   "mh.opengrep.generic.secrets.security.detected-kolide-api-key.detected-kolide-api-key": {
    "source": "opengrep",
@@ -12324,10 +12469,9 @@
    "path": "upstream/opengrep/java/android/security/exported_activity.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "5d5783e972a1bb86d0dac75ee8945291d7c0a534519749c59c76567c4ab3da91",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Reports the app's MAIN/LAUNCHER activity, which Android 12+ requires to be exported, so every Android/Capacitor app carried a finding it could not fix. Replaced by mh.microhealth.android.exported-activity, which exempts only an activity whose sole intent filter is MAIN + LAUNCHER."
   },
   "mh.opengrep.java.aws-lambda.security.tainted-sql-string.tainted-sql-string": {
    "source": "opengrep",
@@ -14234,10 +14378,9 @@
    "path": "upstream/opengrep/javascript/express/security/audit/express-res-sendfile.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "7be701b77b8597005d759c04eea06feace696f03be90900983ab6327b2f3c094",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Its sources include ANY function parameter typed `string`, and its sink is any method named sendFile on any object, so a storage client's own `sendFile(path: string)` upload method was reported as Express (6 of 6 in TueriCXO). Replaced by mh.microhealth.javascript.express-sendfile-request-path: request data to an Express response's sendFile/download without `root`."
   },
   "mh.opengrep.javascript.express.security.audit.express-session-hardcoded-secret.express-session-hardcoded-secret": {
    "source": "opengrep",
@@ -14948,10 +15091,9 @@
    "path": "upstream/opengrep/javascript/lang/security/audit/detect-non-literal-regexp.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "8b22876007d576d725165a3db576f905313e0129ac42db72331814aeb3934196",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Its taint source is \"any parameter of any function\", so a helper called only with constant tag names was user input (22 hits in TueriCXO, all false). Replaced by mh.microhealth.javascript.regexp-from-untrusted-input (see above)."
   },
   "mh.opengrep.javascript.lang.security.audit.detect-non-literal-require.detect-non-literal-require": {
    "source": "opengrep",
@@ -15124,10 +15266,9 @@
    "path": "upstream/opengrep/javascript/lang/security/audit/unsafe-formatstring.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "8ccf5ae217555935a9e035a536f7069eb939fa28bcfed789bb9a9eb3b4632420",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Reports any template literal passed as the first argument of console.* when more arguments follow (2,279 hits in TueriCXO, every one a console.log/warn/error). The harm it describes is that a `%s` inside the interpolated value makes console substitute a later argument into the line: the text of a log line changes, nothing executes, and the value was attacker-chosen log text already. Log injection proper (newlines, terminal escapes) is not what it detects either, so it carries no security signal and buried every real finding in the report."
   },
   "mh.opengrep.javascript.lang.security.detect-buffer-noassert.detect-buffer-noassert": {
    "source": "opengrep",
@@ -15212,10 +15353,9 @@
    "path": "upstream/opengrep/javascript/lang/security/html-in-template-string.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "4f91593ae2592fe812df712dc0a8841ef82f90d8a696e0f13d404dbe025bc36e",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Reports every template literal that contains `<...>` and an interpolation: XML, SVG and PDF writers, LLM prompts, YAML comments, regex sources, CLI usage text. It ignores whether each value is escaped and whether the string is ever parsed as HTML (85 hits in TueriCXO, 84 false). Replaced by mh.microhealth.javascript.html-string-to-dom-sink, which follows interpolated values to the sinks that parse HTML (innerHTML, outerHTML, insertAdjacentHTML, document.write, srcdoc) and treats escaping helpers and DOMPurify as sanitisers; it finds the one real case (a document.write of unescaped vendor and model text)."
   },
   "mh.opengrep.javascript.lang.security.insecure-object-assign.insecure-object-assign": {
    "source": "opengrep",
@@ -15223,10 +15363,9 @@
    "path": "upstream/opengrep/javascript/lang/security/insecure-object-assign.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "4b21e0b6834eff9fa68dd87952c78d1a66abcb7308137a2cdff18e06a9dfb89e",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Its sink is every argument of Object.assign, including the TARGET, so writing a literal of fixed keys into a parsed object was \"prototype pollution\". Replaced by mh.microhealth.javascript.json-parse-into-object-assign: parsed JSON as a source argument, schema-validated values excluded."
   },
   "mh.opengrep.javascript.lang.security.spawn-git-clone.spawn-git-clone": {
    "source": "opengrep",
@@ -27363,10 +27502,9 @@
    "path": "upstream/opengrep/typescript/react/security/audit/react-dangerouslysetinnerhtml.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "baa607ef882e053d26f58b45266c8538f0f32bd65d810a5f555b3b1afec4c106",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Same finding as mh.gitlab.javascript_react_rule-dangerouslysetinnerhtml (reported twice); replaced with it by mh.microhealth.javascript.react-unsanitized-inner-html."
   },
   "mh.opengrep.typescript.react.security.audit.react-href-var.react-href-var": {
    "source": "opengrep",
@@ -27549,10 +27687,9 @@
    "path": "upstream/opengrep/yaml/github-actions/security/audit/unsafe-add-mask-workflow-command.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "d385d4f289dc74673b8548820cf1d15bac7172cb81a97037370597a7db2fa473",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Its pattern is the literal text `::add-mask::`, so it reports every masking command however its value is produced, and the only way to satisfy it is to stop masking secrets. Replaced by mh.microhealth.yaml.github-actions-add-mask-expression: a `${{ \u2026 }}` expression interpolated into the command, the case that can inject."
   },
   "mh.opengrep.yaml.github-actions.security.curl-eval.curl-eval": {
    "source": "opengrep",

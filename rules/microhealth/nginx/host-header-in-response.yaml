@@ -1,0 +1,32 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: nginx.host-header-in-response
+    languages: [regex]
+    severity: WARNING
+    paths:
+      include: ["*.conf", "*.conf.template", "*nginx*", "*vhost*", "sites-available/*", "sites-enabled/*"]
+    message: >-
+      The client's Host header ($host / $http_host) is written into a
+      response: a redirect target, a header, or a rewritten Location. With
+      `server_name _` (or a default server) any Host is accepted, so a
+      request can make this server send users — or a shared cache — to
+      another site (host-header injection, open redirect). Use a configured
+      name ($server_name with an explicit server_name, or a literal).
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [nginx]
+      confidence: MEDIUM
+      likelihood: LOW
+      impact: MEDIUM
+      cwe: ["CWE-644: Improper Neutralization of HTTP Headers for Scripting Syntax"]
+      references:
+        - https://portswigger.net/web-security/host-header
+      # Replaces mh.opengrep.generic.nginx.security.request-host-used, which
+      # reported every occurrence of $host — including `proxy_set_header Host
+      # $host`, which only forwards the request's own Host to the upstream and
+      # puts nothing in the response this server builds. The harm is a Host
+      # value reflected in a redirect, header or Location; that is what this
+      # rule reports.
+    patterns:
+      - pattern-regex: (?m)^\s*(?:return|rewrite|add_header|proxy_redirect|sub_filter)\b[^;\n]*\$(?:http_host|host)\b[^;]*;

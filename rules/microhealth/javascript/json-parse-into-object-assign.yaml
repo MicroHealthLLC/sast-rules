@@ -1,0 +1,46 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.json-parse-into-object-assign
+    languages: [javascript, typescript]
+    severity: WARNING
+    mode: taint
+    message: >-
+      An object parsed from JSON is merged into another with Object.assign.
+      A parsed object can carry a "__proto__" (or "constructor") key, and
+      copying it can change the target's prototype or shadow its methods
+      (prototype pollution). Copy only the keys you expect, validate the
+      object with a schema first, or merge into Object.create(null).
+    metadata:
+      category: security
+      subcategory: [audit]
+      technology: [javascript]
+      confidence: MEDIUM
+      likelihood: LOW
+      impact: MEDIUM
+      cwe: ["CWE-1321: Improperly Controlled Modification of Object Prototype Attributes ('Prototype Pollution')"]
+      references:
+        - https://cheatsheetseries.owasp.org/cheatsheets/Prototype_Pollution_Prevention_Cheat_Sheet.html
+      # Replaces mh.opengrep.javascript.lang.security.insecure-object-assign,
+      # whose sink is every argument of Object.assign — including the TARGET.
+      # Writing a literal of fixed keys INTO an object that came from JSON
+      # (`Object.assign(result, { data: [], status: 200 })`) copies nothing
+      # from the JSON and cannot pollute anything. The danger is the parsed
+      # object as a SOURCE (second argument onward), which is what this rule
+      # reports.
+    pattern-sources:
+      - patterns:
+          - pattern: JSON.parse(...)
+          - pattern-not: JSON.parse("...", ...)
+    pattern-sanitizers:
+      # A schema validator (zod and alike) returns only the declared keys.
+      - patterns:
+          - pattern-either:
+              - pattern: $SCHEMA.parse(...)
+              - pattern: $SCHEMA.safeParse(...)
+          - pattern-not: JSON.parse(...)
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: Object.assign($TARGET, $SRC, ...)
+              - pattern: Object.assign($TARGET, $OTHER, ..., $SRC, ...)
+          - focus-metavariable: $SRC

@@ -1,0 +1,32 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: bash.ifs-global
+    languages: [bash]
+    severity: WARNING
+    message: >-
+      IFS is changed for the rest of the script. Every later unquoted
+      expansion then splits on the new separator, which can turn one argument
+      into several (or a path into pieces) in code far from here. Set it only
+      for one command (`IFS=, read -r a b`) or inside a subshell / function
+      with `local IFS`.
+    metadata:
+      category: security
+      subcategory: [audit]
+      technology: [bash]
+      confidence: MEDIUM
+      likelihood: LOW
+      impact: LOW
+      cwe: ["CWE-20: Improper Input Validation"]
+      references:
+        - https://www.gnu.org/software/bash/manual/html_node/Word-Splitting.html
+      # Replaces mh.opengrep.bash.lang.security.ifs-tampering, which reported
+      # every `IFS=` — including the scoped forms its own message recommends:
+      # inside a command substitution `$(IFS=,; …)`, a subshell, or a
+      # `local IFS` in a function.
+    patterns:
+      - pattern: IFS=$X
+      - pattern-not-inside: $(...)
+      - pattern-not-inside: (...)
+      - pattern-not-inside: |
+          local IFS
+          ...

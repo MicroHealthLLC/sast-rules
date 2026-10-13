@@ -1,0 +1,9 @@
+# Rule-test fixture: synthetic tokens with a fake signature; none is a credential.
+# ruleid: generic.jwt-token
+service_role = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiY2RlZmdoaWprbG1ub3BxcnN0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MSwiZXhwIjoyfQ.c2lnbmF0dXJlLW5vdC1yZWFs"
+# ruleid: generic.jwt-token
+user_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImV4cCI6Mn0.c2lnbmF0dXJlLW5vdC1yZWFs"
+# ok: generic.jwt-token
+anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiY2RlZmdoaWprbG1ub3BxcnN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjEsImV4cCI6Mn0.c2lnbmF0dXJlLW5vdC1yZWFs"
+# ok: generic.jwt-token
+not_a_token = "eyJhbGciOi"
