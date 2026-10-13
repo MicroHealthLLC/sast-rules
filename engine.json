@@ -14,6 +14,9 @@
   },
   "trivy": {
     "version": "0.74.0",
-    "note": "0.75.0 needs Go 1.27; fips-go ships the go1.26 line"
+    "note": "0.75.0 needs Go 1.27; fips-go ships the go1.26 line",
+    "version_built": "0.74.0",
+    "url": "https://github.com/MicroHealthLLC/sast-rules/releases/download/engine-trivy-0.74.0/trivy-0.74.0-linux-amd64-fips",
+    "sha256": "13efbc29992ba1d5ac2fcb54d000fbdbe96e19e53b5006ca148005862a2483b7"
   }
 }
