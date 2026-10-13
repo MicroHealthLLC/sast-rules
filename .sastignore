@@ -1,0 +1,2 @@
+# Rule-test fixture: deliberate md5/blake2b calls that `opengrep scan --test` checks the FIPS hash rule against; never executed.
+rules/microhealth/python/fips-non-approved-hash.py
