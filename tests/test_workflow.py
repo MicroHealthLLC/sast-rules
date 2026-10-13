@@ -91,7 +91,9 @@ class SharedWorkflowTests(unittest.TestCase):
                 for step in job.get("steps") or []:
                     if "docker build" in step.get("run", ""):
                         for line in step["run"].splitlines():
-                            if line.strip().startswith("FROM "):
+                            # `FROM scratch` only exports files from a FIPS
+                            # stage (engines.yml); nothing runs in it.
+                            if line.strip().startswith("FROM ") and line.strip() != "FROM scratch":
                                 self.assertRegex(line, r"microhealthllc/fips-[a-z0-9-]+:dev-latest@sha256:[0-9a-f]{64}", path.name)
 
 

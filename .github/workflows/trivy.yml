@@ -3,11 +3,11 @@ name: Trivy and SBOM
 # CycloneDX SBOM, of a repository and optionally of container images. Called
 # by security-scan.yml; it can be called on its own the same way.
 #
-#   * Trivy is BUILT FROM SOURCE at the version engine.json pins, on
-#     MicroHealth's FIPS Go image with the Go Cryptographic Module (GOFIPS140,
-#     CMVP #5247), exactly as Tueri Core's code scanner builds it; every Go
-#     module is checked against sum.golang.org. A release binary would carry
-#     Go's non-validated crypto. It runs on MicroHealth's FIPS Python image.
+#   * Trivy is MicroHealth's FIPS build: from source, on the FIPS Go image with
+#     the Go Cryptographic Module (GOFIPS140, CMVP #5247), once per version by
+#     engines.yml, and checked here against the sha256 engine.json records.
+#     An upstream release binary would carry Go's non-validated crypto. It
+#     runs on MicroHealth's FIPS Python image.
 #   * Its vulnerability database is downloaded on every run (that is what
 #     makes the scan current); nothing else is.
 #   * Reports go where scripts/destination.sh says: the default branch's
@@ -171,28 +171,16 @@ jobs:
         with:
           registries: ${{ inputs.image_registries != '' && format('295669632222,{0}', inputs.image_registries) || '295669632222' }}
 
-      - name: Build Trivy (FIPS, from source)
+      - name: Trivy (the FIPS build engine.json pins)
         run: |
-          version="$(jq -r .trivy.version .sast-rules/engine.json)"
-          docker build --build-arg APK_REFRESH=${{ github.run_id }} --build-arg TRIVY_VERSION="$version" \
-            -t sast-trivy:fips - <<'DOCKERFILE'
-          FROM 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-go:dev-latest@sha256:8851dd0e45806ba6e5242152e2abc1219e3f0cf8754a95c92fde1d3fc753c7f2 AS trivy
-          ARG TRIVY_VERSION
-          # GOEXPERIMENT=jsonv2 is what upstream's own release build sets.
-          # The Go build and module caches and the linker's temporary files go to
-          # tmpfs (memory): Trivy's build needs several GB of them, more than a
-          # GitHub-hosted runner's disk has left beside the other images, and none of
-          # it belongs in a layer. Only the binary is written to disk. The tmpfs
-          # covers all of GOPATH (/tmp/go): a mount deeper down makes BuildKit
-          # create /tmp/go and /tmp/go/pkg owned by root, and the build user
-          # (10001) then cannot create pkg/sumdb or bin/.
-          RUN --mount=type=tmpfs,target=/tmp/go --mount=type=tmpfs,target=/tmp/gobuild \
-              GOCACHE=/tmp/gobuild/cache GOTMPDIR=/tmp/gobuild GOEXPERIMENT=jsonv2 go install -trimpath \
-                -ldflags "-s -w -X github.com/aquasecurity/trivy/pkg/version/app.ver=${TRIVY_VERSION}" \
-                "github.com/aquasecurity/trivy/cmd/trivy@v${TRIVY_VERSION}" \
-           && go version -m "${GOPATH}/bin/trivy" | grep 'GOFIPS140=v1.0.0' >/dev/null \
-           && mkdir -p /tmp/out && cp "${GOPATH}/bin/trivy" /tmp/out/trivy
-
+          [ "$(uname -m)" = x86_64 ] || { echo "::error::The FIPS Trivy build is linux/amd64 only"; exit 1; }
+          url="$(jq -r .trivy.url .sast-rules/engine.json)"; sum="$(jq -r .trivy.sha256 .sast-rules/engine.json)"
+          case "$sum" in (*[!0-9a-f]*|"") echo "::error::engine.json records no Trivy build"; exit 1;; esac
+          mkdir -p "$RUNNER_TEMP/trivy-bin"
+          curl -fsSL -o "$RUNNER_TEMP/trivy-bin/trivy" "$url"
+          echo "${sum}  $RUNNER_TEMP/trivy-bin/trivy" | sha256sum -c -
+          chmod 0755 "$RUNNER_TEMP/trivy-bin/trivy"
+          docker build --build-arg APK_REFRESH=${{ github.run_id }} -t sast-trivy:fips -f - "$RUNNER_TEMP/trivy-bin" <<'DOCKERFILE'
           FROM 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-python:dev-latest@sha256:0e33bb16875879bff135f8a53972cbad7e1b6d24e82b16f2f2c55f17828c64ec
           # Per-run package refresh: a new value re-runs the layer below.
           ARG APK_REFRESH
@@ -201,7 +189,9 @@ jobs:
           USER root
           RUN apk add --no-cache git aws-cli && apk upgrade --no-cache \
               && git config --system --add safe.directory '*'
-          COPY --from=trivy /tmp/out/trivy /usr/local/bin/trivy
+          # Built from source on fips-go with GOFIPS140 by engines.yml, and
+          # checked against engine.json's sha256 before this build.
+          COPY trivy /usr/local/bin/trivy
           RUN trivy --version
           DOCKERFILE
 

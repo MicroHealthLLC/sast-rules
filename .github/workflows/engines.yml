@@ -1,0 +1,106 @@
+name: Build the Trivy engine
+# Trivy is built from source ONCE per version here, not in every scan: on
+# MicroHealth's FIPS Go image with the Go Cryptographic Module (GOFIPS140,
+# CMVP #5247), every Go module checked against sum.golang.org. A release
+# binary from upstream would carry Go's non-validated crypto; building it in
+# every scan cost each run several minutes and several GB of runner disk,
+# which large repositories did not have.
+#
+# The binary is published as a release asset (`engine-trivy-<version>`);
+# scripts/record_trivy.sh then records its URL and sha256 in engine.json, in
+# a reviewed change (Actions here may not open pull requests). Scans download it
+# and refuse it unless the hash matches — the same contract as Opengrep.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["engine.json"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: engines
+  cancel-in-progress: false
+
+jobs:
+  trivy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+
+      - name: Is this version already built
+        id: need
+        run: |
+          version="$(jq -r .trivy.version engine.json)"
+          have="$(jq -r '.trivy.version_built // ""' engine.json)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "$have" = "$version" ] && [ -n "$(jq -r '.trivy.sha256 // ""' engine.json)" ]; then
+            echo "build=false" >> "$GITHUB_OUTPUT"; echo "Trivy $version is already built."
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
+        if: steps.need.outputs.build == 'true'
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: SastRulesEngines
+          aws-region: ${{ vars.AWS_REGION_EAST_1 }}
+      - uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # aws-actions/amazon-ecr-login v2
+        if: steps.need.outputs.build == 'true'
+        with:
+          registries: "295669632222"
+
+      - name: Build Trivy (FIPS, from source)
+        if: steps.need.outputs.build == 'true'
+        env:
+          VERSION: ${{ steps.need.outputs.version }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/trivy"
+          docker build --build-arg TRIVY_VERSION="$VERSION" --output "type=local,dest=$RUNNER_TEMP/trivy" - <<'DOCKERFILE'
+          FROM 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-go:dev-latest@sha256:8851dd0e45806ba6e5242152e2abc1219e3f0cf8754a95c92fde1d3fc753c7f2 AS build
+          ARG TRIVY_VERSION
+          # GOEXPERIMENT=jsonv2 is what upstream's own release build sets.
+          # Checked here, where the Go toolchain is: built with the Go
+          # Cryptographic Module, and the version it claims.
+          RUN GOEXPERIMENT=jsonv2 go install -trimpath \
+                -ldflags "-s -w -X github.com/aquasecurity/trivy/pkg/version/app.ver=${TRIVY_VERSION}" \
+                "github.com/aquasecurity/trivy/cmd/trivy@v${TRIVY_VERSION}" \
+           && go version -m "${GOPATH}/bin/trivy" > /tmp/buildinfo.txt \
+           && grep 'GOFIPS140=v1.0.0' /tmp/buildinfo.txt >/dev/null \
+           && "${GOPATH}/bin/trivy" --version > /tmp/version.txt \
+           && grep "Version: ${TRIVY_VERSION}" /tmp/version.txt >/dev/null \
+           && mkdir -p /out && cp "${GOPATH}/bin/trivy" /tmp/buildinfo.txt /out/
+          FROM scratch
+          COPY --from=build /out/ /
+          DOCKERFILE
+          cd "$RUNNER_TEMP/trivy"
+          mv trivy "trivy-${VERSION}-linux-amd64-fips"
+          mv buildinfo.txt "trivy-${VERSION}-linux-amd64-fips.buildinfo.txt"
+          sha256sum "trivy-${VERSION}-linux-amd64-fips" | tee "trivy-${VERSION}-linux-amd64-fips.sha256"
+
+      - name: Publish and record it
+        if: steps.need.outputs.build == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.need.outputs.version }}
+        run: |
+          tag="engine-trivy-${VERSION}"
+          file="trivy-${VERSION}-linux-amd64-fips"
+          sum="$(cut -d' ' -f1 "$RUNNER_TEMP/trivy/${file}.sha256")"
+          gh release view "$tag" >/dev/null 2>&1 && gh release delete "$tag" --yes --cleanup-tag
+          gh release create "$tag" "$RUNNER_TEMP/trivy/$file" "$RUNNER_TEMP/trivy/${file}.buildinfo.txt" \
+            "$RUNNER_TEMP/trivy/${file}.sha256" --title "Trivy ${VERSION} (FIPS build)" --latest=false \
+            --notes "Trivy ${VERSION} built from source on MicroHealth's fips-go image with GOFIPS140=v1.0.0 (Go Cryptographic Module, CMVP #5247). sha256 ${sum}. Build info (go version -m) attached."
+          {
+            echo "### Trivy ${VERSION} (FIPS build)"
+            echo
+            echo "Release \`${tag}\`, sha256 \`${sum}\`. Record it in engine.json:"
+            echo
+            echo "    scripts/record_trivy.sh ${VERSION}"
+          } >> "$GITHUB_STEP_SUMMARY"
