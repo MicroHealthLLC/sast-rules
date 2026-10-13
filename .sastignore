@@ -29,3 +29,8 @@ rules/microhealth/generic/generic-api-key.txt
 rules/microhealth/html/missing-integrity.html
 rules/microhealth/javascript/njsscan-crypto-node-timing-attack.js
 rules/microhealth/json/package-dependencies-check.json
+# Rule-test fixtures for the rules added from the e-aar scan: synthetic AWS key
+# IDs, plaintext WebSocket addresses and weak generators; never executed.
+rules/microhealth/generic/aws-access-key-id.txt
+rules/microhealth/javascript/insecure-websocket-url.ts
+rules/microhealth/javascript/insecure-random-for-secret.ts

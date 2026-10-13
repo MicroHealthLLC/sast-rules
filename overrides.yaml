@@ -159,4 +159,30 @@ disabled:
   mh.opengrep.generic.secrets.security.detected-telegram-bot-api-key.detected-telegram-bot-api-key: "Replaced by mh.microhealth.generic.secrets.telegram-bot-api-key: the token now needs a boundary on both sides; the original matched '256:AAAA...' inside SSH fingerprints 'SHA256:AAAA...'."
   mh.opengrep.html.security.audit.missing-integrity.missing-integrity: "Replaced by mh.microhealth.html.missing-integrity: only URLs that start with scheme:// or // count as externally hosted; the original matched '://' anywhere in the value, e.g. inside an inline data: URI."
   mh.opengrep.json.npm.security.package-dependencies-check.package-dependencies-check: "Replaced by mh.microhealth.json.npm.package-dependencies-check: the value is judged as an npm spec, so exact versions, file:/link:/workspace: paths, npm: aliases to an exact version and pinned .tgz tarball URLs no longer fire (upstream matched any '-' or 'x'), while ranges, wildcards, partial versions, dist-tags and unpinned git specs do, scoped packages included."
+  mh.opengrep.generic.secrets.gitleaks.aws-access-token.aws-access-token: >-
+    Reported every AWS key ID a second time beside
+    detected-aws-access-key-id-value, and reported AWS's own documentation
+    example (AKIAIOSFODNN7EXAMPLE), which gitleaks itself allow-lists (12 hits
+    in e-aar, all test fixtures). Replaced, together with the rule below, by
+    mh.microhealth.generic.aws-access-key-id: the union of both prefix lists,
+    exempting only an ID that ends in EXAMPLE, which IAM never issues.
+  mh.opengrep.generic.secrets.security.detected-aws-access-key-id-value.detected-aws-access-key-id-value: >-
+    Duplicate of gitleaks.aws-access-token (the same key IDs, reported twice)
+    and its exemption was too wide: it dropped any ID containing TEST, FAKE or
+    SAMPLE, which a real random key ID can contain. Replaced by
+    mh.microhealth.generic.aws-access-key-id (see above).
+  mh.opengrep.javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket: >-
+    A `regex` rule over every file, so `ws://` in a comment, a JSDoc block or
+    Markdown prose was a HIGH finding (2 of 2 in e-aar: an ADR and a
+    vite.config.ts comment explaining why the dev server's HMR uses ws://).
+    Replaced by mh.microhealth.javascript.insecure-websocket-url, which reads
+    JavaScript/TypeScript string and template literals only and keeps the
+    upstream loopback exemption.
+  mh.gitlab.rules_lgpl_javascript_crypto_rule-node-insecure-random-generator: >-
+    Reported every Math.random() whatever it was for (2 of 2 in e-aar: retry
+    jitter and a skeleton loader's width). Predicting those gives an attacker
+    nothing. Replaced by mh.microhealth.javascript.insecure-random-for-secret:
+    Math.random() whose result is bound to, or returned by, a name that says
+    it must not be guessed (token, secret, nonce, salt, session, key, ...),
+    and crypto.pseudoRandomBytes() wherever it appears.
 severity: {}

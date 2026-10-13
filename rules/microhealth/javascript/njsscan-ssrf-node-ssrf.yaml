@@ -14,19 +14,21 @@ rules:
   - patterns:
     - focus-metavariable: $REQ
     - pattern: function ($REQ, $RES, ...) {...}
-    - &id001
-      metavariable-regex:
+    - metavariable-regex:
         metavariable: $REQ
         regex: ^(req|request)$
-    - &id002
-      metavariable-regex:
+    - metavariable-regex:
         metavariable: $RES
         regex: ^(res|resp|response|reply|h)$
   - patterns:
     - focus-metavariable: $REQ
     - pattern: function $FUNC($REQ, $RES, ...) {...}
-    - *id001
-    - *id002
+    - metavariable-regex:
+        metavariable: $REQ
+        regex: ^(req|request)$
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
   pattern-sanitizers:
   - patterns:
     - pattern-either:

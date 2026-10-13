@@ -1,0 +1,31 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: generic.aws-access-key-id
+    languages: [regex]
+    severity: ERROR
+    message: >-
+      An AWS access key ID is in the source. An access key ID is one half of a
+      long-term credential: remove it, load it from the environment or a
+      secret store at run time, and deactivate and rotate the key in IAM.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [aws, secrets]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      cwe: ["CWE-798: Use of Hard-coded Credentials"]
+      references:
+        - https://docs.aws.amazon.com/IAM/latest/UserGuide/security-creds-programmatic-access.html
+        - https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+      # Replaces mh.opengrep.generic.secrets.gitleaks.aws-access-token and
+      # mh.opengrep.generic.secrets.security.detected-aws-access-key-id-value,
+      # which reported every key ID twice (prefix lists merged here). One
+      # exception, by content: an ID ending in EXAMPLE, the convention AWS's own
+      # documentation uses (AKIAIOSFODNN7EXAMPLE) and the one gitleaks
+      # allow-lists (`.+EXAMPLE$`). IAM never issues such an ID. The upstream
+      # opengrep rule instead dropped any ID containing TEST, FAKE or SAMPLE,
+      # which a real random ID can contain; that exemption is not kept.
+    patterns:
+      - pattern-regex: \b(?:A3T[A-Z0-9]|AKIA|ABIA|ACCA|AGPA|AIDA|AIPA|ANPA|ANVA|AROA|APKA|ASCA|ASIA)[A-Z0-9]{16}\b
+      - pattern-not-regex: \b(?:A3T[A-Z0-9]|AKIA|ABIA|ACCA|AGPA|AIDA|AIPA|ANPA|ANVA|AROA|APKA|ASCA|ASIA)[A-Z0-9]{9}EXAMPLE\b
