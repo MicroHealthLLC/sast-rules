@@ -1,0 +1,139 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/eval/eval_vm2_injection.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/eval/rule-vm2_code_injection.yml
+# (mh.gitlab.rules_lgpl_javascript_eval_rule-vm2-code-injection, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.eval.vm2-code-injection
+  pattern-either:
+  - patterns:
+    - pattern-inside: |
+        require('vm2')
+        ...
+    - pattern-either:
+      - pattern-inside: function (req, $RES, ...) {...}
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $VM.run(<... req.$QUERY.$FOO ...>,...)
+      - pattern: |
+          $CODE = <... req.$QUERY.$FOO ...>;
+          ...
+          $VM.run(<... $CODE ...>,...)
+      - pattern: |
+          new VM(...).run(<... req.$QUERY.$FOO ...>,...)
+      - pattern: |
+          new NodeVM(...).run(<... req.$QUERY.$FOO ...>,...)
+      - pattern: |
+          $CODE = <... req.$QUERY.$FOO ...>;
+          ...
+          new NodeVM(...).run(<... $CODE ...>,...)
+      - pattern: |
+          $CODE = <... req.$QUERY.$FOO ...>;
+          ...
+          new VMScript(<... $CODE ...>,...)
+      - pattern: |
+          $VM.run(<... req.$BODY ...>,...)
+      - pattern: |
+          $CODE = <... req.$BODY ...>;
+          ...
+          $VM.run(<... $CODE ...>,...)
+      - pattern: |
+          new VM(...).run(<... req.$BODY ...>,...)
+      - pattern: |
+          $CODE = <... req.$BODY ...>;
+          ...
+          new VM(...).run($CODE,...)
+      - pattern: |
+          new NodeVM(...).run(<... req.$BODY ...>,...)
+      - pattern: |
+          $CODE = <... req.$BODY ...>;
+          ...
+          new NodeVM(...).run(<... $CODE ...>,...)
+      - pattern: |
+          $CODE = <... req.$BODY ...>;
+          ...
+          new VMScript(<... $CODE ...>,...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-inside: |
+        require('vm2')
+        ...
+    - pattern-either:
+      - pattern-inside: function (request, $RES, ...) {...}
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $VM.run(<... request.$QUERY.$FOO ...>,...)
+      - pattern: |
+          $CODE = <... request.$QUERY.$FOO ...>;
+          ...
+          $VM.run(<... $CODE ...>,...)
+      - pattern: |
+          new VM(...).run(<... request.$QUERY.$FOO ...>,...)
+      - pattern: |
+          new NodeVM(...).run(<... request.$QUERY.$FOO ...>,...)
+      - pattern: |
+          $CODE = <... request.$QUERY.$FOO ...>;
+          ...
+          new NodeVM(...).run(<... $CODE ...>,...)
+      - pattern: |
+          $CODE = <... request.$QUERY.$FOO ...>;
+          ...
+          new VMScript(<... $CODE ...>,...)
+      - pattern: |
+          $VM.run(<... request.$BODY ...>,...)
+      - pattern: |
+          $CODE = <... request.$BODY ...>;
+          ...
+          $VM.run(<... $CODE ...>,...)
+      - pattern: |
+          new VM(...).run(<... request.$BODY ...>,...)
+      - pattern: |
+          $CODE = <... request.$BODY ...>;
+          ...
+          new VM(...).run($CODE,...)
+      - pattern: |
+          new NodeVM(...).run(<... request.$BODY ...>,...)
+      - pattern: |
+          $CODE = <... request.$BODY ...>;
+          ...
+          new NodeVM(...).run(<... $CODE ...>,...)
+      - pattern: |
+          $CODE = <... request.$BODY ...>;
+          ...
+          new VMScript(<... $CODE ...>,...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    Untrusted user input reaching `vm2` can result in code injection.
+  severity: WARNING
+  languages:
+  - javascript
+  metadata:
+    cwe: CWE-94
+    shortDescription: Improper control of generation of code (Code Injection)
+    category: security
+    owasp:
+    - A1:2017-Injection
+    - A03:2021-Injection
+    - A05:2025-Injection
+    security-severity: CRITICAL
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_eval_rule-vm2-code-injection

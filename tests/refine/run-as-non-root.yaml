@@ -1,0 +1,30 @@
+# Fixture for the run-as-non-root-security-context-pod-level refinement.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ok
+spec:
+  template:
+    spec:
+      # ok: mh.opengrep.yaml.kubernetes.security.run-as-non-root-security-context-pod-level.run-as-non-root-security-context-pod-level
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+        - name: app
+          image: app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: missing
+spec:
+  template:
+    spec:
+      # ruleid: mh.opengrep.yaml.kubernetes.security.run-as-non-root-security-context-pod-level.run-as-non-root-security-context-pod-level
+      securityContext:
+        runAsUser: 10001
+      containers:
+        - name: app
+          image: app

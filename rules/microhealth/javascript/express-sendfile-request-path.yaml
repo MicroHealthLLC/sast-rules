@@ -1,0 +1,57 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.express-sendfile-request-path
+    languages: [javascript, typescript]
+    severity: WARNING
+    mode: taint
+    message: >-
+      A path taken from the HTTP request is passed to res.sendFile /
+      res.download. Without the `root` option and a check that the resolved
+      path stays inside it, a caller can read any file the process can
+      (`../../etc/passwd`). Pass { root } and a validated relative name, or
+      map an identifier to a file on the server side.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [express]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      cwe: ["CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"]
+      owasp: ["A01:2021 - Broken Access Control"]
+      references:
+        - https://expressjs.com/en/api.html#res.sendFile
+      # Replaces mh.opengrep.javascript.express.security.audit.express-res-sendfile,
+      # whose sources include ANY function parameter typed `string` and whose
+      # sink is any method named sendFile on any object — so a storage client's
+      # own `sendFile(path: string)` upload method was "Express" (6 of 6 hits
+      # in TueriCXO). Here the source is the request and the sink an Express
+      # response.
+    pattern-sources:
+      - patterns:
+          - pattern-either:
+              - pattern: $REQ.query
+              - pattern: $REQ.params
+              - pattern: $REQ.body
+              - pattern: $REQ.cookies
+              - pattern: $REQ.headers
+              - pattern: $REQ.path
+              - pattern: $REQ.url
+              - pattern: $REQ.originalUrl
+          - metavariable-regex:
+              metavariable: $REQ
+              regex: ^(req|request)$
+    pattern-sanitizers:
+      - pattern: path.basename(...)
+      - pattern: basename(...)
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: $RES.sendFile($P, ...)
+              - pattern: $RES.sendfile($P, ...)
+              - pattern: $RES.download($P, ...)
+          - pattern-not: '$RES.$M($P, {..., root: $ROOT, ...}, ...)'
+          - metavariable-regex:
+              metavariable: $RES
+              regex: ^(res|resp|response)$
+          - focus-metavariable: $P

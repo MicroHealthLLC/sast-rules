@@ -7,7 +7,7 @@
 Inputs (all in this repository, nothing is fetched):
   sources.yaml     where each source came from and how its license is read
   licenses.yaml    which license may go in which bundle
-  overrides.yaml   rules we turn off or re-grade, each with its reason
+  overrides.yaml   rules we turn off, re-grade or refine, each with its reason
                    (a source's `categories` keeps all but security rules out)
   upstream/<src>/  vendored upstream rule files, never edited by hand
   rules/<src>/     rules MicroHealth writes
@@ -26,7 +26,9 @@ Outputs:
 
 The build fails on: an unclassified license, a duplicate id, a rule whose
 license is not allowed in a bundle that would contain it, an override with no
-reason, or an override naming a rule that does not exist.
+reason, an override naming a rule that does not exist, a refinement of a rule
+it cannot extend, or a duplicate key in sources/licenses/overrides.yaml (YAML
+keeps only the last, silently dropping the rest).
 """
 
 from __future__ import annotations
@@ -52,6 +54,69 @@ _LICENSE_HEADER = re.compile(r"^#\s*License:\s*(?:License:\s*)?(.+?)\s*$", re.MU
 def load_yaml(path: Path) -> dict:
     with path.open(encoding="utf-8") as fh:
         return yaml.safe_load(fh) or {}
+
+
+class _StrictLoader(yaml.SafeLoader):
+    """SafeLoader that refuses a mapping with the same key twice."""
+
+
+def _no_duplicate_keys(loader: yaml.SafeLoader, node: yaml.MappingNode, deep: bool = False) -> dict:
+    seen: set = set()
+    for key_node, _ in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if key in seen:
+            raise yaml.constructor.ConstructorError(
+                None, None, f"duplicate key {key!r}", key_node.start_mark
+            )
+        seen.add(key)
+    return loader.construct_mapping(node, deep=deep)
+
+
+_StrictLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _no_duplicate_keys)
+
+
+def load_config(path: Path) -> dict:
+    """One of OUR configuration files: a duplicate key is an error, not a merge."""
+    with path.open(encoding="utf-8") as fh:
+        return yaml.load(fh, Loader=_StrictLoader) or {}  # noqa: S506 - SafeLoader subclass
+
+
+# Clauses a refinement may add to an upstream rule's top-level `patterns`.
+_REFINE_CLAUSES = {
+    "pattern-not", "pattern-not-inside", "pattern-not-regex", "pattern-inside",
+    "metavariable-pattern", "metavariable-regex",
+}
+
+
+def refine(rule: dict, spec: dict) -> str | None:
+    """Apply one `refine` override to a copy of `rule`. Returns an error or None.
+
+    `add` appends clauses to the rule's top-level `patterns` (a lone `pattern`
+    or `pattern-regex` is first wrapped into one), so a refinement can only
+    narrow what the rule reports, never replace its logic. `exclude_paths`
+    appends to `paths.exclude`.
+    """
+    add = spec.get("add") or []
+    for clause in add:
+        if not isinstance(clause, dict) or len(clause) != 1 or next(iter(clause)) not in _REFINE_CLAUSES:
+            return f"refine clause {clause!r} is not one of {sorted(_REFINE_CLAUSES)}"
+    if add:
+        if rule.get("mode") == "taint":
+            return "refine cannot add clauses to a taint rule"
+        if "patterns" not in rule:
+            lone = [k for k in ("pattern", "pattern-regex", "pattern-either") if k in rule]
+            if len(lone) != 1:
+                return "refine needs a rule with `patterns` or exactly one top-level pattern"
+            rule["patterns"] = [{lone[0]: rule.pop(lone[0])}]
+        rule["patterns"] = [*rule["patterns"], *add]
+    excl = spec.get("exclude_paths") or []
+    if excl:
+        paths = dict(rule.get("paths") or {})
+        paths["exclude"] = [*(paths.get("exclude") or []), *excl]
+        rule["paths"] = paths
+    if not add and not excl:
+        return "refine has neither `add` nor `exclude_paths`"
+    return None
 
 
 def rule_files(base: Path):
@@ -163,9 +228,13 @@ def collect(sources: dict, licenses: dict) -> tuple[list[dict], list[str]]:
 
 
 def build(check: bool) -> int:
-    sources = load_yaml(ROOT / "sources.yaml")
-    licenses = load_yaml(ROOT / "licenses.yaml")
-    overrides = load_yaml(ROOT / "overrides.yaml")
+    try:
+        sources = load_config(ROOT / "sources.yaml")
+        licenses = load_config(ROOT / "licenses.yaml")
+        overrides = load_config(ROOT / "overrides.yaml")
+    except yaml.YAMLError as exc:
+        print(exc, file=sys.stderr)
+        return 1
     allowed = {k: set(v.get("bundles", [])) for k, v in licenses["licenses"].items()}
 
     rules, errors = collect(sources, licenses)
@@ -179,6 +248,17 @@ def build(check: bool) -> int:
 
     disabled = overrides.get("disabled") or {}
     regraded = overrides.get("severity") or {}
+    refined = overrides.get("refine") or {}
+    unknown = set(overrides) - {"disabled", "severity", "refine"}
+    if unknown:
+        errors.append(f"overrides.yaml: unknown section(s) {sorted(unknown)}")
+    for rid, spec in refined.items():
+        if not str((spec or {}).get("reason", "")).strip():
+            errors.append(f"overrides.yaml: refine {rid} has no reason")
+        if rid not in seen:
+            errors.append(f"overrides.yaml: refine {rid} names no rule")
+        if rid in disabled:
+            errors.append(f"overrides.yaml: refine {rid} is also disabled")
     for rid, why in disabled.items():
         if not str(why or "").strip():
             errors.append(f"overrides.yaml: disabled {rid} has no reason")
@@ -199,6 +279,11 @@ def build(check: bool) -> int:
     for r in sorted(rules, key=lambda x: x["id"]):
         rule = dict(r["rule"])
         rule["id"] = r["id"]
+        if r["id"] in refined:
+            why = refine(rule, refined[r["id"]])
+            if why:
+                print(f"overrides.yaml: refine {r['id']}: {why}", file=sys.stderr)
+                return 1
         if r["id"] in regraded:
             rule["severity"] = regraded[r["id"]]["to"]
         meta = dict(rule.get("metadata") or {})
@@ -224,6 +309,8 @@ def build(check: bool) -> int:
             "bundles": in_bundles,
             "status": "disabled" if r["id"] in disabled else "excluded" if r["excluded"] else "active",
         }
+        if r["id"] in refined:
+            entry["refined"] = " ".join(str(refined[r["id"]]["reason"]).split())
         if r["id"] in disabled:
             entry["reason"] = disabled[r["id"]]
         elif r["excluded"]:
@@ -251,7 +338,9 @@ def build(check: bool) -> int:
             "# prefixed `mh.<source>.`, metadata.mh_source / mh_upstream_id / mh_license\n"
             "# are added, a word in metadata.security-severity is replaced by a number\n"
             "# (the original kept as mh_upstream_security_severity), and overrides.yaml\n"
-            "# is applied. Nothing else is changed. The date of each change is the date\n"
+            "# is applied: a `refine` entry adds narrowing clauses or path exclusions\n"
+            "# to a rule, its reason recorded as the rule's `refined` in rules.lock.json.\n"
+            "# Nothing else is changed. The date of each change is the date\n"
             "# of the sast-rules commit that built this file; the unmodified upstream\n"
             "# files and the build are in https://github.com/MicroHealthLLC/sast-rules.\n"
             "# Attributions: NOTICE.md; full license texts: licenses/ (both shipped\n"
@@ -301,7 +390,10 @@ def build(check: bool) -> int:
     counts = ", ".join(f"{b}={len(items)}" for b, items in bundles.items())
     retired = sum(1 for e in lock_rules.values() if e["status"] == "retired")
     excluded = sum(1 for e in lock_rules.values() if e["status"] == "excluded")
-    print(f"Built {counts}; {len(disabled)} disabled, {excluded} excluded, {retired} retired.")
+    print(
+        f"Built {counts}; {len(disabled)} disabled, {len(refined)} refined, "
+        f"{excluded} excluded, {retired} retired."
+    )
     return 0
 
 

@@ -108,6 +108,18 @@ class SharedWorkflowTests(unittest.TestCase):
                             if line.strip().startswith("FROM ") and line.strip() != "FROM scratch":
                                 self.assertRegex(line, r"microhealthllc/fips-[a-z0-9-]+:dev-latest@sha256:[0-9a-f]{64}", path.name)
 
+    def test_network_reaches_only_github_gitlab_and_aws(self) -> None:
+        # Reports go to GitHub (code scanning, artifacts) and AWS (S3, ECR) and
+        # nowhere else; downloads come from GitHub, and upstream rules are
+        # cloned read-only from GitHub and GitLab. A new host fails here first.
+        allowed = {"github.com", "api.github.com", "raw.githubusercontent.com", "gitlab.com"}
+        root = WORKFLOWS.parents[1]
+        files = [*WORKFLOWS.glob("*.yml"), *(root / "scripts").glob("*.py"), *(root / "scripts").glob("*.sh"),
+                 *(root / "local").glob("*"), root / "sources.yaml", root / "engine.json"]
+        for path in files:
+            for host in re.findall(r"https?://([A-Za-z0-9.-]+)", path.read_text()):
+                self.assertIn(host.lower(), allowed, f"{path.relative_to(root)}: {host}")
+
 
 if __name__ == "__main__":
     unittest.main()

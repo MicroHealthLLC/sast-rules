@@ -1,12 +1,14 @@
 # sast-rules bundle `product` — built by scripts/build.py; do not edit.
-# 275 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
+# 290 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
 # Licenses of the rules in this bundle: Apache-2.0, MIT.
 # Each rule's own license is its metadata.mh_license.
 # MODIFIED from the upstream rules (MicroHealth, LLC): each rule's id is
 # prefixed `mh.<source>.`, metadata.mh_source / mh_upstream_id / mh_license
 # are added, a word in metadata.security-severity is replaced by a number
 # (the original kept as mh_upstream_security_severity), and overrides.yaml
-# is applied. Nothing else is changed. The date of each change is the date
+# is applied: a `refine` entry adds narrowing clauses or path exclusions
+# to a rule, its reason recorded as the rule's `refined` in rules.lock.json.
+# Nothing else is changed. The date of each change is the date
 # of the sast-rules commit that built this file; the unmodified upstream
 # files and the build are in https://github.com/MicroHealthLLC/sast-rules.
 # Attributions: NOTICE.md; full license texts: licenses/ (both shipped
@@ -5739,58 +5741,6 @@ rules:
     mh_upstream_id: javascript_buf_rule-detect-new-buffer
     mh_license: MIT
   severity: WARNING
-- id: mh.gitlab.javascript_dos_rule-non-literal-regexp
-  languages:
-  - javascript
-  - typescript
-  pattern-either:
-  - patterns:
-    - pattern: 'new RegExp(...)
-
-        '
-    - pattern-not: 'new RegExp("...", ...)
-
-        '
-    - pattern-not: 'new RegExp(/.../, ...)
-
-        '
-  - patterns:
-    - pattern: 'RegExp(...)
-
-        '
-    - pattern-not: 'RegExp("...", ...)
-
-        '
-    - pattern-not: 'RegExp(/.../, ...)
-
-        '
-  - patterns:
-    - pattern: '"...".$METHOD(...)
-
-        '
-    - pattern-not: '"...".$METHOD("...")
-
-        '
-    - pattern-not: '"...".$METHOD(/.../)
-
-        '
-    - metavariable-regex:
-        metavariable: $METHOD
-        regex: ^(match|search)$
-  message: "The `RegExp` constructor was called with a non-literal value. If an adversary were able to\nsupply a malicious regex, they could cause a Regular Expression Denial of Service (ReDoS)\nagainst the application. In Node applications, this could cause the entire application to no\nlonger be responsive to other users' requests.\n\nTo remediate this issue, never allow user-supplied regular expressions. Instead, the regular \nexpression should be  hardcoded. If this is not possible, consider using an alternative regular\nexpression engine such as [node-re2](https://www.npmjs.com/package/re2). RE2 is a safe alternative \nthat does not support backtracking, which is what leads to ReDoS.\n\nExample using re2 which does not support backtracking (Note: it is still recommended to\nnever use user-supplied input):\n```\n// Import the re2 module\nconst RE2 = require('re2');\n\nfunction match(userSuppliedRegex, userInput) {\n    // Create a RE2 object with the user supplied regex, this is relatively safe\n    // due to RE2 not supporting backtracking which can be abused to cause long running\n    // queries\n    var re = new RE2(userSuppliedRegex);\n    // Execute the regular expression against some userInput\n    var result = re.exec(userInput);\n    // Work with the result\n}\n```\n\nFor more information on Regular Expression DoS see:\n- https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS\n"
-  metadata:
-    cwe: CWE-185
-    shortDescription: Regular expression with non-literal value
-    category: security
-    owasp:
-    - A1:2017-Injection
-    - A03:2021-Injection
-    security-severity: '5.5'
-    mh_upstream_security_severity: Medium
-    mh_source: gitlab
-    mh_upstream_id: javascript_dos_rule-non-literal-regexp
-    mh_license: MIT
-  severity: WARNING
 - id: mh.gitlab.javascript_eval_rule-eval-with-expression
   languages:
   - javascript
@@ -6085,101 +6035,6 @@ rules:
     mh_source: gitlab
     mh_upstream_id: javascript_random_rule-pseudo-random-bytes
     mh_license: MIT
-- id: mh.gitlab.javascript_react_rule-dangerouslysetinnerhtml
-  languages:
-  - typescript
-  - javascript
-  pattern-either:
-  - pattern: '<$X dangerouslySetInnerHTML=... />
-
-      '
-  - pattern: '{dangerouslySetInnerHTML: ...}
-
-      '
-  severity: WARNING
-  message: 'The application was found calling `dangerouslySetInnerHTML` which may lead to Cross Site
-
-    Scripting (XSS). By default, React components will encode the data properly before rendering.
-
-    Calling `dangerouslySetInnerHTML` disables this encoding and allows raw markup
-
-    and JavaScript to be executed.
-
-
-    XSS is an attack which exploits a web application or system to treat
-
-    user input as markup or script code. It is important to encode the data, depending on the
-
-    specific context it is used in. There are at least six context types:
-
-
-    - Inside HTML tags `<div>context 1</div>`
-
-    - Inside attributes: `<div class="context 2"></div>`
-
-    - Inside event attributes `<button onclick="context 3">button</button>`
-
-    - Inside script blocks: `<script>var x = "context 4"</script>`
-
-    - Unsafe element HTML assignment: `element.innerHTML = "context 5"`
-
-    - Inside URLs: `<iframe src="context 6"></iframe><a href="context 6">link</a>`
-
-
-    Script blocks alone have multiple ways they need to be encoded. Extra care must be taken if
-
-    user input
-
-    is ever output inside of script tags.
-
-
-    User input that is displayed within the application must be encoded, sanitized or validated
-
-    to ensure it cannot be treated as HTML or executed as Javascript code. Care must also be
-
-    taken
-
-    to not mix server-side templating with client-side templating, as the server-side templating
-
-    will
-
-    not encode things like {{ 7*7 }} which may execute client-side templating features.
-
-
-    It is _NOT_ advised to encode user input prior to inserting into a data store. The data will
-
-    need to be
-
-    encoded depending on context of where it is output. It is much safer to force the displaying
-
-    system to
-
-    handle the encoding and not attempt to guess how it should be encoded.
-
-
-    Remove the call to `dangerouslySetInnerHTML` or ensure that the data used in this call does
-
-    not come from user-supplied input.
-
-
-    For more information on dangerously setting inner HTML see:
-
-    - https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html
-
-    '
-  metadata:
-    cwe: CWE-79
-    owasp:
-    - A7:2017-Cross-Site Scripting (XSS)
-    - A03:2021-Injection
-    - A05:2025-Injection
-    shortDescription: Improper neutralization of input during web page generation ('Cross-site Scripting')
-    category: security
-    security-severity: '5.5'
-    mh_upstream_security_severity: Medium
-    mh_source: gitlab
-    mh_upstream_id: javascript_react_rule-dangerouslysetinnerhtml
-    mh_license: MIT
 - id: mh.gitlab.javascript_require_rule-non-literal-require
   languages:
   - javascript
@@ -6215,378 +6070,6 @@ rules:
     mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: javascript_require_rule-non-literal-require
-    mh_license: MIT
-- id: mh.gitlab.javascript_timing_rule-possible-timing-attacks
-  languages:
-  - javascript
-  patterns:
-  - pattern-not: if ($Z == null) { ... };
-  - pattern-not: if ($Z === null) { ... };
-  - pattern-not: if ($Z != null) { ... };
-  - pattern-not: if ($Z !== null) { ... };
-  - pattern-not: if ($Q != undefined) { ... };
-  - pattern-not: if ($Q !== undefined) { ... };
-  - pattern-not: if ($Q == undefined) { ... };
-  - pattern-not: if ($Q === undefined) { ... };
-  - pattern-not: return $Y == null;
-  - pattern-not: return $Y === null;
-  - pattern-not: return $Y != null;
-  - pattern-not: return $Y !== null;
-  - pattern-not: return $Y == undefined;
-  - pattern-not: return $Y === undefined;
-  - pattern-not: return $Y != undefined;
-  - pattern-not: return $Y !== undefined;
-  - pattern-either:
-    - pattern: "if (password == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == password) {\n    ...\n}\n"
-    - pattern: "if (password === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === password) {\n    ...\n}\n"
-    - pattern: "if (pass == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == pass) {\n    ...\n}\n"
-    - pattern: "if (pass === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === pass) {\n    ...\n}\n"
-    - pattern: "if (secret == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == secret) {\n    ...\n}\n"
-    - pattern: "if (secret === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === secret) {\n    ...\n}\n"
-    - pattern: "if (api == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == api) {\n    ...\n}\n"
-    - pattern: "if (api === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === api) {\n    ...\n}\n"
-    - pattern: "if (apiKey == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == apiKey) {\n    ...\n}\n"
-    - pattern: "if (apiKey === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === apiKey) {\n    ...\n}\n"
-    - pattern: "if (apiSecret == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == apiSecret) {\n    ...\n}\n"
-    - pattern: "if (apiSecret === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === apiSecret) {\n    ...\n}\n"
-    - pattern: "if (token == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == token) {\n    ...\n}\n"
-    - pattern: "if (token === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === token) {\n    ...\n}\n"
-    - pattern: "if (hash == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == hash) {\n    ...\n}\n"
-    - pattern: "if (hash === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === hash) {\n    ...\n}\n"
-    - pattern: "if (auth_token == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == auth_token) {\n    ...\n}\n"
-    - pattern: "if (auth_token === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === auth_token) {\n    ...\n}\n"
-    - pattern: "if (password != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != password) {\n    ...\n}\n"
-    - pattern: "if (password !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== password) {\n    ...\n}\n"
-    - pattern: "if (pass != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != pass) {\n    ...\n}\n"
-    - pattern: "if (pass !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== pass) {\n    ...\n}\n"
-    - pattern: "if (secret != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != secret) {\n    ...\n}\n"
-    - pattern: "if (secret !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== secret) {\n    ...\n}\n"
-    - pattern: "if (api != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != api) {\n    ...\n}\n"
-    - pattern: "if (api !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== api) {\n    ...\n}\n"
-    - pattern: "if (apiKey != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != apiKey) {\n    ...\n}\n"
-    - pattern: "if (apiKey !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== apiKey) {\n    ...\n}\n"
-    - pattern: "if (apiSecret != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != apiSecret) {\n    ...\n}\n"
-    - pattern: "if (apiSecret !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== apiSecret) {\n    ...\n}\n"
-    - pattern: "if (token != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != token) {\n    ...\n}\n"
-    - pattern: "if (token !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== token) {\n    ...\n}\n"
-    - pattern: "if (hash != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != hash) {\n    ...\n}\n"
-    - pattern: "if (hash !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== hash) {\n    ...\n}\n"
-    - pattern: "if (auth_token != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != auth_token) {\n    ...\n}\n"
-    - pattern: "if (auth_token !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== auth_token) {\n    ...\n}\n"
-    - pattern: 'return $X === auth_token;
-
-        '
-    - pattern: 'return auth_token === $X;
-
-        '
-    - pattern: 'return $X === token;
-
-        '
-    - pattern: 'return token === $X;
-
-        '
-    - pattern: 'return $X === hash;
-
-        '
-    - pattern: 'return hash === $X;
-
-        '
-    - pattern: 'return $X === password;
-
-        '
-    - pattern: 'return password === $X;
-
-        '
-    - pattern: 'return $X === pass;
-
-        '
-    - pattern: 'return pass === $X;
-
-        '
-    - pattern: 'return $X === apiKey;
-
-        '
-    - pattern: 'return apiKey === $X;
-
-        '
-    - pattern: 'return $X === apiSecret;
-
-        '
-    - pattern: 'return apiSecret === $X;
-
-        '
-    - pattern: 'return $X === api_key;
-
-        '
-    - pattern: 'return api_key === $X;
-
-        '
-    - pattern: 'return $X === api_secret;
-
-        '
-    - pattern: 'return api_secret === $X;
-
-        '
-    - pattern: 'return $X === secret;
-
-        '
-    - pattern: 'return secret === $X;
-
-        '
-    - pattern: 'return $X === api;
-
-        '
-    - pattern: 'return api === $X;
-
-        '
-    - pattern: 'return $X == auth_token;
-
-        '
-    - pattern: 'return auth_token == $X;
-
-        '
-    - pattern: 'return $X == token;
-
-        '
-    - pattern: 'return token == $X;
-
-        '
-    - pattern: 'return $X == hash;
-
-        '
-    - pattern: 'return hash == $X;
-
-        '
-    - pattern: 'return $X == password;
-
-        '
-    - pattern: 'return password == $X;
-
-        '
-    - pattern: 'return $X == pass;
-
-        '
-    - pattern: 'return pass == $X;
-
-        '
-    - pattern: 'return $X == apiKey;
-
-        '
-    - pattern: 'return apiKey == $X;
-
-        '
-    - pattern: 'return $X == apiSecret;
-
-        '
-    - pattern: 'return apiSecret == $X;
-
-        '
-    - pattern: 'return $X == api_key;
-
-        '
-    - pattern: 'return api_key == $X;
-
-        '
-    - pattern: 'return $X == api_secret;
-
-        '
-    - pattern: 'return api_secret == $X;
-
-        '
-    - pattern: 'return $X == secret;
-
-        '
-    - pattern: 'return secret == $X;
-
-        '
-    - pattern: 'return $X == api;
-
-        '
-    - pattern: 'return api == $X;
-
-        '
-    - pattern: 'return $X !== auth_token;
-
-        '
-    - pattern: 'return auth_token !== $X;
-
-        '
-    - pattern: 'return $X !== token;
-
-        '
-    - pattern: 'return token !== $X;
-
-        '
-    - pattern: 'return $X !== hash;
-
-        '
-    - pattern: 'return hash !== $X;
-
-        '
-    - pattern: 'return $X !== password;
-
-        '
-    - pattern: 'return password !== $X;
-
-        '
-    - pattern: 'return $X !== pass;
-
-        '
-    - pattern: 'return pass !== $X;
-
-        '
-    - pattern: 'return $X !== apiKey;
-
-        '
-    - pattern: 'return apiKey !== $X;
-
-        '
-    - pattern: 'return $X !== apiSecret;
-
-        '
-    - pattern: 'return apiSecret !== $X;
-
-        '
-    - pattern: 'return $X !== api_key;
-
-        '
-    - pattern: 'return api_key !== $X;
-
-        '
-    - pattern: 'return $X !== api_secret;
-
-        '
-    - pattern: 'return api_secret !== $X;
-
-        '
-    - pattern: 'return $X !== secret;
-
-        '
-    - pattern: 'return secret !== $X;
-
-        '
-    - pattern: 'return $X !== api;
-
-        '
-    - pattern: 'return api !== $X;
-
-        '
-    - pattern: 'return $X != auth_token;
-
-        '
-    - pattern: 'return auth_token != $X;
-
-        '
-    - pattern: 'return $X != token;
-
-        '
-    - pattern: 'return token != $X;
-
-        '
-    - pattern: 'return $X != hash;
-
-        '
-    - pattern: 'return hash != $X;
-
-        '
-    - pattern: 'return $X != password;
-
-        '
-    - pattern: 'return password != $X;
-
-        '
-    - pattern: 'return $X != pass;
-
-        '
-    - pattern: 'return pass != $X;
-
-        '
-    - pattern: 'return $X != apiKey;
-
-        '
-    - pattern: 'return apiKey != $X;
-
-        '
-    - pattern: 'return $X != apiSecret;
-
-        '
-    - pattern: 'return apiSecret != $X;
-
-        '
-    - pattern: 'return $X != api_key;
-
-        '
-    - pattern: 'return api_key != $X;
-
-        '
-    - pattern: 'return $X != api_secret;
-
-        '
-    - pattern: 'return api_secret != $X;
-
-        '
-    - pattern: 'return $X != secret;
-
-        '
-    - pattern: 'return secret != $X;
-
-        '
-    - pattern: 'return $X != api;
-
-        '
-    - pattern: 'return api != $X;
-
-        '
-  severity: WARNING
-  message: "The application was found executing string comparisons using one of `===`, `!==`, `==` or `!=`\nagainst security sensitive values. String comparisons like this are not constant time, meaning\nthe\nfirst character found not to match in the two strings will immediately exit the conditional\nstatement.\nThis allows an adversary to calculate or observe small timing differences depending on the\nstrings\npassed to this comparison. This potentially allows an adversary the ability to brute force a\nstring\nthat will match the expected value by monitoring different character values.\n\nTo remediate this issue, use the `crypto.timingSafeEqual` method when comparing strings.\n\nExample using `crypto.timingSafeEqual` to safely compare strings:\n```\nfunction constantTimeIsPasswordEqual(userInput) {\n    // Retrieve the password from a secure data store such as a KMS or Hashicorp's vault.\n    const password = getPasswordFromSecureDataStore();\n    // Use crypto timingSafeEqual to ensure the comparison is done in constant time.\n    return crypto.timingSafeEqual(Buffer.from(userInput, 'utf-8'), Buffer.from(password,\n'utf-8'));\n}\n```\n\nFor more information on constant time comparison see:\n- https://nodejs.org/api/crypto.html#crypto_crypto_timingsafeequal_a_b\n"
-  metadata:
-    cwe: CWE-208
-    shortDescription: Observable timing discrepancy
-    category: security
-    owasp:
-    - A3:2017-Sensitive Data Exposure
-    - A01:2021-Broken Access Control
-    - A01:2025-Broken Access Control
-    security-severity: '5.5'
-    mh_upstream_security_severity: Medium
-    mh_source: gitlab
-    mh_upstream_id: javascript_timing_rule-possible-timing-attacks
     mh_license: MIT
 - id: mh.gitlab.javascript_xss_rule-mustache-escape
   languages:
@@ -9673,31 +9156,6 @@ rules:
   - pattern: xml.etree.cElementTree.parse(...)
   - pattern: xml.etree.cElementTree.iterparse(...)
   - pattern: xml.etree.cElementTree.XMLParser(...)
-  severity: WARNING
-- id: mh.gitlab.python_xml_rule-element
-  languages:
-  - python
-  message: "The application was found using the `xml.etree` package for processing XML.\nPythons default xml processors suffer from various XML parsing vulnerabilities\nand care must be taken when handling XML data. Additionally, depending on the\nversion of Python, more critical vulnerabilities such as eXternal XML Entity\ninjection maybe exploitable.\n\nThe `etree` package suffers from the following security risks as of Python 3.7.1:\n* Billion laughs / exponential entity expansion - May allow an adversary to cause\n  a Denial of Service (DoS) against the application parsing arbitrary XML.\n* Quadratic blowup entity expansion - Similar to above, but requires a larger input\n  to cause the Denial of Service.\n\nTo remediate the above issues, consider using the\n[defusedxml](https://pypi.org/project/defusedxml/)\nlibrary when processing untrusted XML.\n\nExample parsing an XML document using defusedxml:\n```\nfrom defusedxml.ElementTree import parse\n\n# Parse the inventory.xml file\net = parse('inventory.xml')\n# Get the root element\nroot = et.getroot()\n# Work with the root element\n# ...\n```\n\nFor more information on the various XML parsers and their vulnerabilities please see:\n- https://docs.python.org/3/library/xml.html#xml-vulnerabilities\n\nFor more information on XML security see OWASP's guide:\n- https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html#python\n"
-  metadata:
-    cwe: CWE-611
-    owasp:
-    - A4:2017-XML External Entities (XXE)
-    - A05:2021-Security Misconfiguration
-    - A02:2025-Security Misconfiguration
-    category: security
-    shortDescription: Improper restriction of XML external entity reference
-    security-severity: '5.5'
-    mh_upstream_security_severity: Medium
-    mh_source: gitlab
-    mh_upstream_id: python_xml_rule-element
-    mh_license: MIT
-  pattern-either:
-  - patterns:
-    - pattern: xml.etree.ElementTree.fromstring(...)
-    - pattern-not: xml.etree.ElementTree.fromstring("...")
-  - pattern: xml.etree.ElementTree.parse(...)
-  - pattern: xml.etree.ElementTree.iterparse(...)
-  - pattern: xml.etree.ElementTree.XMLParser(...)
   severity: WARNING
 - id: mh.gitlab.python_xml_rule-etree
   languages:
@@ -13679,6 +13137,63 @@ rules:
       '
   - pattern: $XPATH.evaluate(...)
   severity: ERROR
+- id: mh.microhealth.android.exported-activity
+  languages:
+  - regex
+  severity: WARNING
+  paths:
+    include:
+    - '*AndroidManifest.xml'
+  message: This activity is exported (android:exported="true"), so any app on the device can start it with an intent of its choosing. Unless it is meant to be launched by other apps, set android:exported="false"; if it is, validate every intent extra it reads and protect it with a permission.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - android
+    confidence: MEDIUM
+    likelihood: LOW
+    impact: MEDIUM
+    cwe:
+    - 'CWE-926: Improper Export of Android Application Components'
+    references:
+    - https://developer.android.com/privacy-and-security/risks/android-exported
+    mh_source: microhealth
+    mh_upstream_id: android.exported-activity
+    mh_license: MIT
+  patterns:
+  - pattern-regex: <activity\b[^>]*android:exported\s*=\s*"true"[^>]*>[\s\S]*?</activity>
+  - pattern-not-regex: <activity\b[^>]*android:exported\s*=\s*"true"[^>]*>\s*<intent-filter>\s*<action\s+android:name="android\.intent\.action\.MAIN"\s*/>\s*<category\s+android:name="android\.intent\.category\.LAUNCHER"\s*/>\s*</intent-filter>\s*</activity>
+- id: mh.microhealth.bash.ifs-global
+  languages:
+  - bash
+  severity: WARNING
+  message: IFS is changed for the rest of the script. Every later unquoted expansion then splits on the new separator, which can turn one argument into several (or a path into pieces) in code far from here. Set it only for one command (`IFS=, read -r a b`) or inside a subshell / function with `local IFS`.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - bash
+    confidence: MEDIUM
+    likelihood: LOW
+    impact: LOW
+    cwe:
+    - 'CWE-20: Improper Input Validation'
+    references:
+    - https://www.gnu.org/software/bash/manual/html_node/Word-Splitting.html
+    mh_source: microhealth
+    mh_upstream_id: bash.ifs-global
+    mh_license: MIT
+  patterns:
+  - pattern: IFS=$X
+  - pattern-not-inside: $(...)
+  - pattern-not-inside: (...)
+  - pattern-not-inside: 'local IFS
+
+      ...
+
+      '
 - id: mh.microhealth.dockerfile.last-user-root
   languages:
   - dockerfile
@@ -13714,6 +13229,82 @@ rules:
   patterns:
   - pattern-regex: (?m)^[ \t]*(?i:USER)[ \t]+["']?(?:root|0)(?::\S+)?["']?[ \t]*$(?![\s\S]*^[ \t]*(?i:FROM[ \t]|USER[ \t]+(?!["']?(?:root|0)(?:[:"'\s]|$))))(?![\s\S]*\b(?:su-exec|gosu|setpriv|runuser|s6-setuidgid)\b)(?![\s\S]*hadolint[ \t]+ignore=[^\n]*\bDL3002\b)
   - pattern-not-regex: (?m)^[ \t]*#[ \t]*hadolint[ \t]+ignore=[^\n]*\bDL3002\b[^\n]*\n[ \t]*(?i:USER)[^\n]*
+- id: mh.microhealth.generic.aws-access-key-id
+  languages:
+  - regex
+  severity: ERROR
+  message: 'An AWS access key ID is in the source. An access key ID is one half of a long-term credential: remove it, load it from the environment or a secret store at run time, and deactivate and rotate the key in IAM.'
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - aws
+    - secrets
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-798: Use of Hard-coded Credentials'
+    references:
+    - https://docs.aws.amazon.com/IAM/latest/UserGuide/security-creds-programmatic-access.html
+    - https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+    mh_source: microhealth
+    mh_upstream_id: generic.aws-access-key-id
+    mh_license: MIT
+  patterns:
+  - pattern-regex: \b(?:A3T[A-Z0-9]|AKIA|ABIA|ACCA|AGPA|AIDA|AIPA|ANPA|ANVA|AROA|APKA|ASCA|ASIA)[A-Z0-9]{16}\b
+  - pattern-not-regex: \b(?:A3T[A-Z0-9]|AKIA|ABIA|ACCA|AGPA|AIDA|AIPA|ANPA|ANVA|AROA|APKA|ASCA|ASIA)[A-Z0-9]{9}EXAMPLE\b
+- id: mh.microhealth.generic.gcp-service-account-key
+  languages:
+  - regex
+  severity: ERROR
+  message: 'A Google Cloud service-account key file with its private key is in the source. Anyone who reads it can act as that service account. Remove it, load the key from a secret store at run time, and rotate the key in IAM: a committed key is leaked.'
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - gcp
+    - secrets
+    confidence: HIGH
+    likelihood: HIGH
+    impact: HIGH
+    cwe:
+    - 'CWE-798: Use of Hard-coded Credentials'
+    references:
+    - https://cloud.google.com/iam/docs/keys-create-delete
+    mh_source: microhealth
+    mh_upstream_id: generic.gcp-service-account-key
+    mh_license: MIT
+  pattern-either:
+  - pattern-regex: '["'']type["'']\s*:\s*["'']service_account["''][\s\S]{0,4000}?["'']private_key["'']\s*:\s*["'']-----BEGIN (?:RSA )?PRIVATE KEY-----(?:\\n|\n)[A-Za-z0-9+/]{40,}'
+  - pattern-regex: '["'']private_key["'']\s*:\s*["'']-----BEGIN (?:RSA )?PRIVATE KEY-----(?:\\n|\n)[A-Za-z0-9+/]{40,}[\s\S]{0,4000}?["'']type["'']\s*:\s*["'']service_account["'']'
+- id: mh.microhealth.generic.jwt-token
+  languages:
+  - regex
+  severity: ERROR
+  message: 'A JSON Web Token is in the source. A signed token is a bearer credential until it expires: remove it, load it from configuration at run time, and revoke or rotate whatever signed it.'
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - jwt
+    - secrets
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-798: Use of Hard-coded Credentials'
+    references:
+    - https://supabase.com/docs/guides/api/api-keys
+    mh_source: microhealth
+    mh_upstream_id: generic.jwt-token
+    mh_license: MIT
+  patterns:
+  - pattern-regex: \beyJ[A-Za-z0-9_-]{14,}\.[A-Za-z0-9_-]{13,}(?:\.[A-Za-z0-9_-]+)?
+  - pattern-not-regex: \beyJ[A-Za-z0-9_-]*\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6[A-Za-z0-9_-]{28}Iiwicm9sZSI6ImFub24i[A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]+)?
 - id: mh.microhealth.go.decompression-without-limit
   languages:
   - go
@@ -13895,6 +13486,779 @@ rules:
         - pattern-inside: unix.$SYSCALL(..., uintptr(unsafe.Pointer($X)), ...)
         - pattern-inside: windows.$SYSCALL(..., uintptr(unsafe.Pointer($X)), ...)
         - pattern-inside: $PROC.Call(..., uintptr(unsafe.Pointer($X)), ...)
+- id: mh.microhealth.javascript.express-sendfile-request-path
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  mode: taint
+  message: A path taken from the HTTP request is passed to res.sendFile / res.download. Without the `root` option and a check that the resolved path stays inside it, a caller can read any file the process can (`../../etc/passwd`). Pass { root } and a validated relative name, or map an identifier to a file on the server side.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - express
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-22: Improper Limitation of a Pathname to a Restricted Directory (''Path Traversal'')'
+    owasp:
+    - A01:2021 - Broken Access Control
+    references:
+    - https://expressjs.com/en/api.html#res.sendFile
+    mh_source: microhealth
+    mh_upstream_id: javascript.express-sendfile-request-path
+    mh_license: MIT
+  pattern-sources:
+  - patterns:
+    - pattern-either:
+      - pattern: $REQ.query
+      - pattern: $REQ.params
+      - pattern: $REQ.body
+      - pattern: $REQ.cookies
+      - pattern: $REQ.headers
+      - pattern: $REQ.path
+      - pattern: $REQ.url
+      - pattern: $REQ.originalUrl
+    - metavariable-regex:
+        metavariable: $REQ
+        regex: ^(req|request)$
+  pattern-sanitizers:
+  - pattern: path.basename(...)
+  - pattern: basename(...)
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern: $RES.sendFile($P, ...)
+      - pattern: $RES.sendfile($P, ...)
+      - pattern: $RES.download($P, ...)
+    - pattern-not: '$RES.$M($P, {..., root: $ROOT, ...}, ...)'
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response)$
+    - focus-metavariable: $P
+- id: mh.microhealth.javascript.html-string-to-dom-sink
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  mode: taint
+  message: Markup built by string interpolation reaches an HTML sink (innerHTML, outerHTML, insertAdjacentHTML, document.write, srcdoc). Any interpolated value that is not HTML-escaped becomes markup, so a name, a database field or a model's output can inject script (XSS). Escape every interpolated value (escapeHtml) or build the elements with the DOM API / React instead of a string.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - javascript
+    - typescript
+    - browser
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-79: Improper Neutralization of Input During Web Page Generation (''Cross-site Scripting'')'
+    owasp:
+    - A03:2021 - Injection
+    references:
+    - https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
+    mh_source: microhealth
+    mh_upstream_id: javascript.html-string-to-dom-sink
+    mh_license: MIT
+  pattern-sources:
+  - patterns:
+    - pattern: '`...${$X}...`
+
+        '
+    - focus-metavariable: $X
+    - pattern-not: '"..."
+
+        '
+  - patterns:
+    - pattern-either:
+      - pattern: $A + $X
+      - pattern: $X + $A
+    - focus-metavariable: $X
+    - pattern-not: '"..."
+
+        '
+    - pattern-not: $A + $B
+  pattern-sanitizers:
+  - patterns:
+    - pattern: $F(...)
+    - metavariable-regex:
+        metavariable: $F
+        regex: ^(escapeHtml|escapeHTML|htmlEscape|escapeXml|escape|esc|xmlEsc|encodeURIComponent|sanitizeSvg|sanitizeHtml|sanitizeMarkup|String\(Number|Number|parseInt|parseFloat)$
+  - pattern: DOMPurify.sanitize(...)
+  - pattern: $P.sanitize(...)
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern: $EL.innerHTML = $SINK
+      - pattern: $EL.outerHTML = $SINK
+      - pattern: $EL.srcdoc = $SINK
+      - pattern: $EL.insertAdjacentHTML($POS, $SINK)
+      - pattern: document.write($SINK, ...)
+      - pattern: document.writeln($SINK, ...)
+      - pattern: $W.document.write($SINK, ...)
+      - pattern: $W.document.writeln($SINK, ...)
+      - pattern: $RANGE.createContextualFragment($SINK)
+    - focus-metavariable: $SINK
+- id: mh.microhealth.javascript.insecure-random-for-secret
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  message: 'A value that guards access (a token, secret, password, nonce, salt, session or reset code, key or identifier) is made from Math.random() or crypto.pseudoRandomBytes(). Neither is a cryptographic generator: their output can be predicted from earlier output. Use crypto.randomUUID(), crypto.getRandomValues() or crypto.randomBytes().'
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - javascript
+    - node.js
+    - browser
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)'
+    owasp:
+    - A02:2021 - Cryptographic Failures
+    references:
+    - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
+    mh_source: microhealth
+    mh_upstream_id: javascript.insecure-random-for-secret
+    mh_license: MIT
+  pattern-either:
+  - pattern: crypto.pseudoRandomBytes(...)
+  - pattern: $C.pseudoRandomBytes(...)
+  - patterns:
+    - pattern-either:
+      - pattern: $NAME = <... Math.random() ...>
+      - pattern: let $NAME = <... Math.random() ...>
+      - pattern: const $NAME = <... Math.random() ...>
+      - pattern: var $NAME = <... Math.random() ...>
+      - pattern: $OBJ.$NAME = <... Math.random() ...>
+      - pattern: '{..., $NAME: <... Math.random() ...>, ...}'
+      - pattern: const $NAME = (...) => <... Math.random() ...>
+    - metavariable-regex:
+        metavariable: $NAME
+        regex: (?i).*(?:token|secret|passw|pwd|nonce|salt|otp|csrf|xsrf|session|api_?key|private_?key|signing_?key|secret_?key|credential|auth(?!or)|uuid|guid|verifier|challenge|reset_?code|invite_?code|verification)
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function $FN(...) { ... }
+      - pattern-inside: const $FN = (...) => { ... }
+    - pattern: return <... Math.random() ...>;
+    - metavariable-regex:
+        metavariable: $FN
+        regex: (?i).*(?:token|secret|passw|pwd|nonce|salt|otp|csrf|xsrf|session|api_?key|private_?key|signing_?key|secret_?key|credential|auth(?!or)|uuid|guid|verifier|challenge|reset_?code|invite_?code|verification)
+- id: mh.microhealth.javascript.insecure-websocket-url
+  languages:
+  - javascript
+  - typescript
+  severity: ERROR
+  message: This code opens, or builds the address of, a plaintext `ws://` WebSocket to a host that is not this computer. Everything on that socket, session tokens included, crosses the network in clear text and can be read or changed in transit. Use `wss://`.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - websocket
+    confidence: HIGH
+    likelihood: MEDIUM
+    impact: MEDIUM
+    cwe:
+    - 'CWE-319: Cleartext Transmission of Sensitive Information'
+    owasp:
+    - A02:2021 - Cryptographic Failures
+    references:
+    - https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_client_applications#security_considerations
+    mh_source: microhealth
+    mh_upstream_id: javascript.insecure-websocket-url
+    mh_license: MIT
+  patterns:
+  - pattern-either:
+    - pattern: '"$URL"'
+    - pattern: '`$URL`'
+  - metavariable-regex:
+      metavariable: $URL
+      regex: (?i)^ws://(?!(?:localhost|127(?:\.\d{1,3}){3}|\[::1\])(?:[:/?#]|$))
+- id: mh.microhealth.javascript.json-parse-into-object-assign
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  mode: taint
+  message: An object parsed from JSON is merged into another with Object.assign. A parsed object can carry a "__proto__" (or "constructor") key, and copying it can change the target's prototype or shadow its methods (prototype pollution). Copy only the keys you expect, validate the object with a schema first, or merge into Object.create(null).
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - javascript
+    confidence: MEDIUM
+    likelihood: LOW
+    impact: MEDIUM
+    cwe:
+    - 'CWE-1321: Improperly Controlled Modification of Object Prototype Attributes (''Prototype Pollution'')'
+    references:
+    - https://cheatsheetseries.owasp.org/cheatsheets/Prototype_Pollution_Prevention_Cheat_Sheet.html
+    mh_source: microhealth
+    mh_upstream_id: javascript.json-parse-into-object-assign
+    mh_license: MIT
+  pattern-sources:
+  - patterns:
+    - pattern: JSON.parse(...)
+    - pattern-not: JSON.parse("...", ...)
+  pattern-sanitizers:
+  - patterns:
+    - pattern-either:
+      - pattern: $SCHEMA.parse(...)
+      - pattern: $SCHEMA.safeParse(...)
+    - pattern-not: JSON.parse(...)
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern: Object.assign($TARGET, $SRC, ...)
+      - pattern: Object.assign($TARGET, $OTHER, ..., $SRC, ...)
+    - focus-metavariable: $SRC
+- id: mh.microhealth.javascript.open-redirect-from-url-input
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  message: A value read from the page URL (query string, fragment, referrer or window.name) decides where the browser is sent. A link to this page with that value set can bounce a user to any site while showing this site's address first (open redirect, a phishing aid), or run script with a `javascript:` URL. Redirect only to a relative path that starts with a single `/`, or to a URL whose origin is checked against an allow-list.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - browser
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: MEDIUM
+    cwe:
+    - 'CWE-601: URL Redirection to Untrusted Site (''Open Redirect'')'
+    owasp:
+    - A01:2021 - Broken Access Control
+    references:
+    - https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html
+    mh_source: microhealth
+    mh_upstream_id: javascript.open-redirect-from-url-input
+    mh_license: MIT
+  options:
+    taint_intrafile: true
+  mode: taint
+  pattern-sources:
+  - pattern-either:
+    - pattern: location.search
+    - pattern: location.hash
+    - pattern: window.location.search
+    - pattern: window.location.hash
+    - pattern: document.location.search
+    - pattern: document.location.hash
+    - pattern: document.URL
+    - pattern: document.documentURI
+    - pattern: document.referrer
+    - pattern: window.name
+    - pattern: new URLSearchParams(...)
+    - pattern: new URL(location.href).searchParams
+    - pattern: new URL(window.location.href).searchParams
+    - pattern: useSearchParams()
+    - pattern: useLocation().search
+    - pattern: useLocation().hash
+  pattern-sanitizers:
+  - pattern: encodeURIComponent(...)
+  - by-side-effect: true
+    patterns:
+    - pattern-either:
+      - pattern: $AL.includes($X)
+      - pattern: $AL.has($X)
+      - pattern: $CHECK($X, ...)
+      - pattern: $OBJ.$CHECK($X, ...)
+    - metavariable-regex:
+        metavariable: $CHECK
+        regex: (?i)^(includes|has|(assert|validate|check|ensure|verify|is|guard|safe)\w*(url|uri|redirect|path|origin|host|allowed|safe|internal|relative)\w*)$
+    - focus-metavariable: $X
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern: location.href = $U
+      - pattern: window.location.href = $U
+      - pattern: document.location.href = $U
+      - pattern: location = $U
+      - pattern: window.location = $U
+      - pattern: location.assign($U)
+      - pattern: window.location.assign($U)
+      - pattern: location.replace($U)
+      - pattern: window.location.replace($U)
+      - pattern: window.open($U, ...)
+    - metavariable-regex:
+        metavariable: $U
+        regex: ^(?!`https?://[^/`$]+/|`/[^/`$]|["']https?://[^/"']+/|["']/[^/"'])
+    - focus-metavariable: $U
+- id: mh.microhealth.javascript.react-unsanitized-inner-html
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  message: 'dangerouslySetInnerHTML receives markup that was not visibly sanitised. React''s escaping is off for this element, so any script, event handler or javascript: URL in the value runs in the page (XSS). Pass the value through DOMPurify (DOMPurify.sanitize or a project wrapper such as sanitizeSvg / sanitizeHtml) where it is used, or render it as text.'
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - react
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-79: Improper Neutralization of Input During Web Page Generation (''Cross-site Scripting'')'
+    owasp:
+    - A03:2021 - Injection
+    references:
+    - https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html
+    mh_source: microhealth
+    mh_upstream_id: javascript.react-unsanitized-inner-html
+    mh_license: MIT
+  patterns:
+  - pattern: '<$EL dangerouslySetInnerHTML={{__html: $X}} />
+
+      '
+  - metavariable-regex:
+      metavariable: $EL
+      regex: ^(?!style$)
+  - pattern-not: '<$EL dangerouslySetInnerHTML={{__html: "..."}} />
+
+      '
+  - pattern-not: '<$EL dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(...)}} />
+
+      '
+  - pattern-not: '<$EL dangerouslySetInnerHTML={{__html: sanitizeSvg(...)}} />
+
+      '
+  - pattern-not: '<$EL dangerouslySetInnerHTML={{__html: sanitizeHtml(...)}} />
+
+      '
+  - pattern-not: '<$EL dangerouslySetInnerHTML={{__html: sanitizeMarkup(...)}} />
+
+      '
+  - pattern-not-inside: '$V = DOMPurify.sanitize(...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = sanitizeSvg(...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = sanitizeHtml(...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = sanitizeMarkup(...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = $C ? DOMPurify.sanitize(...) : $ALT;
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = $C ? sanitizeSvg(...) : $ALT;
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = $C ? sanitizeHtml(...) : $ALT;
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = $C ? sanitizeMarkup(...) : $ALT;
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => DOMPurify.sanitize(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => sanitizeSvg(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => sanitizeHtml(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => sanitizeMarkup(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => $C ? DOMPurify.sanitize(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => $C ? sanitizeSvg(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => $C ? sanitizeHtml(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => $C ? sanitizeMarkup(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => { ... return DOMPurify.sanitize(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => { ... return sanitizeSvg(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => { ... return sanitizeHtml(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => { ... return sanitizeMarkup(...); }, ...);
+
+      ...
+
+      '
+- id: mh.microhealth.javascript.regexp-from-untrusted-input
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  mode: taint
+  message: 'A regular expression is compiled from input a user controls (the HTTP request, the page URL, a form field). The user then writes the pattern: a crafted one can backtrack for minutes and block the event loop for every request (ReDoS), or match far more than intended. Escape the value (escapeRegExp / `s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")`) to match it literally, or use string methods (includes, startsWith).'
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - javascript
+    - typescript
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: MEDIUM
+    cwe:
+    - 'CWE-1333: Inefficient Regular Expression Complexity'
+    references:
+    - https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS
+    mh_source: microhealth
+    mh_upstream_id: javascript.regexp-from-untrusted-input
+    mh_license: MIT
+  pattern-sources:
+  - patterns:
+    - pattern-either:
+      - pattern: $REQ.query
+      - pattern: $REQ.body
+      - pattern: $REQ.params
+      - pattern: $REQ.headers
+      - pattern: $REQ.url
+      - pattern: $REQ.json()
+      - pattern: $REQ.text()
+      - pattern: $REQ.formData()
+    - metavariable-regex:
+        metavariable: $REQ
+        regex: ^(req|request)$
+  - pattern: location.search
+  - pattern: location.hash
+  - pattern: window.location.search
+  - pattern: window.location.hash
+  - pattern: new URLSearchParams(...).get(...)
+  - pattern: $PARAMS.get(...)
+  - pattern: $EVT.target.value
+  - pattern: $EVT.currentTarget.value
+  pattern-sanitizers:
+  - patterns:
+    - pattern: $F(...)
+    - metavariable-regex:
+        metavariable: $F
+        regex: (?i)^(\w+\.)?(escape\w*reg\w*|reg\w*escape\w*|escape)$
+  - pattern: $S.replace(/[.*+?^${}()|[\]\\]/g, ...)
+  - pattern: $S.replaceAll(/[.*+?^${}()|[\]\\]/g, ...)
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern: new RegExp($P, ...)
+      - pattern: RegExp($P, ...)
+    - focus-metavariable: $P
+- id: mh.microhealth.javascript.secret-compare-not-constant-time
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  message: A secret ($S) is compared with `==` / `===`. String comparison stops at the first differing character, so the time it takes tells a caller how much of a guess was right (timing attack). Compare secrets with a constant-time function (crypto.timingSafeEqual over equal-length buffers, or the project's constant-time helper).
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - javascript
+    - typescript
+    confidence: MEDIUM
+    likelihood: LOW
+    impact: MEDIUM
+    cwe:
+    - 'CWE-208: Observable Timing Discrepancy'
+    references:
+    - https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b
+    mh_source: microhealth
+    mh_upstream_id: javascript.secret-compare-not-constant-time
+    mh_license: MIT
+  patterns:
+  - pattern-either:
+    - pattern: $S == $O
+    - pattern: $O == $S
+    - pattern: $S === $O
+    - pattern: $O === $S
+    - pattern: $S != $O
+    - pattern: $O != $S
+    - pattern: $S !== $O
+    - pattern: $O !== $S
+  - metavariable-regex:
+      metavariable: $O
+      regex: (?i)^(?!(?:[\w.]*\.)?(?:password|passwd|pass|secret|client_?secret|token|access_?token|auth_?token|api_?key|apikey|api_?secret|hmac|signature|service_?role_?key|service_?key)$)
+  - metavariable-regex:
+      metavariable: $S
+      regex: (?i)^(\w*\.)?(password|passwd|pass|secret|client_?secret|token|access_?token|auth_?token|api_?key|apikey|api_?secret|hmac|signature|service_?role_?key|service_?key)$
+  - pattern-not: $S == "..."
+  - pattern-not: '"..." == $S'
+  - pattern-not: $S == null
+  - pattern-not: null == $S
+  - pattern-not: $S == undefined
+  - pattern-not: undefined == $S
+  - pattern-not: $S == true
+  - pattern-not: true == $S
+  - pattern-not: $S == false
+  - pattern-not: false == $S
+  - pattern-not: $S === "..."
+  - pattern-not: '"..." === $S'
+  - pattern-not: $S === null
+  - pattern-not: null === $S
+  - pattern-not: $S === undefined
+  - pattern-not: undefined === $S
+  - pattern-not: $S === true
+  - pattern-not: true === $S
+  - pattern-not: $S === false
+  - pattern-not: false === $S
+  - pattern-not: $S != "..."
+  - pattern-not: '"..." != $S'
+  - pattern-not: $S != null
+  - pattern-not: null != $S
+  - pattern-not: $S != undefined
+  - pattern-not: undefined != $S
+  - pattern-not: $S != true
+  - pattern-not: true != $S
+  - pattern-not: $S != false
+  - pattern-not: false != $S
+  - pattern-not: $S !== "..."
+  - pattern-not: '"..." !== $S'
+  - pattern-not: $S !== null
+  - pattern-not: null !== $S
+  - pattern-not: $S !== undefined
+  - pattern-not: undefined !== $S
+  - pattern-not: $S !== true
+  - pattern-not: true !== $S
+  - pattern-not: $S !== false
+  - pattern-not: false !== $S
+- id: mh.microhealth.javascript.ssrf-request-to-fetch
+  languages:
+  - javascript
+  - typescript
+  severity: ERROR
+  message: Data from the incoming request reaches the URL of an outbound request made by this server. A caller who chooses that URL can make the server read internal services or the cloud metadata endpoint (169.254.169.254) on their behalf (server-side request forgery). Check the URL against an allow-list, or resolve its host and refuse loopback, private, link-local and metadata addresses before the request (and do not follow redirects without checking each hop).
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - javascript
+    - typescript
+    - deno
+    - express
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-918: Server-Side Request Forgery (SSRF)'
+    owasp:
+    - A10:2021 - Server-Side Request Forgery (SSRF)
+    references:
+    - https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html
+    mh_source: microhealth
+    mh_upstream_id: javascript.ssrf-request-to-fetch
+    mh_license: MIT
+  options:
+    taint_intrafile: true
+    taint_assume_safe_functions: true
+  mode: taint
+  pattern-sources:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: 'function $F(..., $REQ: Request, ...) { ... }
+
+          '
+      - pattern-inside: '($REQ: Request, ...) => { ... }
+
+          '
+      - pattern-inside: 'Deno.serve(..., ($REQ, ...) => { ... })
+
+          '
+      - pattern-inside: 'serve(($REQ, ...) => { ... }, ...)
+
+          '
+    - pattern-either:
+      - pattern: $REQ.json()
+      - pattern: $REQ.formData()
+      - pattern: $REQ.text()
+      - pattern: $REQ.url
+      - pattern: $REQ.headers.get(...)
+  - patterns:
+    - pattern-either:
+      - pattern-inside: 'function $F($REQ, $RES, ...) { ... }
+
+          '
+      - pattern-inside: 'function ($REQ, $RES, ...) { ... }
+
+          '
+      - pattern-inside: '($REQ, $RES, ...) => { ... }
+
+          '
+    - metavariable-regex:
+        metavariable: $REQ
+        regex: ^(req|request)$
+    - pattern-either:
+      - pattern: $REQ.query
+      - pattern: $REQ.body
+      - pattern: $REQ.params
+      - pattern: $REQ.headers
+      - pattern: $REQ.cookies
+      - pattern: $REQ.get(...)
+      - pattern: $REQ.header(...)
+  pattern-propagators:
+  - pattern: $TO = new URL($FROM, ...)
+    from: $FROM
+    to: $TO
+  pattern-sanitizers:
+  - pattern: encodeURIComponent(...)
+  - pattern-regex: '`https?://[A-Za-z0-9.-]+(:\d+)?/[^`]*`'
+  - by-side-effect: true
+    patterns:
+    - pattern-either:
+      - pattern: $AL.includes($X)
+      - pattern: $AL.has($X)
+      - pattern: $CHECK($X, ...)
+      - pattern: $OBJ.$CHECK($X, ...)
+    - metavariable-regex:
+        metavariable: $CHECK
+        regex: (?i)^(includes|has|(assert|validate|check|ensure|verify|is|guard)\w*(url|uri|host|origin|endpoint|outbound|public|allowed|safe)\w*)$
+    - focus-metavariable: $X
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern: fetch($U, ...)
+      - pattern: new Request($U, ...)
+      - pattern: axios($U, ...)
+      - pattern: axios.$VERB($U, ...)
+      - pattern: got($U, ...)
+      - pattern: got.$VERB($U, ...)
+      - patterns:
+        - pattern-either:
+          - pattern: $HTTP.get($U, ...)
+          - pattern: $HTTP.request($U, ...)
+        - metavariable-regex:
+            metavariable: $HTTP
+            regex: ^(https?|http2|needle|superagent|undici|ky)$
+    - metavariable-regex:
+        metavariable: $U
+        regex: ^(?!`https?://[^/`$]+/|["']https?://[^/"']+/)
+    - focus-metavariable: $U
+- id: mh.microhealth.nginx.host-header-in-response
+  languages:
+  - regex
+  severity: WARNING
+  paths:
+    include:
+    - '*.conf'
+    - '*.conf.template'
+    - '*nginx*'
+    - '*vhost*'
+    - sites-available/*
+    - sites-enabled/*
+  message: 'The client''s Host header ($host / $http_host) is written into a response: a redirect target, a header, or a rewritten Location. With `server_name _` (or a default server) any Host is accepted, so a request can make this server send users — or a shared cache — to another site (host-header injection, open redirect). Use a configured name ($server_name with an explicit server_name, or a literal).'
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - nginx
+    confidence: MEDIUM
+    likelihood: LOW
+    impact: MEDIUM
+    cwe:
+    - 'CWE-644: Improper Neutralization of HTTP Headers for Scripting Syntax'
+    references:
+    - https://portswigger.net/web-security/host-header
+    mh_source: microhealth
+    mh_upstream_id: nginx.host-header-in-response
+    mh_license: MIT
+  patterns:
+  - pattern-regex: (?m)^\s*(?:return|rewrite|add_header|proxy_redirect|sub_filter)\b[^;\n]*\$(?:http_host|host)\b[^;]*;
+- id: mh.microhealth.nginx.proxy-pass-request-variable
+  languages:
+  - regex
+  severity: WARNING
+  paths:
+    include:
+    - '*.conf'
+    - '*.conf.template'
+    - '*nginx*'
+    - '*vhost*'
+    - sites-available/*
+    - sites-enabled/*
+  message: proxy_pass takes its destination from the request (an argument, header, cookie, Host or URI variable). A client can then point this server at any host, including internal services (SSRF). Proxy to a fixed upstream or a variable set from configuration, and map request values through an allowlist (`map`) first; mark X-Accel-Redirect targets `internal`.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - nginx
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-918: Server-Side Request Forgery (SSRF)'
+    references:
+    - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass
+    mh_source: microhealth
+    mh_upstream_id: nginx.proxy-pass-request-variable
+    mh_license: MIT
+  pattern-either:
+  - pattern-regex: \bproxy_pass\s+(?:https?://)?[^/;\s]*\$(?:arg_\w+|http_\w+|cookie_\w+|host|args|query_string|request_body)\b[^;]*;
+  - pattern-regex: \bproxy_pass\s+(?:https?://)?\$(?:request_uri|uri|document_uri)\b[^;]*;
 - id: mh.microhealth.python.fips-non-approved-hash
   languages:
   - python
@@ -13902,6 +14266,14 @@ rules:
   message: $ALG is not a FIPS 140-3 approved hash. Under the OpenSSL FIPS provider MicroHealth's images run, hashlib refuses it and this call raises at runtime. Use SHA-256 (hashlib.sha256) or another SHA-2/SHA-3 function; if the digest is not used for security (a cache key, a checksum a third-party format requires), pass usedforsecurity=False and say why in a comment.
   metadata:
     category: security
+    subcategory:
+    - audit
+    technology:
+    - python
+    - hashlib
+    confidence: HIGH
+    likelihood: MEDIUM
+    impact: MEDIUM
     cwe:
     - 'CWE-327: Use of a Broken or Risky Cryptographic Algorithm'
     references:
@@ -13911,8 +14283,7 @@ rules:
     mh_license: MIT
   pattern-either:
   - patterns:
-    - pattern-either:
-      - pattern: hashlib.$ALG(...)
+    - pattern: hashlib.$ALG(...)
     - metavariable-regex:
         metavariable: $ALG
         regex: ^(md5|md4|blake2b|blake2s)$
@@ -13988,3 +14359,91 @@ rules:
       - pattern: return "..." + ...
       - pattern: return ... + "..."
       - pattern: return f"...{...}..."
+- id: mh.microhealth.terraform.iam-data-read-unscoped
+  languages:
+  - hcl
+  severity: WARNING
+  message: This IAM statement allows reading data ($ACTION) on every resource (`Resource = "*"`). Whoever holds the role can read every secret, parameter, object or database snapshot the account can reach, not only the ones this workload needs. List the ARNs the workload reads.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - terraform
+    - aws
+    confidence: HIGH
+    likelihood: LOW
+    impact: HIGH
+    cwe:
+    - 'CWE-732: Incorrect Permission Assignment for Critical Resource'
+    owasp:
+    - A01:2021 - Broken Access Control
+    references:
+    - https://cloudsplaining.readthedocs.io/en/latest/glossary/data-exfiltration/
+    mh_source: microhealth
+    mh_upstream_id: terraform.iam-data-read-unscoped
+    mh_license: MIT
+  patterns:
+  - pattern-either:
+    - patterns:
+      - pattern-either:
+        - pattern-inside: '{..., Resource = "*", ...}
+
+            '
+        - pattern-inside: '{..., Resource = [..., "*", ...], ...}
+
+            '
+      - pattern-not-inside: '{..., Effect = "Deny", ...}
+
+          '
+      - pattern: Action = $ACTION
+    - patterns:
+      - pattern-inside: "statement {\n  ...\n  resources = [..., \"*\", ...]\n  ...\n}\n"
+      - pattern-not-inside: "statement {\n  ...\n  effect = \"Deny\"\n  ...\n}\n"
+      - pattern: actions = $ACTION
+  - metavariable-pattern:
+      metavariable: $ACTION
+      pattern-either:
+      - pattern: '"s3:GetObject"'
+      - pattern: '"s3:*"'
+      - pattern: '"ssm:GetParameter"'
+      - pattern: '"ssm:GetParameters"'
+      - pattern: '"ssm:GetParametersByPath"'
+      - pattern: '"ssm:GetParameter*"'
+      - pattern: '"ssm:*"'
+      - pattern: '"secretsmanager:GetSecretValue"'
+      - pattern: '"secretsmanager:*"'
+      - pattern: '"rds:CopyDBSnapshot"'
+      - pattern: '"rds:CreateDBSnapshot"'
+      - pattern: '"rds:*"'
+      - pattern: '"*"'
+- id: mh.microhealth.yaml.github-actions-add-mask-expression
+  languages:
+  - regex
+  severity: WARNING
+  paths:
+    include:
+    - .github/workflows/*.yml
+    - .github/workflows/*.yaml
+    - action.yml
+    - action.yaml
+    - '*.yml'
+    - '*.yaml'
+  message: A `${{ … }}` expression is written straight into an `::add-mask::` workflow command. The expression is substituted into the script before it runs, so a value with a newline, a quote or a second workflow command can inject commands or end masking early. Put the value in an environment variable (`env:`), refuse an empty or multi-line value, and mask "$VAR".
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - github-actions
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: MEDIUM
+    cwe:
+    - 'CWE-200: Exposure of Sensitive Information to an Unauthorized Actor'
+    references:
+    - https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#understanding-the-risk-of-script-injections
+    mh_source: microhealth
+    mh_upstream_id: yaml.github-actions-add-mask-expression
+    mh_license: MIT
+  pattern-regex: ::add-mask::[^\n]*\$\{\{

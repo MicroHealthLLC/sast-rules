@@ -1,0 +1,149 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/eval/eval_node.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/eval/rule-eval_nodejs.yml
+# (mh.gitlab.rules_lgpl_javascript_eval_rule-eval-nodejs, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.eval.eval-nodejs
+  pattern-either:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function (req, $RES, ...) {...}
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          new Function(..., <... req.$QUERY.$VAR ...>, ...)
+      - pattern: |
+          new Function(..., <... req.$QUERY ...>, ...)
+      - pattern: |
+          eval(..., <... req.$QUERY.$VAR ...>, ...)
+      - pattern: |
+          eval(..., <... req.$QUERY ...>, ...)
+      - pattern: |
+          setTimeout(..., <... req.$QUERY.$VAR ...>, ...)
+      - pattern: |
+          setTimeout(..., <... req.$QUERY ...>, ...)
+      - pattern: |
+          setInterval(..., <... req.$QUERY.$VAR ...>, ...)
+      - pattern: |
+          setInterval(..., <... req.$QUERY ...>, ...)
+      - pattern: |
+          $INP = <... req.$QUERY.$VAR ...>;
+          ...
+          new Function(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... req.$QUERY ...>;
+          ...
+          new Function(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... req.$QUERY.$VAR ...>;
+          ...
+          eval(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... req.$QUERY ...>;
+          ...
+          eval(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... req.$QUERY.$VAR ...>;
+          ...
+          setTimeout(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... req.$QUERY ...>;
+          ...
+          setTimeout(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... req.$QUERY.$VAR ...>;
+          ...
+          setInterval(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... req.$QUERY ...>;
+          ...
+          setInterval(..., <... $INP ...>, ...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function (request, $RES, ...) {...}
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          new Function(..., <... request.$QUERY.$VAR ...>, ...)
+      - pattern: |
+          new Function(..., <... request.$QUERY ...>, ...)
+      - pattern: |
+          eval(..., <... request.$QUERY.$VAR ...>, ...)
+      - pattern: |
+          eval(..., <... request.$QUERY ...>, ...)
+      - pattern: |
+          setTimeout(..., <... request.$QUERY.$VAR ...>, ...)
+      - pattern: |
+          setTimeout(..., <... request.$QUERY ...>, ...)
+      - pattern: |
+          setInterval(..., <... request.$QUERY.$VAR ...>, ...)
+      - pattern: |
+          setInterval(..., <... request.$QUERY ...>, ...)
+      - pattern: |
+          $INP = <... request.$QUERY.$VAR ...>;
+          ...
+          new Function(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... request.$QUERY ...>;
+          ...
+          new Function(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... request.$QUERY.$VAR ...>;
+          ...
+          eval(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... request.$QUERY ...>;
+          ...
+          eval(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... request.$QUERY.$VAR ...>;
+          ...
+          setTimeout(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... request.$QUERY ...>;
+          ...
+          setTimeout(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... request.$QUERY.$VAR ...>;
+          ...
+          setInterval(..., <... $INP ...>, ...)
+      - pattern: |
+          $INP = <... request.$QUERY ...>;
+          ...
+          setInterval(..., <... $INP ...>, ...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    User controlled data in eval() or similar functions may result in Server Side Injection or Remote Code Injection
+  languages:
+  - javascript
+  severity: ERROR
+  metadata:
+    cwe: CWE-95
+    shortDescription: Improper neutralization of directives in dynamically evaluated code ('Eval Injection')
+    category: security
+    owasp:
+    - A1:2017-Injection
+    - A03:2021-Injection
+    - A05:2025-Injection
+    security-severity: HIGH
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_eval_rule-eval-nodejs

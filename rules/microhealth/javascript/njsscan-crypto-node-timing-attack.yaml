@@ -1,0 +1,513 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/crypto/timing_attack_node.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/crypto/rule-node_timing_attack.yml
+# (mh.gitlab.rules_lgpl_javascript_crypto_rule-node-timing-attack, disabled in overrides.yaml in favour of this copy).
+# Change: a comparison of a secret-named variable with a literal (null,
+# undefined, a boolean, a number, a string such as '') leaks nothing an
+# attacker controls the other side of: it is an emptiness or presence check.
+# The upstream pattern-nots meant to drop those carry a trailing `;` and never
+# match, so `if (token !== null) {...}` fired. The other side ($X) must now be
+# something other than a literal.
+rules:
+- id: javascript.njsscan.crypto.node-timing-attack
+  patterns:
+  - pattern-not: if ($Z == null) { ... };
+  - pattern-not: if ($Z === null) { ... };
+  - pattern-not: if ($Z != null) { ... };
+  - pattern-not: if ($Z !== null) { ... };
+  - pattern-not: if ($Q != undefined) { ... };
+  - pattern-not: if ($Q !== undefined) { ... };
+  - pattern-not: if ($Q == undefined) { ... };
+  - pattern-not: if ($Q === undefined) { ... };
+  - pattern-not: return $Y == null;
+  - pattern-not: return $Y === null;
+  - pattern-not: return $Y != null;
+  - pattern-not: return $Y !== null;
+  - pattern-not: return $Y == undefined;
+  - pattern-not: return $Y === undefined;
+  - pattern-not: return $Y != undefined;
+  - pattern-not: return $Y !== undefined;
+  - pattern-either:
+    - pattern: |
+        if (password == $X) {
+            ...
+        }
+    - pattern: |
+        if ($X == password) {
+            ...
+        }
+    - pattern: |
+        if (password === $X) {
+            ...
+        }
+    - pattern: |
+        if ($X === password) {
+            ...
+        }
+    - pattern: |
+        if (pass == $X) {
+            ...
+        }
+    - pattern: |
+        if ($X == pass) {
+            ...
+        }
+    - pattern: |
+        if (pass === $X) {
+            ...
+        }
+    - pattern: |
+        if ($X === pass) {
+            ...
+        }
+    - pattern: |
+        if (secret == $X) {
+            ...
+        }
+    - pattern: |
+        if ($X == secret) {
+            ...
+        }
+    - pattern: |
+        if (secret === $X) {
+            ...
+        }
+    - pattern: |
+        if ($X === secret) {
+            ...
+        }
+    - pattern: |
+        if (api == $X) {
+            ...
+        }
+    - pattern: |
+        if ($X == api) {
+            ...
+        }
+    - pattern: |
+        if (api === $X) {
+            ...
+        }
+    - pattern: |
+        if ($X === api) {
+            ...
+        }
+    - pattern: |
+        if (apiKey == $X) {
+            ...
+        }
+    - pattern: |
+        if ($X == apiKey) {
+            ...
+        }
+    - pattern: |
+        if (apiKey === $X) {
+            ...
+        }
+    - pattern: |
+        if ($X === apiKey) {
+            ...
+        }
+    - pattern: |
+        if (apiSecret == $X) {
+            ...
+        }
+    - pattern: |
+        if ($X == apiSecret) {
+            ...
+        }
+    - pattern: |
+        if (apiSecret === $X) {
+            ...
+        }
+    - pattern: |
+        if ($X === apiSecret) {
+            ...
+        }
+    - pattern: |
+        if (token == $X) {
+            ...
+        }
+    - pattern: |
+        if ($X == token) {
+            ...
+        }
+    - pattern: |
+        if (token === $X) {
+            ...
+        }
+    - pattern: |
+        if ($X === token) {
+            ...
+        }
+    - pattern: |
+        if (hash == $X) {
+            ...
+        }
+    - pattern: |
+        if ($X == hash) {
+            ...
+        }
+    - pattern: |
+        if (hash === $X) {
+            ...
+        }
+    - pattern: |
+        if ($X === hash) {
+            ...
+        }
+    - pattern: |
+        if (auth_token == $X) {
+            ...
+        }
+    - pattern: |
+        if ($X == auth_token) {
+            ...
+        }
+    - pattern: |
+        if (auth_token === $X) {
+            ...
+        }
+    - pattern: |
+        if ($X === auth_token) {
+            ...
+        }
+    - pattern: |
+        if (password != $X) {
+            ...
+        }
+    - pattern: |
+        if ($X != password) {
+            ...
+        }
+    - pattern: |
+        if (password !== $X) {
+            ...
+        }
+    - pattern: |
+        if ($X !== password) {
+            ...
+        }
+    - pattern: |
+        if (pass != $X) {
+            ...
+        }
+    - pattern: |
+        if ($X != pass) {
+            ...
+        }
+    - pattern: |
+        if (pass !== $X) {
+            ...
+        }
+    - pattern: |
+        if ($X !== pass) {
+            ...
+        }
+    - pattern: |
+        if (secret != $X) {
+            ...
+        }
+    - pattern: |
+        if ($X != secret) {
+            ...
+        }
+    - pattern: |
+        if (secret !== $X) {
+            ...
+        }
+    - pattern: |
+        if ($X !== secret) {
+            ...
+        }
+    - pattern: |
+        if (api != $X) {
+            ...
+        }
+    - pattern: |
+        if ($X != api) {
+            ...
+        }
+    - pattern: |
+        if (api !== $X) {
+            ...
+        }
+    - pattern: |
+        if ($X !== api) {
+            ...
+        }
+    - pattern: |
+        if (apiKey != $X) {
+            ...
+        }
+    - pattern: |
+        if ($X != apiKey) {
+            ...
+        }
+    - pattern: |
+        if (apiKey !== $X) {
+            ...
+        }
+    - pattern: |
+        if ($X !== apiKey) {
+            ...
+        }
+    - pattern: |
+        if (apiSecret != $X) {
+            ...
+        }
+    - pattern: |
+        if ($X != apiSecret) {
+            ...
+        }
+    - pattern: |
+        if (apiSecret !== $X) {
+            ...
+        }
+    - pattern: |
+        if ($X !== apiSecret) {
+            ...
+        }
+    - pattern: |
+        if (token != $X) {
+            ...
+        }
+    - pattern: |
+        if ($X != token) {
+            ...
+        }
+    - pattern: |
+        if (token !== $X) {
+            ...
+        }
+    - pattern: |
+        if ($X !== token) {
+            ...
+        }
+    - pattern: |
+        if (hash != $X) {
+            ...
+        }
+    - pattern: |
+        if ($X != hash) {
+            ...
+        }
+    - pattern: |
+        if (hash !== $X) {
+            ...
+        }
+    - pattern: |
+        if ($X !== hash) {
+            ...
+        }
+    - pattern: |
+        if (auth_token != $X) {
+            ...
+        }
+    - pattern: |
+        if ($X != auth_token) {
+            ...
+        }
+    - pattern: |
+        if (auth_token !== $X) {
+            ...
+        }
+    - pattern: |
+        if ($X !== auth_token) {
+            ...
+        }
+    - pattern: |
+        return $X === auth_token;
+    - pattern: |
+        return auth_token === $X;
+    - pattern: |
+        return $X === token;
+    - pattern: |
+        return token === $X;
+    - pattern: |
+        return $X === hash;
+    - pattern: |
+        return hash === $X;
+    - pattern: |
+        return $X === password;
+    - pattern: |
+        return password === $X;
+    - pattern: |
+        return $X === pass;
+    - pattern: |
+        return pass === $X;
+    - pattern: |
+        return $X === apiKey;
+    - pattern: |
+        return apiKey === $X;
+    - pattern: |
+        return $X === apiSecret;
+    - pattern: |
+        return apiSecret === $X;
+    - pattern: |
+        return $X === api_key;
+    - pattern: |
+        return api_key === $X;
+    - pattern: |
+        return $X === api_secret;
+    - pattern: |
+        return api_secret === $X;
+    - pattern: |
+        return $X === secret;
+    - pattern: |
+        return secret === $X;
+    - pattern: |
+        return $X === api;
+    - pattern: |
+        return api === $X;
+    - pattern: |
+        return $X == auth_token;
+    - pattern: |
+        return auth_token == $X;
+    - pattern: |
+        return $X == token;
+    - pattern: |
+        return token == $X;
+    - pattern: |
+        return $X == hash;
+    - pattern: |
+        return hash == $X;
+    - pattern: |
+        return $X == password;
+    - pattern: |
+        return password == $X;
+    - pattern: |
+        return $X == pass;
+    - pattern: |
+        return pass == $X;
+    - pattern: |
+        return $X == apiKey;
+    - pattern: |
+        return apiKey == $X;
+    - pattern: |
+        return $X == apiSecret;
+    - pattern: |
+        return apiSecret == $X;
+    - pattern: |
+        return $X == api_key;
+    - pattern: |
+        return api_key == $X;
+    - pattern: |
+        return $X == api_secret;
+    - pattern: |
+        return api_secret == $X;
+    - pattern: |
+        return $X == secret;
+    - pattern: |
+        return secret == $X;
+    - pattern: |
+        return $X == api;
+    - pattern: |
+        return api == $X;
+    - pattern: |
+        return $X !== auth_token;
+    - pattern: |
+        return auth_token !== $X;
+    - pattern: |
+        return $X !== token;
+    - pattern: |
+        return token !== $X;
+    - pattern: |
+        return $X !== hash;
+    - pattern: |
+        return hash !== $X;
+    - pattern: |
+        return $X !== password;
+    - pattern: |
+        return password !== $X;
+    - pattern: |
+        return $X !== pass;
+    - pattern: |
+        return pass !== $X;
+    - pattern: |
+        return $X !== apiKey;
+    - pattern: |
+        return apiKey !== $X;
+    - pattern: |
+        return $X !== apiSecret;
+    - pattern: |
+        return apiSecret !== $X;
+    - pattern: |
+        return $X !== api_key;
+    - pattern: |
+        return api_key !== $X;
+    - pattern: |
+        return $X !== api_secret;
+    - pattern: |
+        return api_secret !== $X;
+    - pattern: |
+        return $X !== secret;
+    - pattern: |
+        return secret !== $X;
+    - pattern: |
+        return $X !== api;
+    - pattern: |
+        return api !== $X;
+    - pattern: |
+        return $X != auth_token;
+    - pattern: |
+        return auth_token != $X;
+    - pattern: |
+        return $X != token;
+    - pattern: |
+        return token != $X;
+    - pattern: |
+        return $X != hash;
+    - pattern: |
+        return hash != $X;
+    - pattern: |
+        return $X != password;
+    - pattern: |
+        return password != $X;
+    - pattern: |
+        return $X != pass;
+    - pattern: |
+        return pass != $X;
+    - pattern: |
+        return $X != apiKey;
+    - pattern: |
+        return apiKey != $X;
+    - pattern: |
+        return $X != apiSecret;
+    - pattern: |
+        return apiSecret != $X;
+    - pattern: |
+        return $X != api_key;
+    - pattern: |
+        return api_key != $X;
+    - pattern: |
+        return $X != api_secret;
+    - pattern: |
+        return api_secret != $X;
+    - pattern: |
+        return $X != secret;
+    - pattern: |
+        return secret != $X;
+    - pattern: |
+        return $X != api;
+    - pattern: |
+        return api != $X;
+  - metavariable-regex:
+      metavariable: $X
+      regex: ^(?!(?:null|undefined|true|false|NaN|-?\d+(?:\.\d+)?|'[^']*'|"[^"]*"|`[^`$]*`)$)
+  message: |
+    'String comparisons using ''==='', ''!=='', ''!='' and ''=='' is vulnerable to timing attacks. More info: https://snyk.io/blog/node-js-timing-attack-ccc-ctf/'
+  languages:
+  - javascript
+  severity: WARNING
+  metadata:
+    cwe: CWE-208
+    shortDescription: Observable timing discrepancy
+    category: security
+    owasp:
+    - A3:2017-Sensitive Data Exposure
+    - A01:2021-Broken Access Control
+    - A01:2025-Broken Access Control
+    security-severity: MEDIUM
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_crypto_rule-node-timing-attack

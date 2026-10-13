@@ -1,0 +1,68 @@
+# Trivy findings that are this repository's test data, not credentials or
+# deployments. Each entry is scoped to the files named; the same check still
+# reports anywhere else. Every value below was checked by hand: synthetic key
+# IDs, truncated key bodies, JWTs signed "signature-not-real", and rule text
+# that quotes the placeholder a rule looks for.
+secrets:
+  # Rule-test fixtures: deliberate `ruleid:` cases `opengrep scan --test` checks.
+  - id: aws-access-key-id
+    paths: [rules/microhealth/generic/aws-access-key-id.txt]
+  - id: gcp-service-account
+    paths: [rules/microhealth/generic/gcp-service-account-key.txt]
+  - id: jwt-token
+    paths: [rules/microhealth/generic/jwt-token.txt]
+  - id: private-key
+    paths: [rules/microhealth/generic/private-key.txt]
+  # Rule text: comments and pattern-not placeholders that quote what a rule
+  # matches (the GCP key-file type marker, a Stripe xxxx key, a Slack T00000000 hook).
+  - id: gcp-service-account
+    paths: [rules/microhealth/generic/gcp-service-account-key.yaml, overrides.yaml]
+  - id: stripe-secret-token
+    paths: [overrides.yaml, rules.lock.json]
+  - id: slack-web-hook
+    paths: [dist/internal.yaml, upstream/opengrep/generic/secrets/security/detected-slack-webhook.yaml]
+misconfigurations:
+  # Rule-test fixture: a Dockerfile whose last stage runs as root on purpose.
+  - id: DS-0002
+    paths: [rules/microhealth/dockerfile/last-user-root.dockerfile]
+  - id: DS-0026
+    paths: [rules/microhealth/dockerfile/last-user-root.dockerfile]
+  # tests/refine/ fixtures: a Kubernetes Deployment and a security group written
+  # insecure on purpose so tests/refine/run.py can check the refined rules
+  # report them; never applied or deployed.
+  - id: AWS-0099
+    paths: [tests/refine/security-group-public-ingress.tf]
+  - id: AWS-0107
+    paths: [tests/refine/security-group-public-ingress.tf]
+  - id: AWS-0124
+    paths: [tests/refine/security-group-public-ingress.tf]
+  - id: KSV-0001
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0003
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0004
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0011
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0012
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0013
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0014
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0015
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0016
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0018
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0021
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0030
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0104
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0106
+    paths: [tests/refine/run-as-non-root.yaml]
+  - id: KSV-0110
+    paths: [tests/refine/run-as-non-root.yaml]

@@ -1,0 +1,70 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.html-string-to-dom-sink
+    languages: [javascript, typescript]
+    severity: WARNING
+    mode: taint
+    message: >-
+      Markup built by string interpolation reaches an HTML sink (innerHTML,
+      outerHTML, insertAdjacentHTML, document.write, srcdoc). Any interpolated
+      value that is not HTML-escaped becomes markup, so a name, a database
+      field or a model's output can inject script (XSS). Escape every
+      interpolated value (escapeHtml) or build the elements with the DOM API
+      / React instead of a string.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [javascript, typescript, browser]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      cwe: ["CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')"]
+      owasp: ["A03:2021 - Injection"]
+      references:
+        - https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
+      # Replaces mh.opengrep.javascript.lang.security.html-in-template-string,
+      # which reported every template literal containing `<...>` — XML and PDF
+      # writers, LLM prompts, YAML comments, regex sources, CLI usage text —
+      # whether or not its values were escaped and whether or not it was ever
+      # parsed as HTML (85 hits in TueriCXO, 84 false). The one real case was a
+      # string written into a window with document.write; this rule follows
+      # interpolated strings to the sinks that parse HTML, and treats escaping
+      # helpers and DOMPurify as sanitisers.
+    pattern-sources:
+      # Each interpolated value is the source, not the literal around it, so an
+      # escaping call around the value sanitises it.
+      - patterns:
+          - pattern: |
+              `...${$X}...`
+          - focus-metavariable: $X
+          - pattern-not: |
+              "..."
+      - patterns:
+          - pattern-either:
+              - pattern: $A + $X
+              - pattern: $X + $A
+          - focus-metavariable: $X
+          - pattern-not: |
+              "..."
+          - pattern-not: $A + $B
+    pattern-sanitizers:
+      - patterns:
+          - pattern: $F(...)
+          - metavariable-regex:
+              metavariable: $F
+              regex: ^(escapeHtml|escapeHTML|htmlEscape|escapeXml|escape|esc|xmlEsc|encodeURIComponent|sanitizeSvg|sanitizeHtml|sanitizeMarkup|String\(Number|Number|parseInt|parseFloat)$
+      - pattern: DOMPurify.sanitize(...)
+      - pattern: $P.sanitize(...)
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: $EL.innerHTML = $SINK
+              - pattern: $EL.outerHTML = $SINK
+              - pattern: $EL.srcdoc = $SINK
+              - pattern: $EL.insertAdjacentHTML($POS, $SINK)
+              - pattern: document.write($SINK, ...)
+              - pattern: document.writeln($SINK, ...)
+              - pattern: $W.document.write($SINK, ...)
+              - pattern: $W.document.writeln($SINK, ...)
+              - pattern: $RANGE.createContextualFragment($SINK)
+          - focus-metavariable: $SINK

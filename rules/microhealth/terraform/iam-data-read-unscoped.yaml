@@ -1,0 +1,70 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: terraform.iam-data-read-unscoped
+    languages: [hcl]
+    severity: WARNING
+    message: >-
+      This IAM statement allows reading data ($ACTION) on every resource
+      (`Resource = "*"`). Whoever holds the role can read every secret,
+      parameter, object or database snapshot the account can reach, not
+      only the ones this workload needs. List the ARNs the workload reads.
+    metadata:
+      category: security
+      subcategory: [audit]
+      technology: [terraform, aws]
+      confidence: HIGH
+      likelihood: LOW
+      impact: HIGH
+      cwe: ["CWE-732: Incorrect Permission Assignment for Critical Resource"]
+      owasp: ["A01:2021 - Broken Access Control"]
+      references:
+        - https://cloudsplaining.readthedocs.io/en/latest/glossary/data-exfiltration/
+      # Replaces mh.opengrep.terraform.lang.security.iam.no-iam-data-exfiltration.no-iam-data-exfiltration,
+      # which asked whether ANY statement of the policy had `Resource = "*"`
+      # and then reported the data actions of EVERY statement. A
+      # `secretsmanager:GetSecretValue` scoped to six secret ARNs was reported
+      # because a different statement granted `ecr:GetAuthorizationToken`,
+      # which AWS only accepts on "*" (Gnosis deployment/ecs). Resource scope
+      # is per statement, so this rule reads the action and the resource from
+      # the same statement.
+    patterns:
+      - pattern-either:
+          - patterns:
+              - pattern-either:
+                  - pattern-inside: |
+                      {..., Resource = "*", ...}
+                  - pattern-inside: |
+                      {..., Resource = [..., "*", ...], ...}
+              - pattern-not-inside: |
+                  {..., Effect = "Deny", ...}
+              - pattern: Action = $ACTION
+          - patterns:
+              - pattern-inside: |
+                  statement {
+                    ...
+                    resources = [..., "*", ...]
+                    ...
+                  }
+              - pattern-not-inside: |
+                  statement {
+                    ...
+                    effect = "Deny"
+                    ...
+                  }
+              - pattern: actions = $ACTION
+      - metavariable-pattern:
+          metavariable: $ACTION
+          pattern-either:
+            - pattern: '"s3:GetObject"'
+            - pattern: '"s3:*"'
+            - pattern: '"ssm:GetParameter"'
+            - pattern: '"ssm:GetParameters"'
+            - pattern: '"ssm:GetParametersByPath"'
+            - pattern: '"ssm:GetParameter*"'
+            - pattern: '"ssm:*"'
+            - pattern: '"secretsmanager:GetSecretValue"'
+            - pattern: '"secretsmanager:*"'
+            - pattern: '"rds:CopyDBSnapshot"'
+            - pattern: '"rds:CreateDBSnapshot"'
+            - pattern: '"rds:*"'
+            - pattern: '"*"'

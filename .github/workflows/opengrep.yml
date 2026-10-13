@@ -219,8 +219,10 @@ jobs:
 
       - name: Preflight — verify AWS credentials and S3 write access
         if: inputs.s3_bucket != '' && steps.dest.outputs.prefix != ''
+        env:
+          PROJECT_INPUT: ${{ inputs.project }}
         run: |
-          PROJECT="${{ inputs.project }}"; PROJECT="${PROJECT:-${GITHUB_REPOSITORY##*/}}"
+          PROJECT="${PROJECT_INPUT:-${GITHUB_REPOSITORY##*/}}"
           printf 'preflight ok: run %s commit %s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > "$RUNNER_TEMP/preflight.txt"
           docker run --rm \
             -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
@@ -321,9 +323,10 @@ jobs:
           STATUS_RECORDED_AT: ${{ steps.publication_status.outputs.recorded_at_utc }}
           RULES_COMMIT: ${{ steps.self.outputs.sha }}
           ENGINE_VERSION: ${{ steps.engine.outputs.version }}
+          PROJECT_INPUT: ${{ inputs.project }}
         run: |
           [ -s "$RUNNER_TEMP/out/sast.json" ] || { echo "::error::sast.json was not created"; exit 1; }
-          PROJECT="${{ inputs.project }}"; PROJECT="${PROJECT:-${GITHUB_REPOSITORY##*/}}"
+          PROJECT="${PROJECT_INPUT:-${GITHUB_REPOSITORY##*/}}"
           KEY="${PROJECT}/${{ steps.dest.outputs.prefix }}/dt=$(date -u +%F)/run-${GITHUB_RUN_ID}/sast.json"
           docker run --rm \
             -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \

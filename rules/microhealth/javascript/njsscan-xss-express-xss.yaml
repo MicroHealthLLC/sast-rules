@@ -1,0 +1,91 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/xss/xss_node.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/xss/rule-express_xss.yml
+# (mh.gitlab.rules_lgpl_javascript_xss_rule-express-xss, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+rules:
+- id: javascript.njsscan.xss.express-xss
+  mode: taint
+  options:
+    taint_unify_mvars: true
+  pattern-sources:
+  - patterns:
+    - patterns:
+      - metavariable-regex:
+          metavariable: $LIB
+          regex: (?<!\s)\bexpress(?:\/.*)?\b
+      - pattern-either:
+        - pattern-inside: |
+            import { ... } from '$LIB'
+            ...
+        - pattern-inside: |
+            import $IMPORT from '$LIB'
+            ...
+        - pattern-inside: |
+            require('$LIB')
+            ...
+    - pattern-either:
+      - patterns:
+        - focus-metavariable: $REQ
+        - pattern: function ($REQ, $RES, ...) {...}
+        - metavariable-regex:
+            metavariable: $REQ
+            regex: ^(req|request)$
+        - metavariable-regex:
+            metavariable: $RES
+            regex: ^(res|resp|response|reply|h)$
+      - patterns:
+        - focus-metavariable: $REQ
+        - pattern: function $FUNC($REQ, $RES, ...) {...}
+        - metavariable-regex:
+            metavariable: $REQ
+            regex: ^(req|request)$
+        - metavariable-regex:
+            metavariable: $RES
+            regex: ^(res|resp|response|reply|h)$
+  pattern-propagators:
+  - pattern: $ARR.push($IN)
+    from: $IN
+    to: $ARR
+  pattern-sanitizers:
+  - pattern: encodeURI(...)
+  - pattern: encodeURIComponent(...)
+  pattern-sinks:
+  - patterns:
+    - focus-metavariable: $INPUT
+    - pattern-either:
+      - pattern: $RES. ... .send($INPUT)
+      - pattern: $RES. ... .write($INPUT)
+  message: |
+    This application accepts user input directly from the client side without validation.
+    This could lead to Cross Site Scripting (XSS) if the input contains malicious script code and
+    the application server does not properly escape or sanitize the output.
+    Consider encoding input data before sending it to the client side.
+
+    ```
+    // safe method of sending user input data
+    router.get('/safe/1', (req, res) => {
+      var name = encodeURI(req.query.name);
+      res.send(name);
+    })
+    ```
+
+    XSS is an attack that exploits a web application or system to treat user input as markup or script code.
+    It is important to encode the data depending on the specific context in which it is used.
+  languages:
+  - javascript
+  severity: WARNING
+  metadata:
+    shortDescription: Improper neutralization of input during web page generation ('Cross-site Scripting')
+    category: security
+    cwe: CWE-79
+    owasp:
+    - A7:2017-Cross-Site Scripting (XSS)
+    - A03:2021-Injection
+    - A05:2025-Injection
+    security-severity: MEDIUM
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_xss_rule-express-xss

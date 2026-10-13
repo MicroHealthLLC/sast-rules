@@ -1,0 +1,124 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.ssrf-request-to-fetch
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      Data from the incoming request reaches the URL of an outbound request
+      made by this server. A caller who chooses that URL can make the server
+      read internal services or the cloud metadata endpoint
+      (169.254.169.254) on their behalf (server-side request forgery). Check
+      the URL against an allow-list, or resolve its host and refuse
+      loopback, private, link-local and metadata addresses before the
+      request (and do not follow redirects without checking each hop).
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [javascript, typescript, deno, express]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      cwe: ["CWE-918: Server-Side Request Forgery (SSRF)"]
+      owasp: ["A10:2021 - Server-Side Request Forgery (SSRF)"]
+      references:
+        - https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html
+      # Replaces mh.gitlab.rules_lgpl_javascript_ssrf_rule-node-ssrf, whose
+      # taint source is the FIRST PARAMETER OF ANY FUNCTION with two or more
+      # parameters, so every helper such as `s3Request(url, init)` was "user
+      # input", and browser code (where SSRF cannot happen) was reported too
+      # (50 hits in Gnosis, 49 false: S3 SigV4 calls, Graph pagination links,
+      # internal function-to-function calls built from configuration). This
+      # rule starts from the request itself — a Fetch-API handler's
+      # `Request`, or an Express-style `req.query/body/params/headers` — and
+      # follows it across the functions of the file (taint_intrafile).
+    options:
+      taint_intrafile: true
+      # A call this file does not define (a database query, a JSON parse of
+      # an API response) does not pass its arguments' taint to its result:
+      # a row looked up BY a request id is configuration, not request data.
+      taint_assume_safe_functions: true
+    mode: taint
+    pattern-sources:
+      # Fetch-API handlers (Deno, Bun, workers): `handler(req: Request)`.
+      - patterns:
+          - pattern-either:
+              - pattern-inside: |
+                  function $F(..., $REQ: Request, ...) { ... }
+              - pattern-inside: |
+                  ($REQ: Request, ...) => { ... }
+              - pattern-inside: |
+                  Deno.serve(..., ($REQ, ...) => { ... })
+              - pattern-inside: |
+                  serve(($REQ, ...) => { ... }, ...)
+          - pattern-either:
+              - pattern: $REQ.json()
+              - pattern: $REQ.formData()
+              - pattern: $REQ.text()
+              - pattern: $REQ.url
+              - pattern: $REQ.headers.get(...)
+      # Express / Connect style: `(req, res) => ... req.query.url`.
+      - patterns:
+          - pattern-either:
+              - pattern-inside: |
+                  function $F($REQ, $RES, ...) { ... }
+              - pattern-inside: |
+                  function ($REQ, $RES, ...) { ... }
+              - pattern-inside: |
+                  ($REQ, $RES, ...) => { ... }
+          - metavariable-regex:
+              metavariable: $REQ
+              regex: ^(req|request)$
+          - pattern-either:
+              - pattern: $REQ.query
+              - pattern: $REQ.body
+              - pattern: $REQ.params
+              - pattern: $REQ.headers
+              - pattern: $REQ.cookies
+              - pattern: $REQ.get(...)
+              - pattern: $REQ.header(...)
+    pattern-propagators:
+      # `new URL(input).origin` is still the input's host.
+      - pattern: $TO = new URL($FROM, ...)
+        from: $FROM
+        to: $TO
+    pattern-sanitizers:
+      # A value that is only a path or query component cannot move the host.
+      - pattern: encodeURIComponent(...)
+      # A template whose literal start is `scheme://host/` fixes the host;
+      # what is interpolated after it is a path or query.
+      - pattern-regex: '`https?://[A-Za-z0-9.-]+(:\d+)?/[^`]*`'
+      # Checked against an allow-list or a URL policy: the value is clean
+      # after the check, in the code that follows it.
+      - by-side-effect: true
+        patterns:
+          - pattern-either:
+              - pattern: $AL.includes($X)
+              - pattern: $AL.has($X)
+              - pattern: $CHECK($X, ...)
+              - pattern: $OBJ.$CHECK($X, ...)
+          - metavariable-regex:
+              metavariable: $CHECK
+              regex: (?i)^(includes|has|(assert|validate|check|ensure|verify|is|guard)\w*(url|uri|host|origin|endpoint|outbound|public|allowed|safe)\w*)$
+          - focus-metavariable: $X
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: fetch($U, ...)
+              - pattern: new Request($U, ...)
+              - pattern: axios($U, ...)
+              - pattern: axios.$VERB($U, ...)
+              - pattern: got($U, ...)
+              - pattern: got.$VERB($U, ...)
+              - patterns:
+                  - pattern-either:
+                      - pattern: $HTTP.get($U, ...)
+                      - pattern: $HTTP.request($U, ...)
+                  - metavariable-regex:
+                      metavariable: $HTTP
+                      regex: ^(https?|http2|needle|superagent|undici|ky)$
+          - metavariable-regex:
+              metavariable: $U
+              # A literal scheme://host/ prefix fixes the destination; the
+              # tainted part can only be a path or query.
+              regex: ^(?!`https?://[^/`$]+/|["']https?://[^/"']+/)
+          - focus-metavariable: $U

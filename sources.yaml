@@ -36,6 +36,10 @@ sources:
     license: LGPL-2.1-only+Commons-Clause
     qualify_by_path: true
   microhealth:
-    # Rules MicroHealth writes. MIT, like the rest of this repository.
+    # Rules MicroHealth writes, MIT like the rest of this repository, and our
+    # modified copies of upstream rules, which keep the upstream license (an
+    # LGPL rule changed by us is still LGPL and stays out of the product
+    # bundle). So the license is read per file from its `# License:` header,
+    # and a file without a recognised one fails the build.
     path: rules/microhealth
-    license: MIT
+    license: per-file
