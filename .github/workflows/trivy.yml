@@ -274,6 +274,17 @@ jobs:
           category: ${{ steps.dest.outputs.artifact }}
           checkout_path: ${{ github.workspace }}/src
 
+      # A fresh session for the upload: the one taken before the scan lasts an
+      # hour, and a long scan outlived it ("ExpiredToken" on the S3 upload,
+      # after a scan that had finished).
+      - name: Refresh AWS credentials for the upload
+        if: inputs.s3_bucket != '' && steps.dest.outputs.upload == 'true'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: GitHubActionsTrivyUpload
+          aws-region: ${{ env.AWS_REGION }}
+
       - name: Upload reports to S3
         if: inputs.s3_bucket != '' && steps.dest.outputs.upload == 'true'
         env:
