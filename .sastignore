@@ -27,3 +27,5 @@ rules/microhealth/generic/telegram-bot-api-key.txt
 rules/microhealth/generic/private-key.txt
 rules/microhealth/generic/generic-api-key.txt
 rules/microhealth/html/missing-integrity.html
+rules/microhealth/javascript/njsscan-crypto-node-timing-attack.js
+rules/microhealth/json/package-dependencies-check.json

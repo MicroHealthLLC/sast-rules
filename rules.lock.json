@@ -4740,10 +4740,9 @@
    "path": "upstream/gitlab/rules/lgpl/javascript/crypto/rule-node_timing_attack.yml",
    "license": "LGPL-3.0",
    "sha256": "14f419babb0d678f2e03ab74f12853bcbda090b1aa7a6d55782e4f745443fef5",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.javascript.njsscan.crypto.node-timing-attack: comparing a secret-named variable with a literal (null, undefined, '', a number or boolean) is a presence check, not a secret comparison; upstream's pattern-nots for those never matched (trailing ';')."
   },
   "mh.gitlab.rules_lgpl_javascript_crypto_rule-node-tls-reject": {
    "source": "gitlab",
@@ -6762,7 +6761,7 @@
    "upstream_id": "generic.secrets.generic-api-key",
    "path": "rules/microhealth/generic/generic-api-key.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "1e66f628b61a142ec0f5a0ec5aa37f6717c73ae3835dae6b2d62fcc6b382a41b",
+   "sha256": "19df190277b4fd99f0f2432a64a8d4b37069bd8592909992f9beaedc843af5f1",
    "bundles": [
     "internal"
    ],
@@ -6837,6 +6836,17 @@
    ],
    "status": "active"
   },
+  "mh.microhealth.javascript.njsscan.crypto.node-timing-attack": {
+   "source": "microhealth",
+   "upstream_id": "javascript.njsscan.crypto.node-timing-attack",
+   "path": "rules/microhealth/javascript/njsscan-crypto-node-timing-attack.yaml",
+   "license": "LGPL-3.0",
+   "sha256": "117cee3b0e8570b19a9b37e0350235fd14e283f1c54fa3b833c1ea8d8e302b67",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
   "mh.microhealth.javascript.njsscan.dos.layer7-object-dos": {
    "source": "microhealth",
    "upstream_id": "javascript.njsscan.dos.layer7-object-dos",
@@ -6853,7 +6863,7 @@
    "upstream_id": "javascript.njsscan.dos.regex-dos",
    "path": "rules/microhealth/javascript/njsscan-dos-regex-dos.yaml",
    "license": "LGPL-3.0",
-   "sha256": "8995ffeee80c24687507672f10de211ed80996e0a2b44ae21f0a8e228d316d19",
+   "sha256": "3bfdb589070846b6026e6cb1b016a223128ec4dd2f9c5f289504a4f8bb1196c3",
    "bundles": [
     "internal"
    ],
@@ -7255,6 +7265,17 @@
    "bundles": [
     "internal",
     "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.json.npm.package-dependencies-check": {
+   "source": "microhealth",
+   "upstream_id": "json.npm.package-dependencies-check",
+   "path": "rules/microhealth/json/package-dependencies-check.yaml",
+   "license": "LGPL-2.1-only+Commons-Clause",
+   "sha256": "6e9dac0f5ede02845603b1eb1945bbef0810a322626a516668a69444530f6397",
+   "bundles": [
+    "internal"
    ],
    "status": "active"
   },
@@ -16190,10 +16211,9 @@
    "path": "upstream/opengrep/json/npm/security/package-dependencies-check.yml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "93766421fcae14200db5b09ea9839d4c1285d83c5c6632d3f57a576a1a1fec1a",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.json.npm.package-dependencies-check: the value is judged as an npm spec, so exact versions, file:/link:/workspace: paths, npm: aliases to an exact version and pinned .tgz tarball URLs no longer fire (upstream matched any '-' or 'x'), while ranges, wildcards, partial versions, dist-tags and unpinned git specs do, scoped packages included."
   },
   "mh.opengrep.kotlin.gradle.security.build-gradle-password-hardcoded.build-gradle-password-hardcoded": {
    "source": "opengrep",

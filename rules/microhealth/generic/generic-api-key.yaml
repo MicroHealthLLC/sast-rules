@@ -8,6 +8,13 @@
 # - a value assigned to an identifier named client_id / clientId / CLIENT_ID;
 # - a value in GitHub's client-id formats (OAuth App `Ov23li` + 14, GitHub
 #   App `Iv23li` + 14 or `Iv1.` + 16 hex), whatever it is called.
+# And values that are not secrets by their shape, each seen as a false
+# positive in MicroHealth repositories:
+# - RFC 6455's sample Sec-WebSocket-Key `dGhlIHNhbXBsZSBub25jZQ==`;
+# - a bare camelCase identifier (`jwtSecret = getJwtSigningKey`): a function or
+#   variable name, not a value (letters only, so mixed secrets still match);
+# - a documentation placeholder holding a sequential run (`0123456789`,
+#   `123456789`, `abcdefghij`).
 # client_secret, api_key, token ... are unchanged.
 rules:
 - id: generic.secrets.generic-api-key
@@ -64,4 +71,4 @@ rules:
   - pattern-not-regex: (?i)[0-9a-z_.\-]*client[_\-.]?id[0-9a-z_]*['"]?\s*(?:=|:|:=|=>)\s*(?:'|"|\x60)?[0-9a-z\-_.=~@]{10,150}(?:'|"|\x60)?
   - metavariable-regex:
       metavariable: $CONTENT
-      regex: ^(?!(?:Ov23li|Iv23li)[0-9A-Za-z]{14}$|Iv1\.[0-9a-f]{16}$)
+      regex: ^(?!(?:Ov23li|Iv23li)[0-9A-Za-z]{14}$|Iv1\.[0-9a-f]{16}$|dGhlIHNhbXBsZSBub25jZQ==$|[a-z]+(?:[A-Z][a-z]+)+$|.*(?:0123456789|123456789|abcdefghij))

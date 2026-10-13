@@ -3,135 +3,105 @@
 # hash: e7a0a61
 # Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/dos/rule-regex_dos.yml
 # (mh.gitlab.rules_lgpl_javascript_dos_rule-regex-dos, disabled in overrides.yaml in favour of this copy).
-# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
-# function of two or more parameters, so `parse(text, opts)` was "a handler".
-# Every handler context now also requires the parameters to be named as an
-# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
-# Search mode: the request name is written into the patterns, one branch per
-# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
-# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
-# expression of every file and timed out on large ones.
+# Changes:
+# - The request-handler context `function ($REQ, $RES, ...)` matched any
+#   function of two or more parameters, so `parse(text, opts)` was "a handler".
+#   It now requires the request ^(req|request)$ and the response
+#   ^(res|resp|response|reply|h)$. The request name is written into the
+#   patterns, one branch per name: an unbound $REQ in
+#   `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+#   expression of every file and timed out on large ones.
+# - The original fired on any `.test()`/`.exec()` receiving request data
+#   without looking at the receiver or the pattern (`service.test(id)`,
+#   `/\s/.test(ch)`, anchored UUID/date validators). The receiver must now be
+#   a regular expression whose backtracking can grow with the input:
+#     * a literal that is not anchored at the start (`^`) and has an unbounded
+#       quantifier (`*`, `+`, `{n,}`), e.g. /<feed[\s>][^]*xmlns=/ over a body;
+#     * or any literal with a quantified group that itself holds a quantifier
+#       (`(a+)+`, `(\w+\s?)*`), anchored or not;
+#     * or a RegExp built at run time (its pattern cannot be judged);
+#     * or a variable assigned one of these earlier in the same function.
+#   A regex constant declared outside the handler is not followed (Opengrep
+#   cannot see across that scope); such calls are no longer reported.
 rules:
 - id: javascript.njsscan.dos.regex-dos
-  pattern-either:
-  - patterns:
-    - pattern-either:
-      - pattern-inside: function (req, $RES, ...) {...}
-      - pattern-inside: function $FUNC(req, $RES, ...) {...}
-      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
-      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
-      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
-    - pattern-either:
-      - pattern: |
-          $REGEX.test(<... req ...>)
-      - pattern: |
-          $REGEX.test(<... req.$QUERY ...>)
-      - pattern: |
-          $REGEX.test(<... req.$BODY.$PARAM ...>)
-      - pattern: |
-          $INP = <... req ...>;
-          ...
-          $REGEX.test(<... $INP ...>)
-      - pattern: |
-          $INP = <... req.$QUERY ...>;
-          ...
-          $REGEX.test(<... $INP ...>)
-      - pattern: |
-          $INP = <... req.$BODY.$PARAM ...>;
-          ...
-          $REGEX.test(<... $INP ...>)
-      - pattern: |
-          /.../g.exec(<... req ...>)
-      - pattern: |
-          /.../g.exec(<... req.$QUERY ...>)
-      - pattern: |
-          /.../.exec(<... req.$BODY.$PARAM ...>)
-      - pattern: |
-          $INP = <... req ...>;
-          ...
-          /.../.exec(<... $INP ...>)
-      - pattern: |
-          $INP = <... req.$QUERY ...>;
-          ...
-          /.../.exec(<... $INP ...>)
-      - pattern: |
-          $INP = <... req.$BODY.$PARAM ...>;
-          ...
-          /.../.exec(<... $INP ...>)
-      - pattern: |
-          $RE = /.../;
-          ...
-          $RE.exec(<... req ...>)
-      - pattern: |
-          $RE = /.../;
-          ...
-          $RE.exec(<... req.$QUERY ...>)
-      - pattern: |
-          $RE = /.../;
-          ...
-          $RE.exec(<... req.$BODY.$PARAM ...>)
-    - metavariable-regex:
-        metavariable: $RES
-        regex: ^(res|resp|response|reply|h)$
-  - patterns:
-    - pattern-either:
-      - pattern-inside: function (request, $RES, ...) {...}
-      - pattern-inside: function $FUNC(request, $RES, ...) {...}
-      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
-      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
-      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
-    - pattern-either:
-      - pattern: |
-          $REGEX.test(<... request ...>)
-      - pattern: |
-          $REGEX.test(<... request.$QUERY ...>)
-      - pattern: |
-          $REGEX.test(<... request.$BODY.$PARAM ...>)
-      - pattern: |
-          $INP = <... request ...>;
-          ...
-          $REGEX.test(<... $INP ...>)
-      - pattern: |
-          $INP = <... request.$QUERY ...>;
-          ...
-          $REGEX.test(<... $INP ...>)
-      - pattern: |
-          $INP = <... request.$BODY.$PARAM ...>;
-          ...
-          $REGEX.test(<... $INP ...>)
-      - pattern: |
-          /.../g.exec(<... request ...>)
-      - pattern: |
-          /.../g.exec(<... request.$QUERY ...>)
-      - pattern: |
-          /.../.exec(<... request.$BODY.$PARAM ...>)
-      - pattern: |
-          $INP = <... request ...>;
-          ...
-          /.../.exec(<... $INP ...>)
-      - pattern: |
-          $INP = <... request.$QUERY ...>;
-          ...
-          /.../.exec(<... $INP ...>)
-      - pattern: |
-          $INP = <... request.$BODY.$PARAM ...>;
-          ...
-          /.../.exec(<... $INP ...>)
-      - pattern: |
-          $RE = /.../;
-          ...
-          $RE.exec(<... request ...>)
-      - pattern: |
-          $RE = /.../;
-          ...
-          $RE.exec(<... request.$QUERY ...>)
-      - pattern: |
-          $RE = /.../;
-          ...
-          $RE.exec(<... request.$BODY.$PARAM ...>)
-    - metavariable-regex:
-        metavariable: $RES
-        regex: ^(res|resp|response|reply|h)$
+  patterns:
+  - pattern-either:
+    - patterns:
+      - pattern-either:
+        - pattern-inside: function (req, $RES, ...) {...}
+        - pattern-inside: function $FUNC(req, $RES, ...) {...}
+        - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+        - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+        - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+      - metavariable-regex:
+          metavariable: $RES
+          regex: ^(res|resp|response|reply|h)$
+      - pattern-either:
+        - pattern: $REGEX.$M(<... req ...>)
+        - pattern: |
+            $INP = <... req ...>;
+            ...
+            $REGEX.$M(<... $INP ...>)
+    - patterns:
+      - pattern-either:
+        - pattern-inside: function (request, $RES, ...) {...}
+        - pattern-inside: function $FUNC(request, $RES, ...) {...}
+        - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+        - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+        - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+      - metavariable-regex:
+          metavariable: $RES
+          regex: ^(res|resp|response|reply|h)$
+      - pattern-either:
+        - pattern: $REGEX.$M(<... request ...>)
+        - pattern: |
+            $INP = <... request ...>;
+            ...
+            $REGEX.$M(<... $INP ...>)
+  - metavariable-regex:
+      metavariable: $M
+      regex: ^(test|exec)$
+  - pattern-either:
+    - patterns:
+      - pattern: $REGEX.$M(...)
+      - metavariable-pattern:
+          metavariable: $REGEX
+          pattern: /.../
+      - metavariable-regex:
+          metavariable: $REGEX
+          regex: ^(?:/(?!\^)(?:[^\\]|\\.)*?(?:[*+]|\{\d+,\})|.*\((?:[^()\\]|\\.)*[*+](?:[^()\\]|\\.)*\)(?:[*+]|\{\d+,\d*\}))
+    - patterns:
+      - pattern: $REGEX.$M(...)
+      - metavariable-pattern:
+          metavariable: $REGEX
+          pattern-either:
+          - pattern: new RegExp(...)
+          - pattern: RegExp(...)
+    - patterns:
+      - pattern-either:
+        - pattern-inside: |
+            $REGEX = $LIT;
+            ...
+        - pattern-inside: |
+            const $REGEX = $LIT;
+            ...
+        - pattern-inside: |
+            let $REGEX = $LIT;
+            ...
+        - pattern-inside: |
+            var $REGEX = $LIT;
+            ...
+      - pattern: $REGEX.$M(...)
+      - metavariable-pattern:
+          metavariable: $LIT
+          pattern-either:
+          - pattern: /.../
+          - pattern: new RegExp(...)
+          - pattern: RegExp(...)
+      - metavariable-regex:
+          metavariable: $LIT
+          regex: ^(?:(?:new\s+)?RegExp\b|/(?!\^)(?:[^\\]|\\.)*?(?:[*+]|\{\d+,\})|.*\((?:[^()\\]|\\.)*[*+](?:[^()\\]|\\.)*\)(?:[*+]|\{\d+,\d*\}))
   message: |
     Ensure that the regex used to compare with user supplied input is safe from regular expression denial of service.
   languages:

@@ -19847,380 +19847,6 @@ rules:
     mh_source: gitlab
     mh_upstream_id: rules_lgpl_javascript_crypto_rule-node-sha1
     mh_license: LGPL-3.0
-- id: mh.gitlab.rules_lgpl_javascript_crypto_rule-node-timing-attack
-  patterns:
-  - pattern-not: if ($Z == null) { ... };
-  - pattern-not: if ($Z === null) { ... };
-  - pattern-not: if ($Z != null) { ... };
-  - pattern-not: if ($Z !== null) { ... };
-  - pattern-not: if ($Q != undefined) { ... };
-  - pattern-not: if ($Q !== undefined) { ... };
-  - pattern-not: if ($Q == undefined) { ... };
-  - pattern-not: if ($Q === undefined) { ... };
-  - pattern-not: return $Y == null;
-  - pattern-not: return $Y === null;
-  - pattern-not: return $Y != null;
-  - pattern-not: return $Y !== null;
-  - pattern-not: return $Y == undefined;
-  - pattern-not: return $Y === undefined;
-  - pattern-not: return $Y != undefined;
-  - pattern-not: return $Y !== undefined;
-  - pattern-either:
-    - pattern: "if (password == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == password) {\n    ...\n}\n"
-    - pattern: "if (password === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === password) {\n    ...\n}\n"
-    - pattern: "if (pass == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == pass) {\n    ...\n}\n"
-    - pattern: "if (pass === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === pass) {\n    ...\n}\n"
-    - pattern: "if (secret == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == secret) {\n    ...\n}\n"
-    - pattern: "if (secret === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === secret) {\n    ...\n}\n"
-    - pattern: "if (api == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == api) {\n    ...\n}\n"
-    - pattern: "if (api === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === api) {\n    ...\n}\n"
-    - pattern: "if (apiKey == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == apiKey) {\n    ...\n}\n"
-    - pattern: "if (apiKey === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === apiKey) {\n    ...\n}\n"
-    - pattern: "if (apiSecret == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == apiSecret) {\n    ...\n}\n"
-    - pattern: "if (apiSecret === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === apiSecret) {\n    ...\n}\n"
-    - pattern: "if (token == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == token) {\n    ...\n}\n"
-    - pattern: "if (token === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === token) {\n    ...\n}\n"
-    - pattern: "if (hash == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == hash) {\n    ...\n}\n"
-    - pattern: "if (hash === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === hash) {\n    ...\n}\n"
-    - pattern: "if (auth_token == $X) {\n    ...\n}\n"
-    - pattern: "if ($X == auth_token) {\n    ...\n}\n"
-    - pattern: "if (auth_token === $X) {\n    ...\n}\n"
-    - pattern: "if ($X === auth_token) {\n    ...\n}\n"
-    - pattern: "if (password != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != password) {\n    ...\n}\n"
-    - pattern: "if (password !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== password) {\n    ...\n}\n"
-    - pattern: "if (pass != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != pass) {\n    ...\n}\n"
-    - pattern: "if (pass !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== pass) {\n    ...\n}\n"
-    - pattern: "if (secret != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != secret) {\n    ...\n}\n"
-    - pattern: "if (secret !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== secret) {\n    ...\n}\n"
-    - pattern: "if (api != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != api) {\n    ...\n}\n"
-    - pattern: "if (api !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== api) {\n    ...\n}\n"
-    - pattern: "if (apiKey != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != apiKey) {\n    ...\n}\n"
-    - pattern: "if (apiKey !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== apiKey) {\n    ...\n}\n"
-    - pattern: "if (apiSecret != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != apiSecret) {\n    ...\n}\n"
-    - pattern: "if (apiSecret !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== apiSecret) {\n    ...\n}\n"
-    - pattern: "if (token != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != token) {\n    ...\n}\n"
-    - pattern: "if (token !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== token) {\n    ...\n}\n"
-    - pattern: "if (hash != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != hash) {\n    ...\n}\n"
-    - pattern: "if (hash !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== hash) {\n    ...\n}\n"
-    - pattern: "if (auth_token != $X) {\n    ...\n}\n"
-    - pattern: "if ($X != auth_token) {\n    ...\n}\n"
-    - pattern: "if (auth_token !== $X) {\n    ...\n}\n"
-    - pattern: "if ($X !== auth_token) {\n    ...\n}\n"
-    - pattern: 'return $X === auth_token;
-
-        '
-    - pattern: 'return auth_token === $X;
-
-        '
-    - pattern: 'return $X === token;
-
-        '
-    - pattern: 'return token === $X;
-
-        '
-    - pattern: 'return $X === hash;
-
-        '
-    - pattern: 'return hash === $X;
-
-        '
-    - pattern: 'return $X === password;
-
-        '
-    - pattern: 'return password === $X;
-
-        '
-    - pattern: 'return $X === pass;
-
-        '
-    - pattern: 'return pass === $X;
-
-        '
-    - pattern: 'return $X === apiKey;
-
-        '
-    - pattern: 'return apiKey === $X;
-
-        '
-    - pattern: 'return $X === apiSecret;
-
-        '
-    - pattern: 'return apiSecret === $X;
-
-        '
-    - pattern: 'return $X === api_key;
-
-        '
-    - pattern: 'return api_key === $X;
-
-        '
-    - pattern: 'return $X === api_secret;
-
-        '
-    - pattern: 'return api_secret === $X;
-
-        '
-    - pattern: 'return $X === secret;
-
-        '
-    - pattern: 'return secret === $X;
-
-        '
-    - pattern: 'return $X === api;
-
-        '
-    - pattern: 'return api === $X;
-
-        '
-    - pattern: 'return $X == auth_token;
-
-        '
-    - pattern: 'return auth_token == $X;
-
-        '
-    - pattern: 'return $X == token;
-
-        '
-    - pattern: 'return token == $X;
-
-        '
-    - pattern: 'return $X == hash;
-
-        '
-    - pattern: 'return hash == $X;
-
-        '
-    - pattern: 'return $X == password;
-
-        '
-    - pattern: 'return password == $X;
-
-        '
-    - pattern: 'return $X == pass;
-
-        '
-    - pattern: 'return pass == $X;
-
-        '
-    - pattern: 'return $X == apiKey;
-
-        '
-    - pattern: 'return apiKey == $X;
-
-        '
-    - pattern: 'return $X == apiSecret;
-
-        '
-    - pattern: 'return apiSecret == $X;
-
-        '
-    - pattern: 'return $X == api_key;
-
-        '
-    - pattern: 'return api_key == $X;
-
-        '
-    - pattern: 'return $X == api_secret;
-
-        '
-    - pattern: 'return api_secret == $X;
-
-        '
-    - pattern: 'return $X == secret;
-
-        '
-    - pattern: 'return secret == $X;
-
-        '
-    - pattern: 'return $X == api;
-
-        '
-    - pattern: 'return api == $X;
-
-        '
-    - pattern: 'return $X !== auth_token;
-
-        '
-    - pattern: 'return auth_token !== $X;
-
-        '
-    - pattern: 'return $X !== token;
-
-        '
-    - pattern: 'return token !== $X;
-
-        '
-    - pattern: 'return $X !== hash;
-
-        '
-    - pattern: 'return hash !== $X;
-
-        '
-    - pattern: 'return $X !== password;
-
-        '
-    - pattern: 'return password !== $X;
-
-        '
-    - pattern: 'return $X !== pass;
-
-        '
-    - pattern: 'return pass !== $X;
-
-        '
-    - pattern: 'return $X !== apiKey;
-
-        '
-    - pattern: 'return apiKey !== $X;
-
-        '
-    - pattern: 'return $X !== apiSecret;
-
-        '
-    - pattern: 'return apiSecret !== $X;
-
-        '
-    - pattern: 'return $X !== api_key;
-
-        '
-    - pattern: 'return api_key !== $X;
-
-        '
-    - pattern: 'return $X !== api_secret;
-
-        '
-    - pattern: 'return api_secret !== $X;
-
-        '
-    - pattern: 'return $X !== secret;
-
-        '
-    - pattern: 'return secret !== $X;
-
-        '
-    - pattern: 'return $X !== api;
-
-        '
-    - pattern: 'return api !== $X;
-
-        '
-    - pattern: 'return $X != auth_token;
-
-        '
-    - pattern: 'return auth_token != $X;
-
-        '
-    - pattern: 'return $X != token;
-
-        '
-    - pattern: 'return token != $X;
-
-        '
-    - pattern: 'return $X != hash;
-
-        '
-    - pattern: 'return hash != $X;
-
-        '
-    - pattern: 'return $X != password;
-
-        '
-    - pattern: 'return password != $X;
-
-        '
-    - pattern: 'return $X != pass;
-
-        '
-    - pattern: 'return pass != $X;
-
-        '
-    - pattern: 'return $X != apiKey;
-
-        '
-    - pattern: 'return apiKey != $X;
-
-        '
-    - pattern: 'return $X != apiSecret;
-
-        '
-    - pattern: 'return apiSecret != $X;
-
-        '
-    - pattern: 'return $X != api_key;
-
-        '
-    - pattern: 'return api_key != $X;
-
-        '
-    - pattern: 'return $X != api_secret;
-
-        '
-    - pattern: 'return api_secret != $X;
-
-        '
-    - pattern: 'return $X != secret;
-
-        '
-    - pattern: 'return secret != $X;
-
-        '
-    - pattern: 'return $X != api;
-
-        '
-    - pattern: 'return api != $X;
-
-        '
-  message: '''String comparisons using ''''==='''', ''''!=='''', ''''!='''' and ''''=='''' is vulnerable to timing attacks. More info: https://snyk.io/blog/node-js-timing-attack-ccc-ctf/''
-
-    '
-  languages:
-  - javascript
-  severity: WARNING
-  metadata:
-    cwe: CWE-208
-    shortDescription: Observable timing discrepancy
-    category: security
-    owasp:
-    - A3:2017-Sensitive Data Exposure
-    - A01:2021-Broken Access Control
-    - A01:2025-Broken Access Control
-    security-severity: '5.5'
-    mh_upstream_security_severity: MEDIUM
-    mh_source: gitlab
-    mh_upstream_id: rules_lgpl_javascript_crypto_rule-node-timing-attack
-    mh_license: LGPL-3.0
 - id: mh.gitlab.rules_lgpl_javascript_crypto_rule-node-tls-reject
   patterns:
   - pattern-either:
@@ -26720,7 +26346,7 @@ rules:
   - pattern-not-regex: (?i)[0-9a-z_.\-]*client[_\-.]?id[0-9a-z_]*['"]?\s*(?:=|:|:=|=>)\s*(?:'|"|\x60)?[0-9a-z\-_.=~@]{10,150}(?:'|"|\x60)?
   - metavariable-regex:
       metavariable: $CONTENT
-      regex: ^(?!(?:Ov23li|Iv23li)[0-9A-Za-z]{14}$|Iv1\.[0-9a-f]{16}$)
+      regex: ^(?!(?:Ov23li|Iv23li)[0-9A-Za-z]{14}$|Iv1\.[0-9a-f]{16}$|dGhlIHNhbXBsZSBub25jZQ==$|[a-z]+(?:[A-Z][a-z]+)+$|.*(?:0123456789|123456789|abcdefghij))
 - id: mh.microhealth.generic.secrets.private-key
   message: A gitleaks private-key was detected which attempts to identify hard-coded credentials. It is not recommended to store credentials in source-code, as this risks secrets being leaked and used by either an internal or external malicious adversary. It is recommended to use environment variables to securely provide credentials or retrieve credentials from a secure vault or HSM (Hardware Security Module).
   languages:
@@ -26980,6 +26606,384 @@ rules:
       - pattern: Object.assign($TARGET, $SRC, ...)
       - pattern: Object.assign($TARGET, $OTHER, ..., $SRC, ...)
     - focus-metavariable: $SRC
+- id: mh.microhealth.javascript.njsscan.crypto.node-timing-attack
+  patterns:
+  - pattern-not: if ($Z == null) { ... };
+  - pattern-not: if ($Z === null) { ... };
+  - pattern-not: if ($Z != null) { ... };
+  - pattern-not: if ($Z !== null) { ... };
+  - pattern-not: if ($Q != undefined) { ... };
+  - pattern-not: if ($Q !== undefined) { ... };
+  - pattern-not: if ($Q == undefined) { ... };
+  - pattern-not: if ($Q === undefined) { ... };
+  - pattern-not: return $Y == null;
+  - pattern-not: return $Y === null;
+  - pattern-not: return $Y != null;
+  - pattern-not: return $Y !== null;
+  - pattern-not: return $Y == undefined;
+  - pattern-not: return $Y === undefined;
+  - pattern-not: return $Y != undefined;
+  - pattern-not: return $Y !== undefined;
+  - pattern-either:
+    - pattern: "if (password == $X) {\n    ...\n}\n"
+    - pattern: "if ($X == password) {\n    ...\n}\n"
+    - pattern: "if (password === $X) {\n    ...\n}\n"
+    - pattern: "if ($X === password) {\n    ...\n}\n"
+    - pattern: "if (pass == $X) {\n    ...\n}\n"
+    - pattern: "if ($X == pass) {\n    ...\n}\n"
+    - pattern: "if (pass === $X) {\n    ...\n}\n"
+    - pattern: "if ($X === pass) {\n    ...\n}\n"
+    - pattern: "if (secret == $X) {\n    ...\n}\n"
+    - pattern: "if ($X == secret) {\n    ...\n}\n"
+    - pattern: "if (secret === $X) {\n    ...\n}\n"
+    - pattern: "if ($X === secret) {\n    ...\n}\n"
+    - pattern: "if (api == $X) {\n    ...\n}\n"
+    - pattern: "if ($X == api) {\n    ...\n}\n"
+    - pattern: "if (api === $X) {\n    ...\n}\n"
+    - pattern: "if ($X === api) {\n    ...\n}\n"
+    - pattern: "if (apiKey == $X) {\n    ...\n}\n"
+    - pattern: "if ($X == apiKey) {\n    ...\n}\n"
+    - pattern: "if (apiKey === $X) {\n    ...\n}\n"
+    - pattern: "if ($X === apiKey) {\n    ...\n}\n"
+    - pattern: "if (apiSecret == $X) {\n    ...\n}\n"
+    - pattern: "if ($X == apiSecret) {\n    ...\n}\n"
+    - pattern: "if (apiSecret === $X) {\n    ...\n}\n"
+    - pattern: "if ($X === apiSecret) {\n    ...\n}\n"
+    - pattern: "if (token == $X) {\n    ...\n}\n"
+    - pattern: "if ($X == token) {\n    ...\n}\n"
+    - pattern: "if (token === $X) {\n    ...\n}\n"
+    - pattern: "if ($X === token) {\n    ...\n}\n"
+    - pattern: "if (hash == $X) {\n    ...\n}\n"
+    - pattern: "if ($X == hash) {\n    ...\n}\n"
+    - pattern: "if (hash === $X) {\n    ...\n}\n"
+    - pattern: "if ($X === hash) {\n    ...\n}\n"
+    - pattern: "if (auth_token == $X) {\n    ...\n}\n"
+    - pattern: "if ($X == auth_token) {\n    ...\n}\n"
+    - pattern: "if (auth_token === $X) {\n    ...\n}\n"
+    - pattern: "if ($X === auth_token) {\n    ...\n}\n"
+    - pattern: "if (password != $X) {\n    ...\n}\n"
+    - pattern: "if ($X != password) {\n    ...\n}\n"
+    - pattern: "if (password !== $X) {\n    ...\n}\n"
+    - pattern: "if ($X !== password) {\n    ...\n}\n"
+    - pattern: "if (pass != $X) {\n    ...\n}\n"
+    - pattern: "if ($X != pass) {\n    ...\n}\n"
+    - pattern: "if (pass !== $X) {\n    ...\n}\n"
+    - pattern: "if ($X !== pass) {\n    ...\n}\n"
+    - pattern: "if (secret != $X) {\n    ...\n}\n"
+    - pattern: "if ($X != secret) {\n    ...\n}\n"
+    - pattern: "if (secret !== $X) {\n    ...\n}\n"
+    - pattern: "if ($X !== secret) {\n    ...\n}\n"
+    - pattern: "if (api != $X) {\n    ...\n}\n"
+    - pattern: "if ($X != api) {\n    ...\n}\n"
+    - pattern: "if (api !== $X) {\n    ...\n}\n"
+    - pattern: "if ($X !== api) {\n    ...\n}\n"
+    - pattern: "if (apiKey != $X) {\n    ...\n}\n"
+    - pattern: "if ($X != apiKey) {\n    ...\n}\n"
+    - pattern: "if (apiKey !== $X) {\n    ...\n}\n"
+    - pattern: "if ($X !== apiKey) {\n    ...\n}\n"
+    - pattern: "if (apiSecret != $X) {\n    ...\n}\n"
+    - pattern: "if ($X != apiSecret) {\n    ...\n}\n"
+    - pattern: "if (apiSecret !== $X) {\n    ...\n}\n"
+    - pattern: "if ($X !== apiSecret) {\n    ...\n}\n"
+    - pattern: "if (token != $X) {\n    ...\n}\n"
+    - pattern: "if ($X != token) {\n    ...\n}\n"
+    - pattern: "if (token !== $X) {\n    ...\n}\n"
+    - pattern: "if ($X !== token) {\n    ...\n}\n"
+    - pattern: "if (hash != $X) {\n    ...\n}\n"
+    - pattern: "if ($X != hash) {\n    ...\n}\n"
+    - pattern: "if (hash !== $X) {\n    ...\n}\n"
+    - pattern: "if ($X !== hash) {\n    ...\n}\n"
+    - pattern: "if (auth_token != $X) {\n    ...\n}\n"
+    - pattern: "if ($X != auth_token) {\n    ...\n}\n"
+    - pattern: "if (auth_token !== $X) {\n    ...\n}\n"
+    - pattern: "if ($X !== auth_token) {\n    ...\n}\n"
+    - pattern: 'return $X === auth_token;
+
+        '
+    - pattern: 'return auth_token === $X;
+
+        '
+    - pattern: 'return $X === token;
+
+        '
+    - pattern: 'return token === $X;
+
+        '
+    - pattern: 'return $X === hash;
+
+        '
+    - pattern: 'return hash === $X;
+
+        '
+    - pattern: 'return $X === password;
+
+        '
+    - pattern: 'return password === $X;
+
+        '
+    - pattern: 'return $X === pass;
+
+        '
+    - pattern: 'return pass === $X;
+
+        '
+    - pattern: 'return $X === apiKey;
+
+        '
+    - pattern: 'return apiKey === $X;
+
+        '
+    - pattern: 'return $X === apiSecret;
+
+        '
+    - pattern: 'return apiSecret === $X;
+
+        '
+    - pattern: 'return $X === api_key;
+
+        '
+    - pattern: 'return api_key === $X;
+
+        '
+    - pattern: 'return $X === api_secret;
+
+        '
+    - pattern: 'return api_secret === $X;
+
+        '
+    - pattern: 'return $X === secret;
+
+        '
+    - pattern: 'return secret === $X;
+
+        '
+    - pattern: 'return $X === api;
+
+        '
+    - pattern: 'return api === $X;
+
+        '
+    - pattern: 'return $X == auth_token;
+
+        '
+    - pattern: 'return auth_token == $X;
+
+        '
+    - pattern: 'return $X == token;
+
+        '
+    - pattern: 'return token == $X;
+
+        '
+    - pattern: 'return $X == hash;
+
+        '
+    - pattern: 'return hash == $X;
+
+        '
+    - pattern: 'return $X == password;
+
+        '
+    - pattern: 'return password == $X;
+
+        '
+    - pattern: 'return $X == pass;
+
+        '
+    - pattern: 'return pass == $X;
+
+        '
+    - pattern: 'return $X == apiKey;
+
+        '
+    - pattern: 'return apiKey == $X;
+
+        '
+    - pattern: 'return $X == apiSecret;
+
+        '
+    - pattern: 'return apiSecret == $X;
+
+        '
+    - pattern: 'return $X == api_key;
+
+        '
+    - pattern: 'return api_key == $X;
+
+        '
+    - pattern: 'return $X == api_secret;
+
+        '
+    - pattern: 'return api_secret == $X;
+
+        '
+    - pattern: 'return $X == secret;
+
+        '
+    - pattern: 'return secret == $X;
+
+        '
+    - pattern: 'return $X == api;
+
+        '
+    - pattern: 'return api == $X;
+
+        '
+    - pattern: 'return $X !== auth_token;
+
+        '
+    - pattern: 'return auth_token !== $X;
+
+        '
+    - pattern: 'return $X !== token;
+
+        '
+    - pattern: 'return token !== $X;
+
+        '
+    - pattern: 'return $X !== hash;
+
+        '
+    - pattern: 'return hash !== $X;
+
+        '
+    - pattern: 'return $X !== password;
+
+        '
+    - pattern: 'return password !== $X;
+
+        '
+    - pattern: 'return $X !== pass;
+
+        '
+    - pattern: 'return pass !== $X;
+
+        '
+    - pattern: 'return $X !== apiKey;
+
+        '
+    - pattern: 'return apiKey !== $X;
+
+        '
+    - pattern: 'return $X !== apiSecret;
+
+        '
+    - pattern: 'return apiSecret !== $X;
+
+        '
+    - pattern: 'return $X !== api_key;
+
+        '
+    - pattern: 'return api_key !== $X;
+
+        '
+    - pattern: 'return $X !== api_secret;
+
+        '
+    - pattern: 'return api_secret !== $X;
+
+        '
+    - pattern: 'return $X !== secret;
+
+        '
+    - pattern: 'return secret !== $X;
+
+        '
+    - pattern: 'return $X !== api;
+
+        '
+    - pattern: 'return api !== $X;
+
+        '
+    - pattern: 'return $X != auth_token;
+
+        '
+    - pattern: 'return auth_token != $X;
+
+        '
+    - pattern: 'return $X != token;
+
+        '
+    - pattern: 'return token != $X;
+
+        '
+    - pattern: 'return $X != hash;
+
+        '
+    - pattern: 'return hash != $X;
+
+        '
+    - pattern: 'return $X != password;
+
+        '
+    - pattern: 'return password != $X;
+
+        '
+    - pattern: 'return $X != pass;
+
+        '
+    - pattern: 'return pass != $X;
+
+        '
+    - pattern: 'return $X != apiKey;
+
+        '
+    - pattern: 'return apiKey != $X;
+
+        '
+    - pattern: 'return $X != apiSecret;
+
+        '
+    - pattern: 'return apiSecret != $X;
+
+        '
+    - pattern: 'return $X != api_key;
+
+        '
+    - pattern: 'return api_key != $X;
+
+        '
+    - pattern: 'return $X != api_secret;
+
+        '
+    - pattern: 'return api_secret != $X;
+
+        '
+    - pattern: 'return $X != secret;
+
+        '
+    - pattern: 'return secret != $X;
+
+        '
+    - pattern: 'return $X != api;
+
+        '
+    - pattern: 'return api != $X;
+
+        '
+  - metavariable-regex:
+      metavariable: $X
+      regex: ^(?!(?:null|undefined|true|false|NaN|-?\d+(?:\.\d+)?|'[^']*'|"[^"]*"|`[^`$]*`)$)
+  message: '''String comparisons using ''''==='''', ''''!=='''', ''''!='''' and ''''=='''' is vulnerable to timing attacks. More info: https://snyk.io/blog/node-js-timing-attack-ccc-ctf/''
+
+    '
+  languages:
+  - javascript
+  severity: WARNING
+  metadata:
+    cwe: CWE-208
+    shortDescription: Observable timing discrepancy
+    category: security
+    owasp:
+    - A3:2017-Sensitive Data Exposure
+    - A01:2021-Broken Access Control
+    - A01:2025-Broken Access Control
+    security-severity: '5.5'
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_crypto_rule-node-timing-attack
+    mh_upstream_security_severity: MEDIUM
+    mh_source: microhealth
+    mh_upstream_id: javascript.njsscan.crypto.node-timing-attack
+    mh_license: LGPL-3.0
 - id: mh.microhealth.javascript.njsscan.dos.layer7-object-dos
   mode: taint
   pattern-sources:
@@ -27042,191 +27046,97 @@ rules:
     mh_upstream_id: javascript.njsscan.dos.layer7-object-dos
     mh_license: LGPL-3.0
 - id: mh.microhealth.javascript.njsscan.dos.regex-dos
-  pattern-either:
-  - patterns:
-    - pattern-either:
-      - pattern-inside: function (req, $RES, ...) {...}
-      - pattern-inside: function $FUNC(req, $RES, ...) {...}
-      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
-      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
-      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
-    - pattern-either:
-      - pattern: '$REGEX.test(<... req ...>)
-
-          '
-      - pattern: '$REGEX.test(<... req.$QUERY ...>)
-
-          '
-      - pattern: '$REGEX.test(<... req.$BODY.$PARAM ...>)
-
-          '
-      - pattern: '$INP = <... req ...>;
-
-          ...
-
-          $REGEX.test(<... $INP ...>)
-
-          '
-      - pattern: '$INP = <... req.$QUERY ...>;
-
-          ...
-
-          $REGEX.test(<... $INP ...>)
-
-          '
-      - pattern: '$INP = <... req.$BODY.$PARAM ...>;
-
-          ...
-
-          $REGEX.test(<... $INP ...>)
-
-          '
-      - pattern: '/.../g.exec(<... req ...>)
-
-          '
-      - pattern: '/.../g.exec(<... req.$QUERY ...>)
-
-          '
-      - pattern: '/.../.exec(<... req.$BODY.$PARAM ...>)
-
-          '
-      - pattern: '$INP = <... req ...>;
-
-          ...
-
-          /.../.exec(<... $INP ...>)
-
-          '
-      - pattern: '$INP = <... req.$QUERY ...>;
-
-          ...
-
-          /.../.exec(<... $INP ...>)
-
-          '
-      - pattern: '$INP = <... req.$BODY.$PARAM ...>;
-
-          ...
-
-          /.../.exec(<... $INP ...>)
-
-          '
-      - pattern: '$RE = /.../;
-
-          ...
-
-          $RE.exec(<... req ...>)
-
-          '
-      - pattern: '$RE = /.../;
-
-          ...
-
-          $RE.exec(<... req.$QUERY ...>)
-
-          '
-      - pattern: '$RE = /.../;
-
-          ...
-
-          $RE.exec(<... req.$BODY.$PARAM ...>)
-
-          '
-    - metavariable-regex:
-        metavariable: $RES
-        regex: ^(res|resp|response|reply|h)$
-  - patterns:
-    - pattern-either:
-      - pattern-inside: function (request, $RES, ...) {...}
-      - pattern-inside: function $FUNC(request, $RES, ...) {...}
-      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
-      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
-      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
-    - pattern-either:
-      - pattern: '$REGEX.test(<... request ...>)
-
-          '
-      - pattern: '$REGEX.test(<... request.$QUERY ...>)
-
-          '
-      - pattern: '$REGEX.test(<... request.$BODY.$PARAM ...>)
-
-          '
-      - pattern: '$INP = <... request ...>;
-
-          ...
-
-          $REGEX.test(<... $INP ...>)
-
-          '
-      - pattern: '$INP = <... request.$QUERY ...>;
-
-          ...
-
-          $REGEX.test(<... $INP ...>)
-
-          '
-      - pattern: '$INP = <... request.$BODY.$PARAM ...>;
-
-          ...
-
-          $REGEX.test(<... $INP ...>)
-
-          '
-      - pattern: '/.../g.exec(<... request ...>)
-
-          '
-      - pattern: '/.../g.exec(<... request.$QUERY ...>)
-
-          '
-      - pattern: '/.../.exec(<... request.$BODY.$PARAM ...>)
-
-          '
-      - pattern: '$INP = <... request ...>;
-
-          ...
-
-          /.../.exec(<... $INP ...>)
-
-          '
-      - pattern: '$INP = <... request.$QUERY ...>;
-
-          ...
-
-          /.../.exec(<... $INP ...>)
-
-          '
-      - pattern: '$INP = <... request.$BODY.$PARAM ...>;
-
-          ...
-
-          /.../.exec(<... $INP ...>)
-
-          '
-      - pattern: '$RE = /.../;
-
-          ...
-
-          $RE.exec(<... request ...>)
-
-          '
-      - pattern: '$RE = /.../;
-
-          ...
-
-          $RE.exec(<... request.$QUERY ...>)
-
-          '
-      - pattern: '$RE = /.../;
-
-          ...
-
-          $RE.exec(<... request.$BODY.$PARAM ...>)
-
-          '
-    - metavariable-regex:
-        metavariable: $RES
-        regex: ^(res|resp|response|reply|h)$
+  patterns:
+  - pattern-either:
+    - patterns:
+      - pattern-either:
+        - pattern-inside: function (req, $RES, ...) {...}
+        - pattern-inside: function $FUNC(req, $RES, ...) {...}
+        - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+        - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+        - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+      - metavariable-regex:
+          metavariable: $RES
+          regex: ^(res|resp|response|reply|h)$
+      - pattern-either:
+        - pattern: $REGEX.$M(<... req ...>)
+        - pattern: '$INP = <... req ...>;
+
+            ...
+
+            $REGEX.$M(<... $INP ...>)
+
+            '
+    - patterns:
+      - pattern-either:
+        - pattern-inside: function (request, $RES, ...) {...}
+        - pattern-inside: function $FUNC(request, $RES, ...) {...}
+        - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+        - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+        - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+      - metavariable-regex:
+          metavariable: $RES
+          regex: ^(res|resp|response|reply|h)$
+      - pattern-either:
+        - pattern: $REGEX.$M(<... request ...>)
+        - pattern: '$INP = <... request ...>;
+
+            ...
+
+            $REGEX.$M(<... $INP ...>)
+
+            '
+  - metavariable-regex:
+      metavariable: $M
+      regex: ^(test|exec)$
+  - pattern-either:
+    - patterns:
+      - pattern: $REGEX.$M(...)
+      - metavariable-pattern:
+          metavariable: $REGEX
+          pattern: /.../
+      - metavariable-regex:
+          metavariable: $REGEX
+          regex: ^(?:/(?!\^)(?:[^\\]|\\.)*?(?:[*+]|\{\d+,\})|.*\((?:[^()\\]|\\.)*[*+](?:[^()\\]|\\.)*\)(?:[*+]|\{\d+,\d*\}))
+    - patterns:
+      - pattern: $REGEX.$M(...)
+      - metavariable-pattern:
+          metavariable: $REGEX
+          pattern-either:
+          - pattern: new RegExp(...)
+          - pattern: RegExp(...)
+    - patterns:
+      - pattern-either:
+        - pattern-inside: '$REGEX = $LIT;
+
+            ...
+
+            '
+        - pattern-inside: 'const $REGEX = $LIT;
+
+            ...
+
+            '
+        - pattern-inside: 'let $REGEX = $LIT;
+
+            ...
+
+            '
+        - pattern-inside: 'var $REGEX = $LIT;
+
+            ...
+
+            '
+      - pattern: $REGEX.$M(...)
+      - metavariable-pattern:
+          metavariable: $LIT
+          pattern-either:
+          - pattern: /.../
+          - pattern: new RegExp(...)
+          - pattern: RegExp(...)
+      - metavariable-regex:
+          metavariable: $LIT
+          regex: ^(?:(?:new\s+)?RegExp\b|/(?!\^)(?:[^\\]|\\.)*?(?:[*+]|\{\d+,\})|.*\((?:[^()\\]|\\.)*[*+](?:[^()\\]|\\.)*\)(?:[*+]|\{\d+,\d*\}))
   message: 'Ensure that the regex used to compare with user supplied input is safe from regular expression denial of service.
 
     '
@@ -33098,6 +33008,44 @@ rules:
   - pattern-not: true !== $S
   - pattern-not: $S !== false
   - pattern-not: false !== $S
+- id: mh.microhealth.json.npm.package-dependencies-check
+  patterns:
+  - pattern-regex: '"[^"\n]+"\s*:\s*"(?!(?:file|link|workspace|portal):)(?!https?://[^"#\s]+\.(?:tgz|tar\.gz)")(?:[^"]*(?:[\^~<>*]|\|\||\s-\s)[^"]*|(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?(?:[xX]|\d+\.[xX](?:\.[\dxX]+)?|\d+\.\d+\.[xX])|(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?\d+(?:\.\d+)?|(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?[A-Za-z][\w.\-]*||(?:git(?:\+(?:ssh|https?|file))?://|git@|github:|gitlab:|bitbucket:|gist:)[^"#]*|https?://[^"#]*\.git|[\w.\-]+/[\w.\-]+)"'
+  - pattern-either:
+    - pattern-inside: "\"dependencies\": {\n  ...\n}\n"
+    - pattern-inside: "\"devDependencies\": {\n  ...\n}\n"
+    - pattern-inside: "\"optionalDependencies\": {\n  ...\n}\n"
+    - pattern-inside: "\"peerDependencies\": {\n  ...\n}\n"
+  - pattern-not-inside: "\"_shrinkwrap\": {\n  ...\n}\n"
+  paths:
+    include:
+    - '*package.json'
+  message: Package dependencies with variant versions may lead to dependency hijack and confusion attacks. Better to specify an exact version or use package-lock.json for a specific version of the package.
+  languages:
+  - json
+  metadata:
+    category: security
+    vulnerability: Security Misconfiguration
+    owasp: A05:2021 - Security Misconfiguration
+    cwe:
+    - 'CWE-427: Uncontrolled Search Path Element'
+    references:
+    - https://security.snyk.io/vuln/SNYK-JS-COLORS-2331906
+    - https://medium.com/@alex.birsan/dependency-confusion-4a5d60fec610
+    - https://cwe.mitre.org/data/definitions/427.html
+    technology:
+    - npm
+    license: Commons Clause License Condition v1.0[LGPL-2.1-only]
+    subcategory:
+    - audit
+    likelihood: LOW
+    impact: LOW
+    confidence: LOW
+    mh_replaces: mh.opengrep.json.npm.security.package-dependencies-check.package-dependencies-check
+    mh_source: microhealth
+    mh_upstream_id: json.npm.package-dependencies-check
+    mh_license: LGPL-2.1-only+Commons-Clause
+  severity: WARNING
 - id: mh.microhealth.nginx.host-header-in-response
   languages:
   - regex
@@ -63659,46 +63607,6 @@ rules:
   languages:
   - json
   severity: ERROR
-- id: mh.opengrep.json.npm.security.package-dependencies-check.package-dependencies-check
-  patterns:
-  - pattern-not-regex: \"[\w\-.]*\"\s*:\s*\"[\d.]+-[\w.]+\"
-  - pattern-either:
-    - pattern-regex: \"[\w\-.]*\"\s*:\s*\"latest\"
-    - pattern-regex: \"[\w\-.]*\"\s*:\s*\"[^~\-\^><=\"x]*[~\-\^><=x]+.*\"
-  - pattern-either:
-    - pattern-inside: "\"dependencies\": {\n  ...\n}\n"
-    - pattern-inside: "\"devDependencies\": {\n  ...\n}\n"
-    - pattern-inside: "\"optionalDependencies\": {\n  ...\n}\n"
-    - pattern-inside: "\"peerDependencies\": {\n  ...\n}\n"
-  - pattern-not-inside: "\"_shrinkwrap\": {\n  ...\n}\n"
-  paths:
-    include:
-    - '*package.json'
-  message: Package dependencies with variant versions may lead to dependency hijack and confusion attacks. Better to specify an exact version or use package-lock.json for a specific version of the package.
-  languages:
-  - json
-  metadata:
-    category: security
-    vulnerability: Security Misconfiguration
-    owasp: A05:2021 - Security Misconfiguration
-    cwe:
-    - 'CWE-427: Uncontrolled Search Path Element'
-    references:
-    - https://security.snyk.io/vuln/SNYK-JS-COLORS-2331906
-    - https://medium.com/@alex.birsan/dependency-confusion-4a5d60fec610
-    - https://cwe.mitre.org/data/definitions/427.html
-    technology:
-    - npm
-    license: Commons Clause License Condition v1.0[LGPL-2.1-only]
-    subcategory:
-    - audit
-    likelihood: LOW
-    impact: LOW
-    confidence: LOW
-    mh_source: opengrep
-    mh_upstream_id: package-dependencies-check
-    mh_license: LGPL-2.1-only+Commons-Clause
-  severity: WARNING
 - id: mh.opengrep.kotlin.gradle.security.build-gradle-password-hardcoded.build-gradle-password-hardcoded
   message: A secret is hard-coded in the application. Secrets stored in source code, such as credentials, identifiers, and other types of sensitive data, can be leaked and used by internal or external malicious actors. It is recommended to rotate the secret and retrieve them from a secure secret vault or Hardware Security Module (HSM), alternatively environment variables can be used if allowed by your company policy.
   severity: WARNING

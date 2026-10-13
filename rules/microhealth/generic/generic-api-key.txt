@@ -9,3 +9,11 @@ export const GITHUB_OAUTH_CLIENT_ID = 'Ov23liMtXMm5uGbBOJcz';
 oauth_app = 'Iv1.8a61f9b3a7aba766'
 # ok: generic.secrets.generic-api-key
 const clientId = 'q7Lr2Vx8Tw4Ny6Pb3k9Z';
+# ok: generic.secrets.generic-api-key
+const wsKey = 'dGhlIHNhbXBsZSBub25jZQ==';
+# ok: generic.secrets.generic-api-key
+  jwtSecret = getJwtSigningKey
+# ok: generic.secrets.generic-api-key
+const api_token = 'tok-0123456789abcdef';
+# ruleid: generic.secrets.generic-api-key
+const access_token = 'abc123-Zq81xk-77Lw9';
