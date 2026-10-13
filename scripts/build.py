@@ -8,6 +8,7 @@ Inputs (all in this repository, nothing is fetched):
   sources.yaml     where each source came from and how its license is read
   licenses.yaml    which license may go in which bundle
   overrides.yaml   rules we turn off or re-grade, each with its reason
+                   (a source's `categories` keeps all but security rules out)
   upstream/<src>/  vendored upstream rule files, never edited by hand
   rules/<src>/     rules MicroHealth writes
 
@@ -86,6 +87,31 @@ def classify(text: str, header_map: dict[str, str]) -> str | None:
     return None
 
 
+# GitHub code scanning reads `security-severity` as a CVSS-style number and
+# refuses the whole SARIF upload when one rule carries a word ("Low"), which
+# GitLab's rules do. A word becomes the midpoint of GitHub's band for it; the
+# upstream value is kept beside it, so nothing is lost and the grading is
+# visible.
+_SEVERITY_SCORE = {"critical": "9.5", "high": "8.0", "medium": "5.5", "low": "2.0", "info": "0.0"}
+
+
+def _numeric_security_severity(meta: dict) -> None:
+    value = meta.get("security-severity")
+    if value is None:
+        return
+    try:
+        float(str(value))
+        return
+    except ValueError:
+        pass
+    score = _SEVERITY_SCORE.get(str(value).strip().lower())
+    meta["mh_upstream_security_severity"] = value
+    if score is None:
+        del meta["security-severity"]
+    else:
+        meta["security-severity"] = score
+
+
 def rule_hash(rule: dict) -> str:
     return hashlib.sha256(json.dumps(rule, sort_keys=True).encode()).hexdigest()
 
@@ -115,8 +141,16 @@ def collect(sources: dict, licenses: dict) -> tuple[list[dict], list[str]]:
                     continue
                 upstream_id = str(rule["id"])
                 local = f"{prefix}.{upstream_id}" if prefix else upstream_id
+                category = str((rule.get("metadata") or {}).get("category") or "")
                 rules.append(
                     {
+                        "category": category,
+                        "excluded": (
+                            f"category {category or '(none)'}: only "
+                            f"{', '.join(src['categories'])} rules are published (sources.yaml)"
+                        )
+                        if src.get("categories") and category not in src["categories"]
+                        else None,
                         "id": f"mh.{name}.{local}",
                         "source": name,
                         "upstream_id": upstream_id,
@@ -168,6 +202,7 @@ def build(check: bool) -> int:
         if r["id"] in regraded:
             rule["severity"] = regraded[r["id"]]["to"]
         meta = dict(rule.get("metadata") or {})
+        _numeric_security_severity(meta)
         meta.update(
             {
                 "mh_source": r["source"],
@@ -176,7 +211,8 @@ def build(check: bool) -> int:
             }
         )
         rule["metadata"] = meta
-        in_bundles = [] if r["id"] in disabled else sorted(allowed[r["license"]])
+        off = r["id"] in disabled or r["excluded"]
+        in_bundles = [] if off else sorted(allowed[r["license"]])
         for b in in_bundles:
             bundles[b].append(rule)
         entry = {
@@ -186,10 +222,12 @@ def build(check: bool) -> int:
             "license": r["license"],
             "sha256": rule_hash(rule),
             "bundles": in_bundles,
-            "status": "disabled" if r["id"] in disabled else "active",
+            "status": "disabled" if r["id"] in disabled else "excluded" if r["excluded"] else "active",
         }
         if r["id"] in disabled:
             entry["reason"] = disabled[r["id"]]
+        elif r["excluded"]:
+            entry["reason"] = r["excluded"]
         lock_rules[r["id"]] = entry
     for rid, old in previous.get("rules", {}).items():
         if rid not in lock_rules:
@@ -202,17 +240,37 @@ def build(check: bool) -> int:
     notice = (ROOT / "NOTICE.md").read_text(encoding="utf-8")
     outputs: dict[Path, str] = {}
     for b, items in bundles.items():
+        licenses_in = sorted({r["metadata"]["mh_license"] for r in items})
         header = (
             f"# sast-rules bundle `{b}` — built by scripts/build.py; do not edit.\n"
             f"# {len(items)} rules. Sources: "
             + ", ".join(f"{n}@{p.get('commit', 'local')[:12]}" for n, p in pins.items())
-            + "\n# Attributions and licenses: NOTICE.md (shipped beside this file).\n"
+            + f"\n# Licenses of the rules in this bundle: {', '.join(licenses_in)}.\n"
+            "# Each rule's own license is its metadata.mh_license.\n"
+            "# MODIFIED from the upstream rules (MicroHealth, LLC): each rule's id is\n"
+            "# prefixed `mh.<source>.`, metadata.mh_source / mh_upstream_id / mh_license\n"
+            "# are added, a word in metadata.security-severity is replaced by a number\n"
+            "# (the original kept as mh_upstream_security_severity), and overrides.yaml\n"
+            "# is applied. Nothing else is changed. The date of each change is the date\n"
+            "# of the sast-rules commit that built this file; the unmodified upstream\n"
+            "# files and the build are in https://github.com/MicroHealthLLC/sast-rules.\n"
+            "# Attributions: NOTICE.md; full license texts: licenses/ (both shipped\n"
+            "# beside this file).\n"
         )
         body = yaml.safe_dump(
             {"rules": items}, sort_keys=False, allow_unicode=True, width=1_000_000
         )
         outputs[DIST / f"{b}.yaml"] = header + body
     outputs[DIST / "NOTICE.md"] = notice
+    # The full text of every license a bundle may carry ships with the bundles.
+    for lic in sorted((ROOT / "licenses").glob("*.txt")):
+        outputs[DIST / "licenses" / lic.name] = lic.read_text(encoding="utf-8")
+    outputs[DIST / "licenses" / "MIT.txt"] = (ROOT / "LICENSE").read_text(encoding="utf-8")
+    # ... and each upstream LICENSE file as vendored (the Commons Clause and
+    # its licensor are only stated there).
+    for lic in sorted((ROOT / "upstream").rglob("LICENSE*")):
+        name = "upstream-" + "-".join(lic.relative_to(ROOT / "upstream").parts) + ".txt"
+        outputs[DIST / "licenses" / name] = lic.read_text(encoding="utf-8")
     sums = "".join(
         f"{hashlib.sha256(outputs[DIST / f'{b}.yaml'].encode()).hexdigest()}  {b}.yaml\n"
         for b in BUNDLES
@@ -237,12 +295,13 @@ def build(check: bool) -> int:
             return 1
         print("dist/ and rules.lock.json match the sources.")
         return 0
-    DIST.mkdir(exist_ok=True)
+    (DIST / "licenses").mkdir(parents=True, exist_ok=True)
     for p, text in outputs.items():
         p.write_text(text, encoding="utf-8")
     counts = ", ".join(f"{b}={len(items)}" for b, items in bundles.items())
     retired = sum(1 for e in lock_rules.values() if e["status"] == "retired")
-    print(f"Built {counts}; {len(disabled)} disabled, {retired} retired.")
+    excluded = sum(1 for e in lock_rules.values() if e["status"] == "excluded")
+    print(f"Built {counts}; {len(disabled)} disabled, {excluded} excluded, {retired} retired.")
     return 0
 
 

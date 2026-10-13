@@ -2,7 +2,7 @@ MIT License
 
 Copyright (c) 2026 MicroHealth, LLC
 
-This license covers this repository's own files: scripts/, rules/microhealth/,
+This license covers this repository's own files: scripts/, tests/, rules/microhealth/,
 .github/, and the configuration and documentation at the root. Vendored rules
 under upstream/ keep their own licenses (see NOTICE.md and each LICENSE file
 beside them); every rule's license is recorded in rules.lock.json.

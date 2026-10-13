@@ -1,9 +1,22 @@
 {
-  "comment": "The Opengrep release every scan runs. scripts/bump_engine.py moves it (the weekly upstream sync runs it); the shared workflow refuses a binary whose sha256 differs.",
+  "comment": "The engines every scan runs. Opengrep: a release binary, checked against the sha256 here (scripts/bump_engine.py moves it). Trivy: MicroHealth's FIPS build, from source on the FIPS Go image with the Go Cryptographic Module (GOFIPS140), every module checked against sum.golang.org, once per `trivy.version` by .github/workflows/engines.yml; scripts/record_trivy.sh records its url and sha256 here and every scan refuses a binary that does not match. ZAP: pinned in .github/workflows/zap.yml with the sha256 of every file it fetches.",
   "name": "opengrep",
   "version": "1.30.2",
   "assets": {
-    "x86_64": {"file": "opengrep_musllinux_x86", "sha256": "f757557fa23c217e54c140a9e609a46397e668518ca1394436eb76d83ba560fe"},
-    "aarch64": {"file": "opengrep_musllinux_aarch64", "sha256": "564211ffe4e932f89a3b4d5e04c4a8c6dc4fb1c4e61e9a830f3afbd9ab2e5f97"}
+    "x86_64": {
+      "file": "opengrep_musllinux_x86",
+      "sha256": "f757557fa23c217e54c140a9e609a46397e668518ca1394436eb76d83ba560fe"
+    },
+    "aarch64": {
+      "file": "opengrep_musllinux_aarch64",
+      "sha256": "564211ffe4e932f89a3b4d5e04c4a8c6dc4fb1c4e61e9a830f3afbd9ab2e5f97"
+    }
+  },
+  "trivy": {
+    "version": "0.74.0",
+    "note": "0.75.0 needs Go 1.27; fips-go ships the go1.26 line",
+    "version_built": "0.74.0",
+    "url": "https://github.com/MicroHealthLLC/sast-rules/releases/download/engine-trivy-0.74.0/trivy-0.74.0-linux-amd64-fips",
+    "sha256": "13efbc29992ba1d5ac2fcb54d000fbdbe96e19e53b5006ca148005862a2483b7"
   }
 }

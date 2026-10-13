@@ -10,8 +10,14 @@ sources:
     commit: 53bf5cf6df3c51b6c02110f5a638b5e6213666cd
     track: tags
     path: upstream/gitlab
+    # Security rules only: style, correctness, portability and the like are
+    # not SAST findings. Others stay in the lock as `excluded`.
+    categories: [security]
     license: per-file
-    include: [c, csharp, go, java, javascript, python, scala, rules]
+    # rules/gitlab is left out: its folder LICENSE is GitLab's Enterprise
+    # Edition license, so even the files in it headed MIT are not clearly ours
+    # to redistribute.
+    include: [c, csharp, go, java, javascript, python, scala, rules/lgpl, rules/lgpl-cc]
   opengrep:
     # opengrep/opengrep-rules: archived read-only on 2025-11-28, so this is a
     # one-time import and never syncs. LGPL-2.1 with the Commons Clause
@@ -24,6 +30,9 @@ sources:
     commit: f1d2b562b414783763fd02a6ed2736eaed622efa
     track: frozen
     path: upstream/opengrep
+    # Security rules only: style, correctness, portability and the like are
+    # not SAST findings. Others stay in the lock as `excluded`.
+    categories: [security]
     license: LGPL-2.1-only+Commons-Clause
     qualify_by_path: true
   microhealth:

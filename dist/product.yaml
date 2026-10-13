@@ -1,6 +1,16 @@
 # sast-rules bundle `product` — built by scripts/build.py; do not edit.
-# 277 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
-# Attributions and licenses: NOTICE.md (shipped beside this file).
+# 273 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
+# Licenses of the rules in this bundle: Apache-2.0, MIT.
+# Each rule's own license is its metadata.mh_license.
+# MODIFIED from the upstream rules (MicroHealth, LLC): each rule's id is
+# prefixed `mh.<source>.`, metadata.mh_source / mh_upstream_id / mh_license
+# are added, a word in metadata.security-severity is replaced by a number
+# (the original kept as mh_upstream_security_severity), and overrides.yaml
+# is applied. Nothing else is changed. The date of each change is the date
+# of the sast-rules commit that built this file; the unmodified upstream
+# files and the build are in https://github.com/MicroHealthLLC/sast-rules.
+# Attributions: NOTICE.md; full license texts: licenses/ (both shipped
+# beside this file).
 rules:
 - id: mh.gitlab.csharp_cookies_rule-CookieWithoutHttpOnlyFlag
   languages:
@@ -64,7 +74,8 @@ rules:
     - A05:2021-Security Misconfiguration
     - A02:2025-Security Misconfiguration
     cwe: CWE-1004
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: csharp_cookies_rule-CookieWithoutHttpOnlyFlag
     mh_license: MIT
@@ -126,7 +137,8 @@ rules:
     - A05:2021-Security Misconfiguration
     - A02:2025-Security Misconfiguration
     cwe: CWE-614
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: csharp_cookies_rule-CookieWithoutSSLFlag
     mh_license: MIT
@@ -183,7 +195,8 @@ rules:
     - A07:2021-Identification and Authentication Failures
     - A07:2025-Authentication Failures
     cwe: CWE-295
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: csharp_crypto_rule-CertificateValidationDisabled
     mh_license: MIT
@@ -213,7 +226,8 @@ rules:
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
     cwe: CWE-327
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: csharp_crypto_rule-WeakCipherAlgorithm
     mh_license: MIT
@@ -240,7 +254,8 @@ rules:
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
     cwe: CWE-327
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: csharp_crypto_rule-WeakCipherMode
     mh_license: MIT
@@ -269,7 +284,8 @@ rules:
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
     cwe: CWE-327
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: csharp_crypto_rule-WeakHashingFunction
     mh_license: MIT
@@ -319,7 +335,8 @@ rules:
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
     cwe: CWE-338
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: csharp_crypto_rule-WeakRNG
     mh_license: MIT
@@ -398,7 +415,8 @@ rules:
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
     cwe: CWE-352
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: csharp_csrf_rule-Csrf
     mh_license: MIT
@@ -450,7 +468,8 @@ rules:
     - A8:2017-Insecure Deserialization
     - A08:2021-Software and Data Integrity Failures
     - A08:2025-Software or Data Integrity Failures
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: csharp_deserialization_rule-InsecureDeserialization
     mh_license: MIT
@@ -549,7 +568,8 @@ rules:
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
     cwe: CWE-601
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: csharp_endpoint_rule-UnvalidatedRedirect
     mh_license: MIT
@@ -607,7 +627,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     cwe: CWE-78
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: csharp_injection_rule-CommandInjection
     mh_license: MIT
@@ -644,7 +665,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     cwe: CWE-90
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: csharp_injection_rule-LdapInjection
     mh_license: MIT
@@ -759,7 +781,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     cwe: CWE-89
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: csharp_injection_rule-SQLInjection
     mh_license: MIT
@@ -816,7 +839,8 @@ rules:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: csharp_injection_rule-XPathInjection
     mh_license: MIT
@@ -888,7 +912,8 @@ rules:
     - A4:2017-XML External Entities (XXE)
     - A05:2021-Security Misconfiguration
     - A02:2025-Security Misconfiguration
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: csharp_injection_rule-XmlDocumentXXEInjection
     mh_license: MIT
@@ -961,7 +986,8 @@ rules:
     - A4:2017-XML External Entities (XXE)
     - A05:2021-Security Misconfiguration
     - A02:2025-Security Misconfiguration
-    security-severity: MEDIUM
+    security-severity: '5.5'
+    mh_upstream_security_severity: MEDIUM
     mh_source: gitlab
     mh_upstream_id: csharp_injection_rule-XmlReaderXXEInjection
     mh_license: MIT
@@ -1088,7 +1114,8 @@ rules:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: csharp_other_rule-UnsafeXSLTSettingUsed
     mh_license: MIT
@@ -1120,7 +1147,8 @@ rules:
     - A2:2017-Broken Authentication
     - A07:2021-Identification and Authentication Failures
     - A07:2025-Authentication Failures
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: csharp_password_rule-PasswordComplexity
     mh_license: MIT
@@ -1221,7 +1249,8 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: csharp_path_rule-PathTraversal
     mh_license: MIT
@@ -1241,7 +1270,8 @@ rules:
     - A6:2017-Security Misconfiguration
     - A04:2021-Insecure Design
     - A05:2025-Injection
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: csharp_validation_rule-InputValidation
     mh_license: MIT
@@ -1370,7 +1400,8 @@ rules:
     - A7:2017-Cross-Site Scripting (XSS)
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: csharp_xss_rule-HtmlElementXss
     mh_license: MIT
@@ -1477,7 +1508,8 @@ rules:
     - A7:2017-Cross-Site Scripting (XSS)
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: MEDIUM
+    security-severity: '5.5'
+    mh_upstream_security_severity: MEDIUM
     mh_source: gitlab
     mh_upstream_id: csharp_xss_rule-ScriptXss
     mh_license: MIT
@@ -1497,8 +1529,9 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_blocklist_rule-blocklist-des
     mh_license: Apache-2.0
@@ -1518,8 +1551,9 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_blocklist_rule-blocklist-md5
     mh_license: Apache-2.0
@@ -1539,8 +1573,9 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_blocklist_rule-blocklist-rc4
     mh_license: Apache-2.0
@@ -1560,8 +1595,9 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_blocklist_rule-blocklist-sha1
     mh_license: Apache-2.0
@@ -1589,7 +1625,8 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_crypto_rule-badtlssettings
     mh_license: Apache-2.0
@@ -1607,8 +1644,9 @@ rules:
     - A2:2017-Broken Authentication
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_crypto_rule-insecure-ignore-host-key
     mh_license: Apache-2.0
@@ -1661,8 +1699,9 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_crypto_rule-tlsversion
     mh_license: MIT
@@ -1686,8 +1725,9 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_crypto_rule-weakkeystrength
     mh_license: Apache-2.0
@@ -1730,8 +1770,9 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_crypto_rule-weakrandsource
     mh_license: Apache-2.0
@@ -1755,8 +1796,9 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_file-permissions_rule-fileperm
     mh_license: Apache-2.0
@@ -1780,8 +1822,9 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_file-permissions_rule-mkdir
     mh_license: Apache-2.0
@@ -1819,8 +1862,9 @@ rules:
     owasp:
     - A1:2017-Injection
     - A03:2021-Injection
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_filesystem_rule-decompression-bomb
     mh_license: Apache-2.0
@@ -1894,8 +1938,9 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_filesystem_rule-fileread
     mh_license: Apache-2.0
@@ -1951,8 +1996,9 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_filesystem_rule-httprootdir
     mh_license: Apache-2.0
@@ -1977,8 +2023,9 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_filesystem_rule-poorwritepermissions
     mh_license: Apache-2.0
@@ -2011,8 +2058,9 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_filesystem_rule-tempfiles
     mh_license: Apache-2.0
@@ -2061,8 +2109,9 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_filesystem_rule-ziparchive
     mh_license: Apache-2.0
@@ -2094,8 +2143,9 @@ rules:
     owasp:
     - A6:2017-Security Misconfiguration
     - A05:2021-Security Misconfiguration
-    security-severity: Low
+    security-severity: '2.0'
     category: security
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: go_http_rule-http-serve
     mh_license: Apache-2.0
@@ -2173,8 +2223,9 @@ rules:
     - A1:2017-Injection
     - A10:2021-Server-Side Request Forgery
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_injection_rule-ssrf
     mh_license: Apache-2.0
@@ -2204,8 +2255,9 @@ rules:
     - A7:2017-Cross-Site Scripting (XSS)
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_injection_rule-template-injection
     mh_license: Apache-2.0
@@ -2239,8 +2291,9 @@ rules:
     - A6:2017-Security Misconfiguration
     - A05:2021-Security Misconfiguration
     - A02:2025-Security Misconfiguration
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_leak_rule-pprof-endpoint
     mh_license: Apache-2.0
@@ -2266,8 +2319,9 @@ rules:
     owasp:
     - A1:2017-Injection
     - A03:2021-Injection
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: go_memory_rule-integer-overflow
     mh_license: Apache-2.0
@@ -2289,8 +2343,9 @@ rules:
     owasp:
     - A6:2017-Security Misconfiguration
     - A05:2021-Security Misconfiguration
-    security-severity: Info
+    security-severity: '0.0'
     category: security
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: go_memory_rule-memoryaliasing
     mh_license: Apache-2.0
@@ -2313,8 +2368,9 @@ rules:
     - A6:2017-Security Misconfiguration
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Low
+    security-severity: '2.0'
     category: security
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: go_network_rule-bind-to-all-interfaces
     mh_license: Apache-2.0
@@ -2353,8 +2409,9 @@ rules:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: High
+    security-severity: '8.0'
     category: security
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: go_sql_rule-concat-sqli
     mh_license: Apache-2.0
@@ -2384,8 +2441,9 @@ rules:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: High
+    security-severity: '8.0'
     category: security
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: go_subproc_rule-subproc
     mh_license: Apache-2.0
@@ -2406,8 +2464,9 @@ rules:
     owasp:
     - A6:2017-Security Misconfiguration
     - A04:2021-Insecure Design
-    security-severity: High
+    security-severity: '8.0'
     category: security
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: go_unsafe_rule-unsafe
     mh_license: Apache-2.0
@@ -2484,7 +2543,8 @@ rules:
     - A02:2025-Security Misconfiguration
     technology:
     - java
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: java_cookie_rule-CookieInsecure
     mh_license: MIT
@@ -2532,7 +2592,8 @@ rules:
     - A05:2025-Injection
     technology:
     - java
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: java_cookie_rule-HttpResponseSplitting
     mh_license: MIT
@@ -2576,7 +2637,8 @@ rules:
     - A05:2025-Injection
     technology:
     - java
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: java_cookie_rule-RequestParamToHeader
     mh_license: MIT
@@ -2615,7 +2677,8 @@ rules:
     - A02:2025-Security Misconfiguration
     technology:
     - java
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: java_cors_rule-PermissiveCORSInjection
     mh_license: MIT
@@ -2644,7 +2707,8 @@ rules:
     cwe: CWE-326
     technology:
     - java
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-BlowfishKeySize
     mh_license: MIT
@@ -2676,7 +2740,8 @@ rules:
     - A04:2025-Cryptographic Failures
     technology:
     - java
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-CipherDESInsecure
     mh_license: MIT
@@ -2708,7 +2773,8 @@ rules:
     - A04:2025-Cryptographic Failures
     technology:
     - java
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-CipherDESedeInsecure
     mh_license: MIT
@@ -2740,7 +2806,8 @@ rules:
     - A04:2025-Cryptographic Failures
     technology:
     - java
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-CipherECBMode
     mh_license: MIT
@@ -2772,7 +2839,8 @@ rules:
     - A04:2025-Cryptographic Failures
     technology:
     - java
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-CipherIntegrity
     mh_license: MIT
@@ -2804,7 +2872,8 @@ rules:
     - A04:2025-Cryptographic Failures
     technology:
     - java
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-CipherPaddingOracle
     mh_license: MIT
@@ -2858,7 +2927,8 @@ rules:
     - A04:2025-Cryptographic Failures
     technology:
     - java
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-CustomMessageDigest
     mh_license: MIT
@@ -2888,7 +2958,8 @@ rules:
     - A04:2025-Cryptographic Failures
     technology:
     - java
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-HazelcastSymmetricEncryption
     mh_license: MIT
@@ -2921,7 +2992,8 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-InsufficientKeySizeRsa
     mh_license: MIT
@@ -2942,7 +3014,8 @@ rules:
     - A04:2025-Cryptographic Failures
     technology:
     - java
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-NullCipher
     mh_license: MIT
@@ -2971,7 +3044,8 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-RsaNoPadding
     mh_license: MIT
@@ -3060,7 +3134,8 @@ rules:
     - A04:2025-Cryptographic Failures
     technology:
     - java
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-WeakMessageDigest
     mh_license: MIT
@@ -3078,7 +3153,8 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A07:2021-Identification and Authentication Failures
     - A07:2025-Authentication Failures
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-WeakTLSProtocol-DefaultHttpClient
     mh_license: MIT
@@ -3110,7 +3186,8 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: MEDIUM
+    security-severity: '5.5'
+    mh_upstream_security_severity: MEDIUM
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-WeakTLSProtocol-SSLContext
     mh_license: MIT
@@ -3249,7 +3326,8 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_crypto_rule-WeakTLSProtocolVersion
     mh_license: MIT
@@ -3266,7 +3344,8 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A07:2021-Identification and Authentication Failures
     - A07:2025-Authentication Failures
-    security-severity: MEDIUM
+    security-severity: '5.5'
+    mh_upstream_security_severity: MEDIUM
     mh_source: gitlab
     mh_upstream_id: java_endpoint_rule-HostnameVerifier
     mh_license: MIT
@@ -3321,7 +3400,8 @@ rules:
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
     shortDescription: URL redirection to untrusted site ('Open Redirect')
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: java_endpoint_rule-UnvalidatedRedirect
     mh_license: MIT
@@ -3338,7 +3418,8 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A07:2021-Identification and Authentication Failures
     - A07:2025-Authentication Failures
-    security-severity: MEDIUM
+    security-severity: '5.5'
+    mh_upstream_security_severity: MEDIUM
     mh_source: gitlab
     mh_upstream_id: java_endpoint_rule-X509TrustManager
     mh_license: MIT
@@ -3374,10 +3455,11 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Info
+    security-severity: '0.0'
     category: security
     technology:
     - java
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: java_file_rule-FileUploadFileName
     mh_license: MIT
@@ -3394,9 +3476,10 @@ rules:
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
     shortDescription: Improper limitation of a pathname to a restricted directory ('Path Traversal')
-    security-severity: Info
+    security-severity: '0.0'
     technology:
     - java
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: java_file_rule-FilenameUtils
     mh_license: MIT
@@ -3491,7 +3574,8 @@ rules:
     - A05:2025-Injection
     technology:
     - java
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: java_inject_rule-CommandInjection
     mh_license: MIT
@@ -3509,7 +3593,8 @@ rules:
     - A05:2025-Injection
     technology:
     - java
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: java_inject_rule-ELInjection
     mh_license: MIT
@@ -3637,7 +3722,8 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: HIGH
+    security-severity: '8.0'
+    mh_upstream_security_severity: HIGH
     mh_source: gitlab
     mh_upstream_id: java_inject_rule-FileDisclosureRequestDispatcher
     mh_license: MIT
@@ -3679,7 +3765,8 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: HIGH
+    security-severity: '8.0'
+    mh_upstream_security_severity: HIGH
     mh_source: gitlab
     mh_upstream_id: java_inject_rule-FileDisclosureSpringFramework
     mh_license: MIT
@@ -3709,7 +3796,8 @@ rules:
     - A05:2025-Injection
     technology:
     - java
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_inject_rule-HttpParameterPollution
     mh_license: MIT
@@ -3786,7 +3874,8 @@ rules:
     - A05:2025-Injection
     technology:
     - java
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_inject_rule-LDAPInjection
     mh_license: MIT
@@ -3930,7 +4019,8 @@ rules:
     - A05:2025-Injection
     technology:
     - java
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: java_inject_rule-OgnlInjection
     mh_license: MIT
@@ -4036,10 +4126,11 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
     technology:
     - java
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_inject_rule-SpotbugsPathTraversalAbsolute
     mh_license: MIT
@@ -4063,7 +4154,8 @@ rules:
     - A2:2017-Broken Authentication
     - A07:2021-Identification and Authentication Failures
     - A07:2025-Authentication Failures
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: java_ldap_rule-AnonymousLDAP
     mh_license: MIT
@@ -4117,7 +4209,8 @@ rules:
     - A07:2025-Authentication Failures
     technology:
     - java
-    security-severity: Critical
+    security-severity: '9.5'
+    mh_upstream_security_severity: Critical
     mh_source: gitlab
     mh_upstream_id: java_password_rule-ConstantDBPassword
     mh_license: MIT
@@ -4177,7 +4270,8 @@ rules:
     - A07:2025-Authentication Failures
     technology:
     - java
-    security-severity: Critical
+    security-severity: '9.5'
+    mh_upstream_security_severity: Critical
     mh_source: gitlab
     mh_upstream_id: java_password_rule-EmptyDBPassword
     mh_license: MIT
@@ -4240,7 +4334,8 @@ rules:
     - A07:2025-Authentication Failures
     technology:
     - java
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: java_password_rule-HardcodePassword
     mh_license: MIT
@@ -4300,7 +4395,8 @@ rules:
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
     confidence: HIGH
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_perm_rule-DangerousPermissions
     mh_license: MIT
@@ -4370,7 +4466,8 @@ rules:
     - A01:2025-Broken Access Control
     category: security
     confidence: HIGH
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_perm_rule-OverlyPermissiveFilePermissionInline
     mh_license: MIT
@@ -4402,7 +4499,8 @@ rules:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: java_script_rule-ScriptInjection
     mh_license: MIT
@@ -4430,7 +4528,8 @@ rules:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: java_script_rule-SpringSpelExpressionParser
     mh_license: MIT
@@ -4553,7 +4652,8 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A07:2021-Identification and Authentication Failures
     - A07:2025-Authentication Failures
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_smtp_rule-InsecureSmtp
     mh_license: MIT
@@ -4676,7 +4776,8 @@ rules:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: java_smtp_rule-SmtpClient
     mh_license: MIT
@@ -4746,7 +4847,8 @@ rules:
     - A1:2017-Injection
     - A10:2021-Server-Side Request Forgery
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_ssrf_rule-SSRF
     mh_license: MIT
@@ -4820,7 +4922,8 @@ rules:
     owasp:
     - A6:2017-Security Misconfiguration
     - A05:2021-Security Misconfiguration
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: java_strings_rule-BadHexConversion
     mh_license: MIT
@@ -4919,7 +5022,8 @@ rules:
     - A1:2017-Injection
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_strings_rule-FormatStringManipulation
     mh_license: MIT
@@ -4947,7 +5051,8 @@ rules:
     owasp:
     - A1:2017-Injection
     - A03:2021-Injection
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: java_strings_rule-ModifyAfterValidation
     mh_license: MIT
@@ -4977,7 +5082,8 @@ rules:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: java_strings_rule-NormalizeAfterValidation
     mh_license: MIT
@@ -5094,7 +5200,8 @@ rules:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: java_templateinjection_rule-TemplateInjection
     mh_license: MIT
@@ -5139,7 +5246,8 @@ rules:
     - A02:2025-Security Misconfiguration
     technology:
     - java
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: java_unsafe_rule-ExternalConfigControl
     mh_license: MIT
@@ -5155,7 +5263,8 @@ rules:
     - A2:2017-Broken Authentication
     - A07:2021-Identification and Authentication Failures
     - A07:2025-Authentication Failures
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_xml_rule-SAMLIgnoreComments
     mh_license: MIT
@@ -5173,7 +5282,8 @@ rules:
     - A8:2017-Insecure Deserialization
     - A08:2021-Software and Data Integrity Failures
     - A08:2025-Software or Data Integrity Failures
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: java_xml_rule-XmlDecoder
     mh_license: MIT
@@ -5328,7 +5438,8 @@ rules:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_xml_rule-XsltTransform
     mh_license: MIT
@@ -5354,7 +5465,8 @@ rules:
     - A7:2017-Cross-Site Scripting (XSS)
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_xss_rule-WicketXSS
     mh_license: MIT
@@ -5576,7 +5688,8 @@ rules:
     - A05:2025-Injection
     technology:
     - java
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_xss_rule-XSSReqParamToServletWriter
     mh_license: MIT
@@ -5659,7 +5772,8 @@ rules:
     - A4:2017-XML External Entities (XXE)
     - A05:2021-Security Misconfiguration
     - A02:2025-Security Misconfiguration
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: java_xxe_rule-XMLRdr
     mh_license: MIT
@@ -5679,9 +5793,10 @@ rules:
     - A05:2021-Security Misconfiguration
     cwe: CWE-125
     shortDescription: Out-of-bounds read
-    security-severity: MEDIUM
+    security-severity: '5.5'
     category: security
     source-rule-url: https://github.com/nodesecurity/eslint-plugin-security/blob/master/rules/detect-buffer-noassert.js
+    mh_upstream_security_severity: MEDIUM
     mh_source: gitlab
     mh_upstream_id: javascript_buf_rule-buffer-noassert-read
     mh_license: MIT
@@ -5701,9 +5816,10 @@ rules:
     - A05:2021-Security Misconfiguration
     cwe: CWE-787
     shortDescription: Out-of-bounds write
-    security-severity: MEDIUM
+    security-severity: '5.5'
     category: security
     source-rule-url: https://github.com/nodesecurity/eslint-plugin-security/blob/master/rules/detect-buffer-noassert.js
+    mh_upstream_security_severity: MEDIUM
     mh_source: gitlab
     mh_upstream_id: javascript_buf_rule-buffer-noassert-write
     mh_license: MIT
@@ -5773,7 +5889,8 @@ rules:
     - A9:2017-Using Components with Known Vulnerabilities
     - A06:2021-Vulnerable and Outdated Components
     source-rule-url: https://github.com/eslint-community/eslint-plugin-security/blob/main/rules/detect-new-buffer.js
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: javascript_buf_rule-detect-new-buffer
     mh_license: MIT
@@ -5824,7 +5941,8 @@ rules:
     owasp:
     - A1:2017-Injection
     - A03:2021-Injection
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: javascript_dos_rule-non-literal-regexp
     mh_license: MIT
@@ -5940,7 +6058,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     source-rule-url: https://github.com/nodesecurity/eslint-plugin-security/blob/master/rules/detect-eval-with-expression.js
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: javascript_eval_rule-eval-with-expression
     mh_license: MIT
@@ -6070,8 +6189,9 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: javascript_pathtraversal_rule-non-literal-fs-filename
     mh_license: MIT
@@ -6116,7 +6236,8 @@ rules:
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
     source-rule-url: https://github.com/nodesecurity/eslint-plugin-security/blob/master/rules/detect-pseudoRandomBytes.js
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: javascript_random_rule-pseudo-random-bytes
     mh_license: MIT
@@ -6210,7 +6331,8 @@ rules:
     - A05:2025-Injection
     shortDescription: Improper neutralization of input during web page generation ('Cross-site Scripting')
     category: security
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: javascript_react_rule-dangerouslysetinnerhtml
     mh_license: MIT
@@ -6245,7 +6367,8 @@ rules:
     shortDescription: Improper neutralization of directives in dynamically evaluated code ('Eval Injection')
     category: security
     source-rule-url: https://github.com/nodesecurity/eslint-plugin-security/blob/master/rules/detect-non-literal-require.js
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: javascript_require_rule-non-literal-require
     mh_license: MIT
@@ -6616,7 +6739,8 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: javascript_timing_rule-possible-timing-attacks
     mh_license: MIT
@@ -6656,7 +6780,8 @@ rules:
     - A05:2025-Injection
     category: security
     shortDescription: Improper neutralization of input during web page generation (XSS)
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: javascript_xss_rule-mustache-escape
     mh_license: MIT
@@ -6672,7 +6797,8 @@ rules:
     - A6:2017-Security Misconfiguration
     - A05:2021-Security Misconfiguration
     - A10:2025-Mishandling of Exceptional Conditions
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: python_assert_rule-assert-used
     mh_license: MIT
@@ -6770,7 +6896,8 @@ rules:
     - A01:2025-Broken Access Control
     shortDescription: Binding to an unrestricted IP address
     cwe: CWE-1327
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: python_bind-all-interfaces_rule-general-bindall-interfaces
     mh_license: MIT
@@ -6787,7 +6914,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-cipher-modes
     mh_license: MIT
@@ -6805,7 +6933,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto-cipher-blowfish
     mh_license: MIT
@@ -6935,7 +7064,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto-cipher-des
     mh_license: MIT
@@ -7065,7 +7195,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto-cipher-rc2
     mh_license: MIT
@@ -7195,7 +7326,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto-cipher-rc4
     mh_license: MIT
@@ -7325,7 +7457,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto-cipher-xor
     mh_license: MIT
@@ -7346,7 +7479,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Inadequate encryption strength
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto-encrypt-dsa-rsa
     mh_license: MIT
@@ -7396,7 +7530,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Inadequate encryption strength
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto-encrypt-ec
     mh_license: MIT
@@ -7484,7 +7619,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto-hash-md5
     mh_license: MIT
@@ -7566,7 +7702,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto-hash-sha1
     mh_license: MIT
@@ -7691,7 +7828,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto-hazmat-cipher-arc4
     mh_license: MIT
@@ -7709,7 +7847,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto-hazmat-cipher-blowfish
     mh_license: MIT
@@ -7726,8 +7865,9 @@ rules:
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
     shortDescription: Use of a Broken or Risky Cryptographic Algorithm
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto-hazmat-cipher-idea
     mh_license: MIT
@@ -7800,8 +7940,9 @@ rules:
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto.hazmat-hash-md5
     mh_license: MIT
@@ -7875,7 +8016,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-crypto.hazmat-hash-sha1
     mh_license: MIT
@@ -7950,7 +8092,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-hash-md2
     mh_license: MIT
@@ -7971,7 +8114,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-hash-md4
     mh_license: MIT
@@ -7992,7 +8136,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-hash-md5
     mh_license: MIT
@@ -8010,7 +8155,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-hash-sha1
     mh_license: MIT
@@ -8074,7 +8220,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of a broken or risky cryptographic algorithm
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-hashlib-new-insecure-functions
     mh_license: MIT
@@ -8110,7 +8257,8 @@ rules:
     - A03:2025-Software Supply Chain Failures
     category: security
     shortDescription: Use of unmaintained third party components
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_crypto_rule-import-pycrypto
     mh_license: MIT
@@ -8137,7 +8285,8 @@ rules:
     - A08:2025-Software or Data Integrity Failures
     category: security
     shortDescription: Deserialization of untrusted data
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_deserialization_rule-cpickle
     mh_license: MIT
@@ -8155,7 +8304,8 @@ rules:
     - A08:2025-Software or Data Integrity Failures
     category: security
     shortDescription: Deserialization of untrusted data
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_deserialization_rule-dill
     mh_license: MIT
@@ -8175,7 +8325,8 @@ rules:
     - A08:2025-Software or Data Integrity Failures
     category: security
     shortDescription: Deserialization of untrusted data
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_deserialization_rule-marshal
     mh_license: MIT
@@ -8197,7 +8348,8 @@ rules:
     - A08:2025-Software or Data Integrity Failures
     category: security
     shortDescription: Deserialization of untrusted data
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_deserialization_rule-pickle
     mh_license: MIT
@@ -8225,7 +8377,8 @@ rules:
     - A08:2025-Software or Data Integrity Failures
     category: security
     shortDescription: Deserialization of untrusted data
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_deserialization_rule-shelve
     mh_license: MIT
@@ -8265,7 +8418,8 @@ rules:
     - A08:2025-Software or Data Integrity Failures
     category: security
     shortDescription: Deserialization of untrusted data
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_deserialization_rule-yaml-load
     mh_license: MIT
@@ -8300,7 +8454,8 @@ rules:
     - A05:2025-Injection
     category: security
     shortDescription: Improper neutralization of special elements used in an SQL Command ('SQL Injection')
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_django_rule-django-extra-used
     mh_license: MIT
@@ -8317,7 +8472,8 @@ rules:
     - A05:2025-Injection
     category: security
     shortDescription: Improper neutralization of special elements used in an SQL Command ('SQL Injection')
-    security-severity: CRITICAL
+    security-severity: '9.5'
+    mh_upstream_security_severity: CRITICAL
     mh_source: gitlab
     mh_upstream_id: python_django_rule-django-rawsql-used
     mh_license: MIT
@@ -8424,7 +8580,8 @@ rules:
     - A05:2025-Injection
     category: security
     shortDescription: Improper neutralization of input during web page generation ('Cross-site Scripting')
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_escaping_rule-django
     mh_license: MIT
@@ -8459,7 +8616,8 @@ rules:
     - A05:2025-Injection
     category: security
     shortDescription: Improper encoding or escaping of output
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_escaping_rule-jinja2-autoescape-false
     mh_license: MIT
@@ -8486,7 +8644,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper neutralization of input during web page generation ('Cross-site Scripting')
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_escaping_rule-use-of-mako-templates
     mh_license: MIT
@@ -8521,7 +8680,8 @@ rules:
     - A05:2025-Injection
     category: security
     shortDescription: Improper neutralization of directives in dynamically evaluated code ('Eval Injection')
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_eval_rule-eval
     mh_license: MIT
@@ -8538,7 +8698,8 @@ rules:
     - A05:2025-Injection
     category: security
     shortDescription: Improper neutralization of directives in dynamically evaluated code ('Eval Injection')
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_exec_rule-exec-used
     mh_license: MIT
@@ -8557,7 +8718,8 @@ rules:
     - A1:2017-Injection
     - A03:2021-Injection
     shortDescription: Improper neutralization of wildcards or matching symbols
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_exec_rule-linux-command-wildcard-injection
     mh_license: MIT
@@ -8595,8 +8757,9 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper neutralization of special elements used in an OS Command ('OS Command Injection')
-    security-severity: High
+    security-severity: '8.0'
     category: security
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_exec_rule-os-path
     mh_license: MIT
@@ -8630,105 +8793,13 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper neutralization of special elements used in an OS Command ('OS Command Injection')
-    security-severity: High
+    security-severity: '8.0'
     category: security
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_exec_rule-os-popen2
     mh_license: MIT
   severity: INFO
-- id: mh.gitlab.python_exec_rule-start-process-partial-path
-  languages:
-  - python
-  message: 'Starting a process with a partial executable path
-
-    '
-  patterns:
-  - pattern-either:
-    - patterns:
-      - pattern: os.popen(...)
-      - pattern-not: os.popen("...", ...)
-    - patterns:
-      - pattern: os.system(...)
-      - pattern-not: os.system("...", ...)
-    - patterns:
-      - pattern: os.popen2(...)
-      - pattern-not: os.popen2("...", ...)
-    - patterns:
-      - pattern: os.popen3(...)
-      - pattern-not: os.popen3("...", ...)
-    - patterns:
-      - pattern: os.popen4(...)
-      - pattern-not: os.popen4("...", ...)
-    - patterns:
-      - pattern: popen2.popen2(...)
-      - pattern-not: popen2.popen2("...", ...)
-    - patterns:
-      - pattern: popen2.popen3(...)
-      - pattern-not: popen2.popen3("...", ...)
-    - patterns:
-      - pattern: popen2.popen4(...)
-      - pattern-not: popen2.popen4("...", ...)
-    - patterns:
-      - pattern: popen2.Popen3(...)
-      - pattern-not: popen2.Popen3("...", ...)
-    - patterns:
-      - pattern: popen2.Popen4(...)
-      - pattern-not: popen2.Popen4("...", ...)
-    - patterns:
-      - pattern: commands.getoutput(...)
-      - pattern-not: commands.getoutput("...", ...)
-    - patterns:
-      - pattern: commands.getstatusoutput(...)
-      - pattern-not: commands.getstatusoutput("...", ...)
-  metadata:
-    cwe: CWE-78
-    owasp:
-    - A1:2017-Injection
-    - A03:2021-Injection
-    - A05:2025-Injection
-    shortDescription: Improper neutralization of special elements used in an OS Command ('OS Command Injection')
-    security-severity: High
-    category: security
-    mh_source: gitlab
-    mh_upstream_id: python_exec_rule-start-process-partial-path
-    mh_license: MIT
-  severity: INFO
-- id: mh.gitlab.python_exec_rule-start-process-path
-  languages:
-  - python
-  message: 'Starting a process with a partial executable path
-
-    '
-  patterns:
-  - pattern-either:
-    - pattern: subprocess.Popen($BIN, shell=False)
-    - pattern: subprocess.Popen([$BIN, ...], shell=False)
-    - pattern: os.system($BIN, shell=False)
-    - pattern: os.system([$BIN, ...], shell=False)
-    - pattern: popen2.Popen3($BIN, shell=False)
-    - pattern: popen2.Popen3([$BIN, ...], shell=False)
-    - pattern: popen2.Popen4($BIN, shell=False)
-    - pattern: popen2.Popen4([$BIN, ...], shell=False)
-    - pattern: commands.getoutput($BIN, shell=False)
-    - pattern: commands.getoutput([$BIN, ...], shell=False)
-    - pattern: commands.getstatusoutput($BIN, shell=False)
-    - pattern: commands.getstatusoutput([$BIN, ...], shell=False)
-  - metavariable-regex:
-      metavariable: $BIN
-      regex: ^['"][^/\.][^:].*['"]
-  metadata:
-    cwe: CWE-426
-    owasp:
-    - A1:2017-Injection
-    - A08:2021-Software and Data Integrity Failures
-    - A08:2025-Software or Data Integrity Failures
-    shortDescription: Untrusted search path
-    security-severity: High
-    category: security
-    mh_source: gitlab
-    mh_upstream_id: python_exec_rule-start-process-path
-    mh_license: MIT
-  severity: ERROR
 - id: mh.gitlab.python_exec_rule-start-process-with-no-shell
   languages:
   - python
@@ -8770,8 +8841,9 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper neutralization of special elements used in an OS Command ('OS Command Injection')
-    security-severity: High
+    security-severity: '8.0'
     category: security
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_exec_rule-start-process-with-no-shell
     mh_license: MIT
@@ -8823,42 +8895,11 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper neutralization of special elements used in an OS Command ('OS Command Injection')
-    security-severity: High
+    security-severity: '8.0'
     category: security
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_exec_rule-subprocess-call
-    mh_license: MIT
-  severity: WARNING
-- id: mh.gitlab.python_exec_rule-subprocess-call-array
-  languages:
-  - python
-  message: 'subprocess call - check for execution of untrusted input
-
-    '
-  patterns:
-  - pattern: 'subprocess.$FUNC([..., $ARG, ...])
-
-      '
-  - metavariable-pattern:
-      metavariable: $ARG
-      patterns:
-      - pattern-not: '"..."
-
-          '
-      - pattern-not: '''...''
-
-          '
-  metadata:
-    cwe: CWE-78
-    owasp:
-    - A1:2017-Injection
-    - A03:2021-Injection
-    - A05:2025-Injection
-    shortDescription: Improper neutralization of special elements used in an OS Command ('OS Command Injection')
-    security-severity: High
-    category: security
-    mh_source: gitlab
-    mh_upstream_id: python_exec_rule-subprocess-call-array
     mh_license: MIT
   severity: WARNING
 - id: mh.gitlab.python_exec_rule-subprocess-popen-shell-true
@@ -8908,8 +8949,9 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper neutralization of special elements used in an OS Command ('OS Command Injection')
-    security-severity: High
+    security-severity: '8.0'
     category: security
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_exec_rule-subprocess-popen-shell-true
     mh_license: MIT
@@ -8930,8 +8972,9 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper neutralization of special elements used in an OS Command ('OS Command Injection')
-    security-severity: High
+    security-severity: '8.0'
     category: security
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_exec_rule-subprocess-shell-TRUE
     mh_license: MIT
@@ -8979,7 +9022,8 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_file-permissions_rule-general-bad-permission
     mh_license: MIT
@@ -9000,8 +9044,9 @@ rules:
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
     shortDescription: Improper limitation of a pathname to a restricted directory ('Path Traversal')
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_files_rule-tarfile-unsafe-members
     mh_license: MIT
@@ -9056,7 +9101,8 @@ rules:
     - A05:2021-Security Misconfiguration
     - A02:2025-Security Misconfiguration
     shortDescription: Active debug code
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_flask_rule-app-debug
     mh_license: MIT
@@ -9080,7 +9126,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Cleartext transmission of sensitive information
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_ftp_rule-ftplib
     mh_license: MIT
@@ -9124,7 +9171,8 @@ rules:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_log_rule-logging-config-insecure-listen
     mh_license: MIT
@@ -9182,7 +9230,8 @@ rules:
     - A04:2025-Cryptographic Failures
     category: security
     shortDescription: Use of cryptographically weak pseudo-random number generator (PRNG)
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: python_random_rule-random
     mh_license: MIT
@@ -9256,7 +9305,8 @@ rules:
     owasp:
     - A6:2017-Security Misconfiguration
     - A05:2021-Security Misconfiguration
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_requests_rule-request-without-timeout
     mh_license: MIT
@@ -9273,7 +9323,8 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_snmp_rule-insecure-snmp-version
     mh_license: MIT
@@ -9293,7 +9344,8 @@ rules:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_snmp_rule-snmp-weak-cryptography
     mh_license: MIT
@@ -9403,7 +9455,8 @@ rules:
     - A05:2025-Injection
     category: security
     shortDescription: Improper neutralization of special elements used in an SQL Command ('SQL Injection')
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: python_sql_rule-hardcoded-sql-expression
     mh_license: MIT
@@ -9455,7 +9508,8 @@ rules:
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
     shortDescription: Key exchange without entity authentication
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_ssh_rule-ssh-nohost-key-verification
     mh_license: MIT
@@ -9523,7 +9577,8 @@ rules:
     - A07:2025-Authentication Failures
     category: security
     shortDescription: Improper certificate validation
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_ssl_rule-req-no-certvalid
     mh_license: MIT
@@ -9549,8 +9604,9 @@ rules:
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
     shortDescription: Inadequate encryption strength
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_ssl_rule-ssl-no-version
     mh_license: MIT
@@ -9568,8 +9624,9 @@ rules:
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
     shortDescription: Inadequate Encryption Strength
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_ssl_rule-ssl-with-bad-version
     mh_license: MIT
@@ -9597,7 +9654,8 @@ rules:
     - A07:2025-Authentication Failures
     category: security
     shortDescription: Improper certificate validation
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_ssl_rule-unverified-context
     mh_license: MIT
@@ -9615,7 +9673,8 @@ rules:
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
     shortDescription: Cleartext transmission of sensitive information
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_telnet_rule-import-telnib
     mh_license: MIT
@@ -9634,7 +9693,8 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_tmpdir_rule-hardcodedtmp
     mh_license: MIT
@@ -9652,7 +9712,8 @@ rules:
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
     shortDescription: Insecure temporary file
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_tmpdir_rule-mktemp-q
     mh_license: MIT
@@ -9737,8 +9798,9 @@ rules:
     - A10:2021-Server-Side Request Forgery
     - A01:2025-Broken Access Control
     shortDescription: Server-side request forgery (SSRF)
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_urlopen_rule-urllib-urlopen
     mh_license: MIT
@@ -9755,7 +9817,8 @@ rules:
     - A02:2025-Security Misconfiguration
     category: security
     shortDescription: Improper restriction of XML external entity reference
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_xml_rule-celement
     mh_license: MIT
@@ -9779,7 +9842,8 @@ rules:
     - A02:2025-Security Misconfiguration
     category: security
     shortDescription: Improper restriction of XML external entity reference
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_xml_rule-element
     mh_license: MIT
@@ -9803,7 +9867,8 @@ rules:
     - A02:2025-Security Misconfiguration
     category: security
     shortDescription: Improper restriction of XML external entity reference
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_xml_rule-etree
     mh_license: MIT
@@ -9829,7 +9894,8 @@ rules:
     - A02:2025-Security Misconfiguration
     category: security
     shortDescription: Improper restriction of XML external entity reference
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_xml_rule-expatbuilder
     mh_license: MIT
@@ -9851,7 +9917,8 @@ rules:
     - A02:2025-Security Misconfiguration
     category: security
     shortDescription: Improper restriction of XML external entity reference
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_xml_rule-expatreader
     mh_license: MIT
@@ -9875,7 +9942,8 @@ rules:
     - A02:2025-Security Misconfiguration
     category: security
     shortDescription: Improper restriction of XML external entity reference
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_xml_rule-minidom
     mh_license: MIT
@@ -9897,7 +9965,8 @@ rules:
     - A02:2025-Security Misconfiguration
     category: security
     shortDescription: Improper restriction of XML external entity reference
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_xml_rule-pulldom
     mh_license: MIT
@@ -9919,7 +9988,8 @@ rules:
     - A02:2025-Security Misconfiguration
     category: security
     shortDescription: Improper restriction of XML external entity reference
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: python_xml_rule-sax
     mh_license: MIT
@@ -9952,7 +10022,8 @@ rules:
     shortDescription: Sensitive Cookie Without 'HttpOnly' Flag
     technology:
     - scala
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: scala_cookie_rule-CookieHTTPOnly
     mh_license: MIT
@@ -9992,7 +10063,8 @@ rules:
     shortDescription: Sensitive Cookie in HTTPS Session Without 'Secure' Attribute
     technology:
     - scala
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: scala_cookie_rule-CookieInsecure
     mh_license: MIT
@@ -10036,7 +10108,8 @@ rules:
     shortDescription: Information Exposure Through Persistent Cookies
     technology:
     - scala
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_cookie_rule-CookiePersistent
     mh_license: MIT
@@ -10068,7 +10141,8 @@ rules:
     shortDescription: Sensitive Cookie in HTTPS Session Without 'Secure' Attribute
     technology:
     - scala
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_cookie_rule-CookieUsage
     mh_license: MIT
@@ -10106,7 +10180,8 @@ rules:
     shortDescription: Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Response Splitting')
     technology:
     - scala
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: scala_cookie_rule-HttpResponseSplitting
     mh_license: MIT
@@ -10149,7 +10224,8 @@ rules:
     shortDescription: Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Response Splitting')
     technology:
     - scala
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_cookie_rule-RequestParamToCookie
     mh_license: MIT
@@ -10198,7 +10274,8 @@ rules:
     shortDescription: Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Response Splitting')
     technology:
     - scala
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: scala_cookie_rule-RequestParamToHeader
     mh_license: MIT
@@ -10251,7 +10328,8 @@ rules:
     - A04:2021-Insecure Design
     - A06:2025-Insecure Design
     shortDescription: Trust Boundary Violation
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_cookie_rule-TrustBoundaryViolation
     mh_license: MIT
@@ -10300,7 +10378,8 @@ rules:
     shortDescription: Permissive Cross-domain Policy with Untrusted Domains
     technology:
     - scala
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_cors_rule-PermissiveCORS
     mh_license: MIT
@@ -10365,7 +10444,8 @@ rules:
     shortDescription: Permissive Cross-domain Policy with Untrusted Domains
     technology:
     - java
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: scala_cors_rule-PermissiveCORSInjection
     mh_license: MIT
@@ -10399,7 +10479,8 @@ rules:
     shortDescription: Inadequate Encryption Strength
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-BlowfishKeySize
     mh_license: MIT
@@ -10433,7 +10514,8 @@ rules:
     shortDescription: Inadequate Encryption Strength
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-CipherDESInsecure
     mh_license: MIT
@@ -10461,7 +10543,8 @@ rules:
     shortDescription: Inadequate Encryption Strength
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-CipherDESedeInsecure
     mh_license: MIT
@@ -10493,7 +10576,8 @@ rules:
     shortDescription: Inadequate Encryption Strength
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-CipherECBMode
     mh_license: MIT
@@ -10520,7 +10604,8 @@ rules:
     shortDescription: Missing Support for Integrity Check
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-CipherIntegrity
     mh_license: MIT
@@ -10558,7 +10643,8 @@ rules:
     shortDescription: Use of a broken or risky cryptographic algorithm
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-CipherPaddingOracle
     mh_license: MIT
@@ -10588,7 +10674,8 @@ rules:
     shortDescription: Use of a Broken or Risky Cryptographic Algorithm
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-CustomMessageDigest
     mh_license: MIT
@@ -10614,7 +10701,8 @@ rules:
     - A04:2025-Cryptographic Failures
     technology:
     - scala
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-DefaultHTTPClient
     mh_license: MIT
@@ -10638,7 +10726,8 @@ rules:
     shortDescription: Inadequate Encryption Strength
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-HazelcastSymmetricEncryption
     mh_license: MIT
@@ -10661,7 +10750,8 @@ rules:
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
     shortDescription: Inadequate Encryption Strength
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-InsufficientKeySizeRsa
     mh_license: MIT
@@ -10703,7 +10793,8 @@ rules:
     shortDescription: Use of a Broken or Risky Cryptographic Algorithm
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-NullCipher
     mh_license: MIT
@@ -10720,12 +10811,13 @@ rules:
   metadata:
     cwe: CWE-780
     shortDescription: Use of RSA Algorithm without OAEP
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
     owasp:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-RsaNoPadding
     mh_license: MIT
@@ -10753,7 +10845,8 @@ rules:
     shortDescription: Use of a broken or risky cryptographic algorithm (SHA1/MD5)
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-WeakMessageDigest
     mh_license: MIT
@@ -10783,7 +10876,8 @@ rules:
     - A07:2021-Identification and Authentication Failures
     - A07:2025-Authentication Failures
     shortDescription: Improper Certificate Validation
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_crypto_rule-WeakTLSProtocol
     mh_license: MIT
@@ -10828,7 +10922,8 @@ rules:
     shortDescription: Use of less trusted source
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_endpoint_rule-JaxRsEndpoint
     mh_license: MIT
@@ -10870,7 +10965,8 @@ rules:
     shortDescription: Use of less trusted source
     technology:
     - scala
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_endpoint_rule-JaxWsEndpoint
     mh_license: MIT
@@ -10901,12 +10997,13 @@ rules:
   metadata:
     cwe: CWE-319
     shortDescription: Cleartext transmission of sensitive information
-    security-severity: Info
+    security-severity: '0.0'
     owasp:
     - A3:2017-Sensitive Data Exposure
     - A02:2021-Cryptographic Failures
     - A04:2025-Cryptographic Failures
     category: security
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_endpoint_rule-UnencryptedSocket
     mh_license: MIT
@@ -10930,7 +11027,8 @@ rules:
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
     shortDescription: URL Redirection to Untrusted Site ('Open Redirect')
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_endpoint_rule-UnvalidatedRedirect
     mh_license: MIT
@@ -10967,7 +11065,8 @@ rules:
     - A07:2021-Identification and Authentication Failures
     - A07:2025-Authentication Failures
     shortDescription: Improper Certificate Validation
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_endpoint_rule-WeakHostNameVerification
     mh_license: MIT
@@ -11010,7 +11109,8 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_file_rule-FileUploadFileName
     mh_license: MIT
@@ -11038,7 +11138,8 @@ rules:
     - A5:2017-Broken Access Control
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_file_rule-FilenameUtils
     mh_license: MIT
@@ -11080,7 +11181,8 @@ rules:
     - A04:2021-Insecure Design
     - A05:2025-Injection
     shortDescription: Improper use of validation framework
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_form_rule-FormValidate
     mh_license: MIT
@@ -11109,7 +11211,8 @@ rules:
     shortDescription: Improper Neutralization of Special Elements in Data Query Logic
     technology:
     - scala
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-AWSQueryInjection
     mh_license: MIT
@@ -11155,7 +11258,8 @@ rules:
     shortDescription: External Control of System or Configuration Setting
     technology:
     - scala
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-BeanPropertyInjection
     mh_license: MIT
@@ -11206,7 +11310,8 @@ rules:
     shortDescription: Improper Neutralization of CRLF Sequences ('CRLF Injection')
     technology:
     - scala
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-CLRFInjectionLogs
     mh_license: MIT
@@ -11267,7 +11372,8 @@ rules:
     shortDescription: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
     technology:
     - scala
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-CommandInjection
     mh_license: MIT
@@ -11344,7 +11450,8 @@ rules:
     shortDescription: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
     technology:
     - scala
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-CustomInjection
     mh_license: MIT
@@ -11400,7 +11507,8 @@ rules:
     shortDescription: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
     technology:
     - scala
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-CustomInjectionSQLString
     mh_license: MIT
@@ -11451,7 +11559,8 @@ rules:
     shortDescription: Improper Control of Generation of Code ('Code Injection')
     technology:
     - scala
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-ELInjection
     mh_license: MIT
@@ -11486,7 +11595,8 @@ rules:
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
     shortDescription: Files or Directories Accessible to External Parties
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-FileDisclosure
     mh_license: MIT
@@ -11565,7 +11675,8 @@ rules:
     shortDescription: Improper Neutralization of Argument Delimiters in a Command ('Argument Injection')
     technology:
     - scala
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-HttpParameterPollution
     mh_license: MIT
@@ -11602,7 +11713,8 @@ rules:
     shortDescription: Improper Neutralization of Special Elements used in an LDAP Query ('LDAP Injection')
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-LDAPInjection
     mh_license: MIT
@@ -11691,7 +11803,8 @@ rules:
     - A05:2025-Injection
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-OgnlInjection
     mh_license: MIT
@@ -11717,7 +11830,8 @@ rules:
     shortDescription: Improper limitation of a pathname to a restricted directory ('Path Traversal')
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-PathTraversalIn
     mh_license: MIT
@@ -11796,7 +11910,8 @@ rules:
     shortDescription: Improper limitation of a pathname to a restricted directory ('Path Traversal')
     technology:
     - scala
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-PathTraversalOut
     mh_license: MIT
@@ -11840,7 +11955,8 @@ rules:
     shortDescription: Improper limitation of a pathname to a restricted directory ('Path Traversal')
     technology:
     - scala
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-SpotbugsPathTraversalAbsolute
     mh_license: MIT
@@ -11899,7 +12015,8 @@ rules:
     shortDescription: Improper limitation of a pathname to a restricted directory ('Path Traversal')
     technology:
     - scala
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-SpotbugsPathTraversalRelative
     mh_license: MIT
@@ -11962,7 +12079,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_inject_rule-SqlInjection
     mh_license: MIT
@@ -12158,7 +12276,8 @@ rules:
     - A07:2021-Identification and Authentication Failures
     - A07:2025-Authentication Failures
     shortDescription: Missing authentication for critical function
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_ldap_rule-AnonymousLDAP
     mh_license: MIT
@@ -12188,7 +12307,8 @@ rules:
     - A08:2021-Software and Data Integrity Failures
     - A08:2025-Software or Data Integrity Failures
     shortDescription: Deserialization of untrusted data
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: scala_ldap_rule-EntryPoisoning
     mh_license: MIT
@@ -12241,7 +12361,8 @@ rules:
     shortDescription: Use of Hard-coded Password
     technology:
     - scala
-    security-severity: Critical
+    security-severity: '9.5'
+    mh_upstream_security_severity: Critical
     mh_source: gitlab
     mh_upstream_id: scala_password_rule-ConstantDBPassword
     mh_license: MIT
@@ -12301,7 +12422,8 @@ rules:
     shortDescription: Use of Hard-coded Password
     technology:
     - scala
-    security-severity: Critical
+    security-severity: '9.5'
+    mh_upstream_security_severity: Critical
     mh_source: gitlab
     mh_upstream_id: scala_password_rule-EmptyDBPassword
     mh_license: MIT
@@ -12353,7 +12475,8 @@ rules:
     shortDescription: Use of Hard-coded Password
     technology:
     - scala
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: scala_password_rule-HardcodePassword
     mh_license: MIT
@@ -12403,7 +12526,8 @@ rules:
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
     confidence: HIGH
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_perm_rule-DangerousPermissions
     mh_license: MIT
@@ -12423,7 +12547,8 @@ rules:
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
     shortDescription: Incorrect Permission Assignment for Critical Resource
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: scala_perm_rule-OverlyPermissiveFilePermissionInline
     mh_license: MIT
@@ -12456,7 +12581,8 @@ rules:
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
     shortDescription: Incorrect Permission Assignment for Critical Resource
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_perm_rule-OverlyPermissiveFilePermissionObj
     mh_license: MIT
@@ -12488,12 +12614,13 @@ rules:
   metadata:
     cwe: CWE-94
     shortDescription: Improper Control of Generation of Code ('Code Injection')
-    security-severity: Info
+    security-severity: '0.0'
     category: security
     owasp:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_script_rule-ScriptInjection
     mh_license: MIT
@@ -12516,12 +12643,13 @@ rules:
   metadata:
     cwe: CWE-94
     shortDescription: Improper Control of Generation of Code ('Code Injection')
-    security-severity: Medium
+    security-severity: '5.5'
     category: security
     owasp:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_script_rule-SpelView
     mh_license: MIT
@@ -12538,12 +12666,13 @@ rules:
   metadata:
     cwe: CWE-297
     shortDescription: Improper Validation of Certificate with Host Mismatch
-    security-severity: High
+    security-severity: '8.0'
     category: security
     owasp:
     - A3:2017-Sensitive Data Exposure
     - A07:2021-Identification and Authentication Failures
     - A07:2025-Authentication Failures
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: scala_smtp_rule-InsecureSmtp
     mh_license: MIT
@@ -12606,7 +12735,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper Neutralization of Special Elements used in a Command
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: scala_smtp_rule-SmtpClient
     mh_license: MIT
@@ -12662,7 +12792,8 @@ rules:
     - A10:2021-Server-Side Request Forgery
     - A01:2025-Broken Access Control
     shortDescription: Server-Side Request Forgery (SSRF)
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_ssrf_rule-PlaySSRF
     mh_license: MIT
@@ -12701,7 +12832,8 @@ rules:
     - A10:2021-Server-Side Request Forgery
     - A01:2025-Broken Access Control
     shortDescription: Server-Side Request Forgery (SSRF)
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: scala_ssrf_rule-SSRF
     mh_license: MIT
@@ -12772,7 +12904,8 @@ rules:
     confidence: HIGH
     cwe: CWE-704
     shortDescription: Incorrect Type Conversion or Cast
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_strings_rule-BadHexConversion
     mh_license: MIT
@@ -12802,7 +12935,8 @@ rules:
     - A01:2021-Broken Access Control
     - A01:2025-Broken Access Control
     shortDescription: Use of Externally-Controlled Format String
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_strings_rule-FormatStringManipulation
     mh_license: MIT
@@ -12860,7 +12994,8 @@ rules:
     confidence: HIGH
     cwe: CWE-176
     shortDescription: Improper Handling of Unicode Encoding
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_strings_rule-ImproperUnicode
     mh_license: MIT
@@ -12907,7 +13042,8 @@ rules:
     category: security
     cwe: CWE-182
     confidence: HIGH
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_strings_rule-ModifyAfterValidation
     mh_license: MIT
@@ -12938,7 +13074,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     confidence: HIGH
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_strings_rule-NormalizeAfterValidation
     mh_license: MIT
@@ -12958,7 +13095,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper Control of Generation of Code ('Code Injection')
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_templateinjection_rule-TemplateInjection
     mh_license: MIT
@@ -13015,7 +13153,8 @@ rules:
     shortDescription: External Control of System or Configuration Setting
     technology:
     - scala
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: scala_unsafe_rule-ExternalConfigControl
     mh_license: MIT
@@ -13052,54 +13191,13 @@ rules:
     shortDescription: Information Exposure Through an Error Message
     technology:
     - scala
-    security-severity: Low
+    security-severity: '2.0'
+    mh_upstream_security_severity: Low
     mh_source: gitlab
     mh_upstream_id: scala_unsafe_rule-InformationExposure
     mh_license: MIT
   patterns:
   - pattern: $E.printStackTrace(...)
-  severity: WARNING
-- id: mh.gitlab.scala_unsafe_rule-InformationExposureVariant2
-  languages:
-  - scala
-  message: 'The sensitive information may be valuable information on its own (such as a password), or it
-
-    may be useful for launching other, more deadly attacks. If an attack fails, an attacker may use
-
-    error information provided by the server to launch another more focused attack. For example, an
-
-    attempt to exploit a path traversal weakness (CWE-22) might yield the full pathname of the
-
-    installed application.
-
-    '
-  metadata:
-    category: security
-    cwe: CWE-209
-    owasp:
-    - A6:2017-Security Misconfiguration
-    - A04:2021-Insecure Design
-    - A10:2025-Mishandling of Exceptional Conditions
-    shortDescription: Information Exposure Through an Error Message
-    technology:
-    - scala
-    security-severity: Info
-    mh_source: gitlab
-    mh_upstream_id: scala_unsafe_rule-InformationExposureVariant2
-    mh_license: MIT
-  patterns:
-  - pattern-either:
-    - pattern: $E.printStackTrace
-    - patterns:
-      - pattern: $E.printStackTrace($OUT)
-      - metavariable-pattern:
-          metavariable: $OUT
-          pattern-either:
-          - pattern: '($PS: java.io.PrintStream)'
-          - pattern: '($PW: java.io.PrintWriter)'
-          - pattern: java.lang.System.out
-          - pattern: '($O: java.io.OutputStream)'
-          - pattern: '($SOS: javax.servlet.ServletOutputStream)'
   severity: WARNING
 - id: mh.gitlab.scala_unsafe_rule-SensitiveDataExposure
   languages:
@@ -13125,7 +13223,8 @@ rules:
     technology:
     - scala
     - play
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_unsafe_rule-SensitiveDataExposure
     mh_license: MIT
@@ -13154,7 +13253,8 @@ rules:
     - A08:2021-Software and Data Integrity Failures
     - A08:2025-Software or Data Integrity Failures
     shortDescription: Deserialization of Untrusted Data
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_xml_rule-ApacheXmlRpc
     mh_license: MIT
@@ -13189,7 +13289,8 @@ rules:
     - A2:2017-Broken Authentication
     - A07:2021-Identification and Authentication Failures
     - A07:2025-Authentication Failures
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_xml_rule-SAMLIgnoreComments
     mh_license: MIT
@@ -13209,7 +13310,8 @@ rules:
     - A08:2021-Software and Data Integrity Failures
     - A08:2025-Software or Data Integrity Failures
     shortDescription: Deserialization of Untrusted Data
-    security-severity: High
+    security-severity: '8.0'
+    mh_upstream_security_severity: High
     mh_source: gitlab
     mh_upstream_id: scala_xml_rule-XmlDecoder
     mh_license: MIT
@@ -13265,7 +13367,8 @@ rules:
     - A1:2017-Injection
     - A03:2021-Injection
     - A05:2025-Injection
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_xml_rule-XsltTransform
     mh_license: MIT
@@ -13288,7 +13391,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper neutralization of data within XPath expressions ('XPath Injection')
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_xpathi_rule-XpathInjection
     mh_license: MIT
@@ -13324,7 +13428,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_xss_rule-MVCApi
     mh_license: MIT
@@ -13352,7 +13457,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_xss_rule-RequestWrapper
     mh_license: MIT
@@ -13380,7 +13486,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_xss_rule-WicketXSS
     mh_license: MIT
@@ -13403,7 +13510,8 @@ rules:
     shortDescription: Improper Neutralization of Input During Web Page Generation
     technology:
     - scala
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_xss_rule-XSSReqParamToServletWriter
     mh_license: MIT
@@ -13449,7 +13557,8 @@ rules:
     - A03:2021-Injection
     - A05:2025-Injection
     shortDescription: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_xss_rule-XSSServlet
     mh_license: MIT
@@ -13493,7 +13602,8 @@ rules:
     - A05:2021-Security Misconfiguration
     - A02:2025-Security Misconfiguration
     shortDescription: Improper Restriction of XML External Entity Reference ('XXE')
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_xxe_rule-Document
     mh_license: MIT
@@ -13531,7 +13641,8 @@ rules:
     - A05:2021-Security Misconfiguration
     - A02:2025-Security Misconfiguration
     shortDescription: Improper Restriction of XML External Entity Reference ('XXE')
-    security-severity: Info
+    security-severity: '0.0'
+    mh_upstream_security_severity: Info
     mh_source: gitlab
     mh_upstream_id: scala_xxe_rule-SaxParserXXE
     mh_license: MIT
@@ -13574,7 +13685,8 @@ rules:
     - A05:2021-Security Misconfiguration
     - A02:2025-Security Misconfiguration
     shortDescription: Improper Restriction of XML External Entity Reference ('XXE')
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_xxe_rule-Trans
     mh_license: MIT
@@ -13612,7 +13724,8 @@ rules:
     - A05:2021-Security Misconfiguration
     - A02:2025-Security Misconfiguration
     shortDescription: Improper Restriction of XML External Entity Reference ('XXE')
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_xxe_rule-XMLRdr
     mh_license: MIT
@@ -13645,7 +13758,8 @@ rules:
     - A05:2021-Security Misconfiguration
     - A02:2025-Security Misconfiguration
     shortDescription: Improper Restriction of XML External Entity Reference ('XXE')
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_xxe_rule-XMLStreamRdr
     mh_license: MIT
@@ -13683,7 +13797,8 @@ rules:
     - A05:2021-Security Misconfiguration
     - A02:2025-Security Misconfiguration
     shortDescription: Improper Restriction of XML External Entity Reference ('XXE')
-    security-severity: Medium
+    security-severity: '5.5'
+    mh_upstream_security_severity: Medium
     mh_source: gitlab
     mh_upstream_id: scala_xxe_rule-XPathXXE
     mh_license: MIT

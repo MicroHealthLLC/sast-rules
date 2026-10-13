@@ -7,5 +7,12 @@
 #   mh.gitlab.some-rule-id: "what was assessed and why it does not apply"
 # severity:
 #   mh.opengrep.some.rule: {to: WARNING, reason: "why"}
-disabled: {}
+disabled:
+  mh.opengrep.generic.secrets.security.detected-aws-account-id.detected-aws-account-id: >-
+    An AWS account ID is an identifier, not a credential (AWS: "account IDs
+    are not considered secret"); access needs credentials this rule never
+    sees. It fired on every pinned MicroHealth FIPS image reference
+    (295669632222.dkr.ecr...), 87 times in Tueri Core alone, burying real
+    findings. Secret keys are still caught by the AWS access-key and secret
+    rules in both upstream sources and by Trivy's secret scanner.
 severity: {}

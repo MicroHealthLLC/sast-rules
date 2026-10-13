@@ -1,2 +1,6 @@
+# The vendored upstream rules and the built bundles are rule DEFINITIONS:
+# their patterns are what the rules look for, not code that does it.
+upstream/
+dist/
 # Rule-test fixture: deliberate md5/blake2b calls that `opengrep scan --test` checks the FIPS hash rule against; never executed.
 rules/microhealth/python/fips-non-approved-hash.py
