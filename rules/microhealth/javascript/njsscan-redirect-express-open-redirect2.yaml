@@ -7,6 +7,11 @@
 # function of two or more parameters, so `parse(text, opts)` was "a handler".
 # Every handler context now also requires the parameters to be named as an
 # HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Change (TueriDev): a location written as a literal same-origin path -- a
+# string or template that starts with "/" and a fixed character that is not
+# "/", "\" or an interpolation (`/download/${id}`) -- cannot leave the site,
+# whatever follows, so it is not a sink. "//host", "/\host" and `/${x}`
+# (x may begin with "/") still are.
 rules:
 - id: javascript.njsscan.redirect.express-open-redirect2
   mode: taint
@@ -31,6 +36,9 @@ rules:
           ...
       - pattern: |
           $RES.$METHOD("=~/location/i", $VAR)
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: '^(?!(?:`/[^/\\`$]|"/[^/\\"]|''/[^/\\'']))'
       - metavariable-regex:
           metavariable: $METHOD
           regex: (header|set|append|setHeader)
@@ -57,6 +65,9 @@ rules:
                       location: $V,
                       ...
                   })
+      - metavariable-regex:
+          metavariable: $V
+          regex: '^(?!(?:`/[^/\\`$]|"/[^/\\"]|''/[^/\\'']))'
       - focus-metavariable: $V
     - patterns:
       - pattern-not: |
@@ -66,6 +77,9 @@ rules:
           ...
       - pattern: |
           $RES.location($VAR)
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: '^(?!(?:`/[^/\\`$]|"/[^/\\"]|''/[^/\\'']))'
   pattern-sanitizers:
   - pattern-either:
     - patterns:

@@ -25,3 +25,32 @@ function present(token, apiKey) {
     return true;
   }
 }
+
+let activeIndexToken = 0;
+function onBatch(token) {
+  // ok: javascript.njsscan.crypto.node-timing-attack
+  if (token !== activeIndexToken) {
+    return;
+  }
+}
+
+function signUp(password, confirmPassword) {
+  // ok: javascript.njsscan.crypto.node-timing-attack
+  if (password !== confirmPassword) {
+    return false;
+  }
+}
+
+function check(token, providedToken) {
+  // ruleid: javascript.njsscan.crypto.node-timing-attack
+  if (token === providedToken) {
+    return true;
+  }
+}
+
+function ask(password, again) {
+  // ok: javascript.njsscan.crypto.node-timing-attack
+  if (again !== password) {
+    return false;
+  }
+}

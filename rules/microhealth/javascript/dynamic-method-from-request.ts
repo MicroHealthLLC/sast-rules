@@ -29,3 +29,11 @@ export function notify(toast: Record<string, (t: string) => void>, level: string
   // ok: javascript.dynamic-method-from-request
   toast[level]('done');
 }
+
+// A key typed as a union of string literals, from no request (the case the
+// unsafe-dynamic-method refinement covered before this rule replaced it).
+declare const client: Record<string, (...args: unknown[]) => Promise<unknown>>;
+export const run = async (method: 'queryObject' | 'queryArray', args: unknown[]) => {
+  // ok: javascript.dynamic-method-from-request
+  return await client[method](...args);
+};

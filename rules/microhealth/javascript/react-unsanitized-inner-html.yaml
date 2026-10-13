@@ -35,6 +35,9 @@ rules:
       # string into the HTML verbatim and a `</style>` would close the
       # element: a server-rendered <style> fed from request data needs review
       # by hand.
+      #
+      # `React.useMemo` is the same hook as an imported `useMemo` (TueriDev
+      # calls it that way), so each useMemo form is also accepted spelled so.
     patterns:
       - pattern: |
           <$EL dangerouslySetInnerHTML={{__html: $X}} />
@@ -110,4 +113,40 @@ rules:
           ...
       - pattern-not-inside: |
           $V = useMemo(() => { ... return sanitizeMarkup(...); }, ...);
+          ...
+      - pattern-not-inside: |
+          $V = React.useMemo(() => DOMPurify.sanitize(...), ...);
+          ...
+      - pattern-not-inside: |
+          $V = React.useMemo(() => sanitizeSvg(...), ...);
+          ...
+      - pattern-not-inside: |
+          $V = React.useMemo(() => sanitizeHtml(...), ...);
+          ...
+      - pattern-not-inside: |
+          $V = React.useMemo(() => sanitizeMarkup(...), ...);
+          ...
+      - pattern-not-inside: |
+          $V = React.useMemo(() => $C ? DOMPurify.sanitize(...) : $ALT, ...);
+          ...
+      - pattern-not-inside: |
+          $V = React.useMemo(() => $C ? sanitizeSvg(...) : $ALT, ...);
+          ...
+      - pattern-not-inside: |
+          $V = React.useMemo(() => $C ? sanitizeHtml(...) : $ALT, ...);
+          ...
+      - pattern-not-inside: |
+          $V = React.useMemo(() => $C ? sanitizeMarkup(...) : $ALT, ...);
+          ...
+      - pattern-not-inside: |
+          $V = React.useMemo(() => { ... return DOMPurify.sanitize(...); }, ...);
+          ...
+      - pattern-not-inside: |
+          $V = React.useMemo(() => { ... return sanitizeSvg(...); }, ...);
+          ...
+      - pattern-not-inside: |
+          $V = React.useMemo(() => { ... return sanitizeHtml(...); }, ...);
+          ...
+      - pattern-not-inside: |
+          $V = React.useMemo(() => { ... return sanitizeMarkup(...); }, ...);
           ...

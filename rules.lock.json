@@ -7011,7 +7011,7 @@
    "upstream_id": "javascript.njsscan.crypto.node-timing-attack",
    "path": "rules/microhealth/javascript/njsscan-crypto-node-timing-attack.yaml",
    "license": "LGPL-3.0",
-   "sha256": "117cee3b0e8570b19a9b37e0350235fd14e283f1c54fa3b833c1ea8d8e302b67",
+   "sha256": "1091c98a65d0337830c3e14e51f7d9cd8c867eb9852b13afee5e20cd624e0864",
    "bundles": [
     "internal"
    ],
@@ -7220,7 +7220,7 @@
    "upstream_id": "javascript.njsscan.redirect.express-open-redirect2",
    "path": "rules/microhealth/javascript/njsscan-redirect-express-open-redirect2.yaml",
    "license": "LGPL-3.0",
-   "sha256": "e83baed45c47240da8a3dc32477d7a3b53588ab4eb8a1837fd6a50138732eceb",
+   "sha256": "b7ce6a3dbabeb988b6f5ef96e0a3cb8c72753b23b67d7b3199df9a9a7b6ef58b",
    "bundles": [
     "internal"
    ],
@@ -7431,7 +7431,7 @@
    "upstream_id": "javascript.react-unsanitized-inner-html",
    "path": "rules/microhealth/javascript/react-unsanitized-inner-html.yaml",
    "license": "MIT",
-   "sha256": "009bb1b6ab9c37eff3f429f8b6c93de5cdf2cabc5670a588b0577947b009be9a",
+   "sha256": "be72da12911b8fdd8de59a95125ac4fa61a7cbaa307cbd940bc992ad4a7ac45b",
    "bundles": [
     "internal",
     "product"
@@ -7455,7 +7455,7 @@
    "upstream_id": "javascript.secret-compare-not-constant-time",
    "path": "rules/microhealth/javascript/secret-compare-not-constant-time.yaml",
    "license": "MIT",
-   "sha256": "948247213e0fc4eea42c32655135acd4087c987f2de35bbc0bfd48ec12425504",
+   "sha256": "ca83c53b479eff79237e32d96e6985f7666ad3ff89fd5db7954085272df3398a",
    "bundles": [
     "internal",
     "product"
@@ -7491,7 +7491,7 @@
    "upstream_id": "json.npm.package-dependencies-check",
    "path": "rules/microhealth/json/package-dependencies-check.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "6e9dac0f5ede02845603b1eb1945bbef0810a322626a516668a69444530f6397",
+   "sha256": "cad3176372180192b64acb871c91fd9b169e475167937bd974c22f810a6ffb1f",
    "bundles": [
     "internal"
    ],

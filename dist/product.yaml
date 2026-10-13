@@ -14186,6 +14186,66 @@ rules:
       ...
 
       '
+  - pattern-not-inside: '$V = React.useMemo(() => DOMPurify.sanitize(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => sanitizeSvg(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => sanitizeHtml(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => sanitizeMarkup(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => $C ? DOMPurify.sanitize(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => $C ? sanitizeSvg(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => $C ? sanitizeHtml(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => $C ? sanitizeMarkup(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => { ... return DOMPurify.sanitize(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => { ... return sanitizeSvg(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => { ... return sanitizeHtml(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => { ... return sanitizeMarkup(...); }, ...);
+
+      ...
+
+      '
 - id: mh.microhealth.javascript.regexp-from-untrusted-input
   languages:
   - javascript
@@ -14281,7 +14341,10 @@ rules:
     - pattern: $O !== $S
   - metavariable-regex:
       metavariable: $O
-      regex: (?i)^(?!(?:[\w.]*\.)?(?:password|passwd|pass|secret|client_?secret|token|access_?token|auth_?token|api_?key|apikey|api_?secret|hmac|signature|service_?role_?key|service_?key)$)
+      regex: (?i)^(?!(?![\w$?.\[\]'"-]*(?:provided|given|input|incoming|received|supplied|request|req\b|header|query|body|param|cookie))[\w$?.]*(?:password|passwd|pass|secret|token|api_?key|apikey|api_?secret|hmac|signature|hash|service_?role_?key|service_?key)$)
+  - metavariable-regex:
+      metavariable: $O
+      regex: (?i)^(?!(?:[\w$?.]*\.)?(?:confirm\w*|\w*confirm(?:ation)?\w*|again|\w*again|repeat\w*|\w*repeat(?:ed)?|re_?type\w*|\w*retyped|re_?enter\w*|\w*reentered)$)
   - metavariable-regex:
       metavariable: $S
       regex: (?i)^(\w*\.)?(password|passwd|pass|secret|client_?secret|token|access_?token|auth_?token|api_?key|apikey|api_?secret|hmac|signature|service_?role_?key|service_?key)$

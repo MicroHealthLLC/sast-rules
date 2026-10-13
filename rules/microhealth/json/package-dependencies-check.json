@@ -19,9 +19,9 @@
     "tarball": "https://github.com/example/Capacitor-NodeJS/releases/download/v1.0.0-beta.10/capacitor-nodejs.tgz",
     // ok: json.npm.package-dependencies-check
     "git-pinned": "git+https://github.com/example/repo.git#v1.2.3",
-    // ruleid: json.npm.package-dependencies-check
+    // ok: json.npm.package-dependencies-check
     "caret": "^1.2.3",
-    // ruleid: json.npm.package-dependencies-check
+    // ok: json.npm.package-dependencies-check
     "@scope/tilde": "~4.0.0",
     // ruleid: json.npm.package-dependencies-check
     "range": ">=1.0.0 <2.0.0",
@@ -39,10 +39,18 @@
     "tag": "latest",
     // ruleid: json.npm.package-dependencies-check
     "nexttag": "next",
-    // ruleid: json.npm.package-dependencies-check
+    // ok: json.npm.package-dependencies-check
     "alias-range": "npm:string-width@^4.2.3",
     // ruleid: json.npm.package-dependencies-check
     "git-moving": "git+https://github.com/example/repo.git",
+    // ok: json.npm.package-dependencies-check
+    "caret-pre": "^6.0.0-beta.4",
+    // ruleid: json.npm.package-dependencies-check
+    "caret-partial": "^1.2",
+    // ruleid: json.npm.package-dependencies-check
+    "tilde-wild": "~1.x",
+    // ruleid: json.npm.package-dependencies-check
+    "caret-open": "^1.2.3 || >=3",
     // ruleid: json.npm.package-dependencies-check
     "short": "example/repo"
   }

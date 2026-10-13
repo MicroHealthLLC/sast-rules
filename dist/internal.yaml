@@ -27180,6 +27180,12 @@ rules:
   - metavariable-regex:
       metavariable: $X
       regex: ^(?!(?:null|undefined|true|false|NaN|-?\d+(?:\.\d+)?|'[^']*'|"[^"]*"|`[^`$]*`)$)
+  - metavariable-regex:
+      metavariable: $X
+      regex: (?i)^(?!(?![\w$?.\[\]'"-]*(?:provided|given|input|incoming|received|supplied|request|req\b|header|query|body|param|cookie))[\w$?.]*(?:password|passwd|pass|secret|token|api_?key|apikey|api_?secret|hmac|signature|hash|service_?role_?key|service_?key)$)
+  - metavariable-regex:
+      metavariable: $X
+      regex: (?i)^(?!(?:[\w$?.]*\.)?(?:confirm\w*|\w*confirm(?:ation)?\w*|again|\w*again|repeat\w*|\w*repeat(?:ed)?|re_?type\w*|\w*retyped|re_?enter\w*|\w*reentered)$)
   message: '''String comparisons using ''''==='''', ''''!=='''', ''''!='''' and ''''=='''' is vulnerable to timing attacks. More info: https://snyk.io/blog/node-js-timing-attack-ccc-ctf/''
 
     '
@@ -30437,6 +30443,9 @@ rules:
 
           '
       - metavariable-regex:
+          metavariable: $VAR
+          regex: ^(?!(?:`/[^/\\`$]|"/[^/\\"]|'/[^/\\']))
+      - metavariable-regex:
           metavariable: $METHOD
           regex: (header|set|append|setHeader)
     - patterns:
@@ -30455,6 +30464,9 @@ rules:
 
                   '
       - pattern: "$RES.writeHead(..., {\n            ...,\n            location: $V,\n            ...\n        })\n"
+      - metavariable-regex:
+          metavariable: $V
+          regex: ^(?!(?:`/[^/\\`$]|"/[^/\\"]|'/[^/\\']))
       - focus-metavariable: $V
     - patterns:
       - pattern-not: '$RES.location("=~/http(s)?:\/\/.*\//" + ...)
@@ -30468,6 +30480,9 @@ rules:
       - pattern: '$RES.location($VAR)
 
           '
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: ^(?!(?:`/[^/\\`$]|"/[^/\\"]|'/[^/\\']))
   pattern-sanitizers:
   - pattern-either:
     - patterns:
@@ -33269,6 +33284,66 @@ rules:
       ...
 
       '
+  - pattern-not-inside: '$V = React.useMemo(() => DOMPurify.sanitize(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => sanitizeSvg(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => sanitizeHtml(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => sanitizeMarkup(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => $C ? DOMPurify.sanitize(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => $C ? sanitizeSvg(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => $C ? sanitizeHtml(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => $C ? sanitizeMarkup(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => { ... return DOMPurify.sanitize(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => { ... return sanitizeSvg(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => { ... return sanitizeHtml(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => { ... return sanitizeMarkup(...); }, ...);
+
+      ...
+
+      '
 - id: mh.microhealth.javascript.regexp-from-untrusted-input
   languages:
   - javascript
@@ -33364,7 +33439,10 @@ rules:
     - pattern: $O !== $S
   - metavariable-regex:
       metavariable: $O
-      regex: (?i)^(?!(?:[\w.]*\.)?(?:password|passwd|pass|secret|client_?secret|token|access_?token|auth_?token|api_?key|apikey|api_?secret|hmac|signature|service_?role_?key|service_?key)$)
+      regex: (?i)^(?!(?![\w$?.\[\]'"-]*(?:provided|given|input|incoming|received|supplied|request|req\b|header|query|body|param|cookie))[\w$?.]*(?:password|passwd|pass|secret|token|api_?key|apikey|api_?secret|hmac|signature|hash|service_?role_?key|service_?key)$)
+  - metavariable-regex:
+      metavariable: $O
+      regex: (?i)^(?!(?:[\w$?.]*\.)?(?:confirm\w*|\w*confirm(?:ation)?\w*|again|\w*again|repeat\w*|\w*repeat(?:ed)?|re_?type\w*|\w*retyped|re_?enter\w*|\w*reentered)$)
   - metavariable-regex:
       metavariable: $S
       regex: (?i)^(\w*\.)?(password|passwd|pass|secret|client_?secret|token|access_?token|auth_?token|api_?key|apikey|api_?secret|hmac|signature|service_?role_?key|service_?key)$
@@ -33562,6 +33640,7 @@ rules:
 - id: mh.microhealth.json.npm.package-dependencies-check
   patterns:
   - pattern-regex: '"[^"\n]+"\s*:\s*"(?!(?:file|link|workspace|portal):)(?!https?://[^"#\s]+\.(?:tgz|tar\.gz)")(?:[^"]*(?:[\^~<>*]|\|\||\s-\s)[^"]*|(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?(?:[xX]|\d+\.[xX](?:\.[\dxX]+)?|\d+\.\d+\.[xX])|(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?\d+(?:\.\d+)?|(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?[A-Za-z][\w.\-]*||(?:git(?:\+(?:ssh|https?|file))?://|git@|github:|gitlab:|bitbucket:|gist:)[^"#]*|https?://[^"#]*\.git|[\w.\-]+/[\w.\-]+)"'
+  - pattern-not-regex: '"[^"\n]+"\s*:\s*"(?:npm:(?:@[^"/@\s]+/)?[^"@\s]+@)?[\^~]\d+\.\d+\.\d+(?:-[0-9A-Za-z.\-]+)?(?:\+[0-9A-Za-z.\-]+)?"'
   - pattern-either:
     - pattern-inside: "\"dependencies\": {\n  ...\n}\n"
     - pattern-inside: "\"devDependencies\": {\n  ...\n}\n"
@@ -33571,7 +33650,7 @@ rules:
   paths:
     include:
     - '*package.json'
-  message: Package dependencies with variant versions may lead to dependency hijack and confusion attacks. Better to specify an exact version or use package-lock.json for a specific version of the package.
+  message: Package dependencies with variant versions may lead to dependency hijack and confusion attacks. Better to specify an exact version, or a caret/tilde range of a full version pinned by a committed lockfile.
   languages:
   - json
   metadata:
