@@ -6767,7 +6767,7 @@
    "upstream_id": "python.fips-non-approved-hash",
    "path": "rules/microhealth/python/fips-non-approved-hash.yaml",
    "license": "MIT",
-   "sha256": "2b05fafec4b508b4bcf2f93d9b711939481e842d65c5d6421f407ca6b1fb31d7",
+   "sha256": "5940eca1fb59ebc4e3a4ed21c9b9fe5bc63ab44aa3836802159d4a1a2b1679d9",
    "bundles": [
     "internal",
     "product"

@@ -12,13 +12,17 @@ rules:
       a comment.
     metadata:
       category: security
+      subcategory: [audit]
+      technology: [python, hashlib]
+      confidence: HIGH
+      likelihood: MEDIUM
+      impact: MEDIUM
       cwe: ["CWE-327: Use of a Broken or Risky Cryptographic Algorithm"]
       references:
         - https://csrc.nist.gov/projects/cryptographic-module-validation-program
     pattern-either:
       - patterns:
-          - pattern-either:
-              - pattern: hashlib.$ALG(...)
+          - pattern: hashlib.$ALG(...)
           - metavariable-regex:
               metavariable: $ALG
               regex: ^(md5|md4|blake2b|blake2s)$
