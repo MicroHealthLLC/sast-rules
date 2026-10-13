@@ -1,5 +1,5 @@
 {
-  "comment": "The engines every scan runs. Opengrep: a release binary, checked against the sha256 here (scripts/bump_engine.py moves it). Trivy: built from source at `trivy.version` on MicroHealth's FIPS Go image with the Go Cryptographic Module (GOFIPS140), every module checked against sum.golang.org. ZAP: pinned in .github/workflows/zap.yml with the sha256 of every file it fetches.",
+  "comment": "The engines every scan runs. Opengrep: a release binary, checked against the sha256 here (scripts/bump_engine.py moves it). Trivy: MicroHealth's FIPS build, from source on the FIPS Go image with the Go Cryptographic Module (GOFIPS140), every module checked against sum.golang.org, once per `trivy.version` by .github/workflows/engines.yml; scripts/record_trivy.sh records its url and sha256 here and every scan refuses a binary that does not match. ZAP: pinned in .github/workflows/zap.yml with the sha256 of every file it fetches.",
   "name": "opengrep",
   "version": "1.30.2",
   "assets": {
