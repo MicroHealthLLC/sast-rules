@@ -1,0 +1,82 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.open-redirect-from-url-input
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      A value read from the page URL (query string, fragment, referrer or
+      window.name) decides where the browser is sent. A link to this page
+      with that value set can bounce a user to any site while showing this
+      site's address first (open redirect, a phishing aid), or run script
+      with a `javascript:` URL. Redirect only to a relative path that starts
+      with a single `/`, or to a URL whose origin is checked against an
+      allow-list.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [browser]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: MEDIUM
+      cwe: ["CWE-601: URL Redirection to Untrusted Site ('Open Redirect')"]
+      owasp: ["A01:2021 - Broken Access Control"]
+      references:
+        - https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html
+      # Replaces mh.opengrep.javascript.browser.security.open-redirect-from-function.js-open-redirect-from-function,
+      # whose taint source is ANY parameter of ANY function, so a click
+      # handler receiving a folder row and building
+      # `${config.edgeFunctionUrl}/functions/v1/auth?drive_id=${folder.id}`
+      # was an open redirect (2 of 2 in Gnosis, both a fixed origin). This
+      # rule starts from what an attacker can actually put in a link.
+    options:
+      taint_intrafile: true
+    mode: taint
+    pattern-sources:
+      - pattern-either:
+          - pattern: location.search
+          - pattern: location.hash
+          - pattern: window.location.search
+          - pattern: window.location.hash
+          - pattern: document.location.search
+          - pattern: document.location.hash
+          - pattern: document.URL
+          - pattern: document.documentURI
+          - pattern: document.referrer
+          - pattern: window.name
+          - pattern: new URLSearchParams(...)
+          - pattern: new URL(location.href).searchParams
+          - pattern: new URL(window.location.href).searchParams
+          - pattern: useSearchParams()
+          - pattern: useLocation().search
+          - pattern: useLocation().hash
+    pattern-sanitizers:
+      - pattern: encodeURIComponent(...)
+      - by-side-effect: true
+        patterns:
+          - pattern-either:
+              - pattern: $AL.includes($X)
+              - pattern: $AL.has($X)
+              - pattern: $CHECK($X, ...)
+              - pattern: $OBJ.$CHECK($X, ...)
+          - metavariable-regex:
+              metavariable: $CHECK
+              regex: (?i)^(includes|has|(assert|validate|check|ensure|verify|is|guard|safe)\w*(url|uri|redirect|path|origin|host|allowed|safe|internal|relative)\w*)$
+          - focus-metavariable: $X
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: location.href = $U
+              - pattern: window.location.href = $U
+              - pattern: document.location.href = $U
+              - pattern: location = $U
+              - pattern: window.location = $U
+              - pattern: location.assign($U)
+              - pattern: window.location.assign($U)
+              - pattern: location.replace($U)
+              - pattern: window.location.replace($U)
+              - pattern: window.open($U, ...)
+          - metavariable-regex:
+              metavariable: $U
+              # A literal `https://host/` or `/path` prefix fixes the origin.
+              regex: ^(?!`https?://[^/`$]+/|`/[^/`$]|["']https?://[^/"']+/|["']/[^/"'])
+          - focus-metavariable: $U

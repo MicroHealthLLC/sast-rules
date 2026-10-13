@@ -1,0 +1,125 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/headers/host_header_injection.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/headers/rule-host_header_injection.yml
+# (mh.gitlab.rules_lgpl_javascript_headers_rule-host-header-injection, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.headers.host-header-injection
+  pattern-either:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function (req, $RES, ...) {...}
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $X = <... "=~/.*http[s]*:///i" + req.host ...>;
+      - pattern: |
+          $X = <... "=~/.*http[s]*:///i" + req["host"] ...>;
+      - pattern: |
+          $X = <... "=~/.*http[s]*:///i" + req("host") ...>;
+      - pattern: |
+          $X = { $Y: <... "=~/.*http[s]*:///i" + req.host ...>};
+      - pattern: |
+          $X = { $Y: <... "=~/.*http[s]*:///i" + req["host"] ...>};
+      - pattern: |
+          $X = { $Y: <... "=~/.*http[s]*:///i" + req("host") ...>};
+      - pattern: |
+          $Z = req.host;
+          ...
+          $X = <... "=~/.*http[s]*:///i" + $Z ...>;
+      - pattern: |
+          $Z = req["host"];
+          ...
+          $X = <... "=~/.*http[s]*:///i" + $Z ...>;
+      - pattern: |
+          $Z = req("host")
+          ...
+          $X = <... "=~/.*http[s]*:///i" + $Z ...>;
+      - pattern: |
+          $Z = req.host;
+          ...
+          $X = { $Y: <... "=~/.*http[s]*:///i" + req.host ...>};
+      - pattern: |
+          $Z = req["host"];
+          ...
+          $X = { $Y: <... "=~/.*http[s]*:///i" + $Z ...>};
+      - pattern: |
+          $Z = req("host")
+          ...
+          $X = { $Y: <... "=~/.*http[s]*:///i" + req("host") ...>};
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function (request, $RES, ...) {...}
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          $X = <... "=~/.*http[s]*:///i" + request.host ...>;
+      - pattern: |
+          $X = <... "=~/.*http[s]*:///i" + request["host"] ...>;
+      - pattern: |
+          $X = <... "=~/.*http[s]*:///i" + request("host") ...>;
+      - pattern: |
+          $X = { $Y: <... "=~/.*http[s]*:///i" + request.host ...>};
+      - pattern: |
+          $X = { $Y: <... "=~/.*http[s]*:///i" + request["host"] ...>};
+      - pattern: |
+          $X = { $Y: <... "=~/.*http[s]*:///i" + request("host") ...>};
+      - pattern: |
+          $Z = request.host;
+          ...
+          $X = <... "=~/.*http[s]*:///i" + $Z ...>;
+      - pattern: |
+          $Z = request["host"];
+          ...
+          $X = <... "=~/.*http[s]*:///i" + $Z ...>;
+      - pattern: |
+          $Z = request("host")
+          ...
+          $X = <... "=~/.*http[s]*:///i" + $Z ...>;
+      - pattern: |
+          $Z = request.host;
+          ...
+          $X = { $Y: <... "=~/.*http[s]*:///i" + request.host ...>};
+      - pattern: |
+          $Z = request["host"];
+          ...
+          $X = { $Y: <... "=~/.*http[s]*:///i" + $Z ...>};
+      - pattern: |
+          $Z = request("host")
+          ...
+          $X = { $Y: <... "=~/.*http[s]*:///i" + request("host") ...>};
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    Using untrusted Host header for generating dynamic URLs can result in web cache and or password reset poisoning.
+  languages:
+  - javascript
+  severity: WARNING
+  metadata:
+    owasp:
+    - A1:2017-Injection
+    - A08:2021-Software and Data Integrity Failures
+    - A08:2025-Software or Data Integrity Failures
+    cwe: CWE-348
+    shortDescription: Use of less trusted source
+    security-severity: MEDIUM
+    category: security
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_headers_rule-host-header-injection

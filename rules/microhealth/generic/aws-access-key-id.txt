@@ -1,0 +1,13 @@
+# Rule-test fixture: synthetic key IDs; none was issued by IAM.
+# ruleid: generic.aws-access-key-id
+aws_access_key_id = AKIAZ7Q2MDK4LPX9W3RT
+# ruleid: generic.aws-access-key-id
+{"AccessKeyId": "ASIAQ4XN8C2VZK7JD5PM"}
+# ruleid: generic.aws-access-key-id
+legacy = "AKIAENVTESTFAKE00001"
+# ok: generic.aws-access-key-id
+documented = "AKIAIOSFODNN7EXAMPLE"
+# ok: generic.aws-access-key-id
+fixture = "AKIAENVENVENVEXAMPLE"
+# ok: generic.aws-access-key-id
+too_short = "AKIA1234"

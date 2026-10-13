@@ -1,12 +1,14 @@
 # sast-rules bundle `product` — built by scripts/build.py; do not edit.
-# 285 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
+# 296 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
 # Licenses of the rules in this bundle: Apache-2.0, MIT.
 # Each rule's own license is its metadata.mh_license.
 # MODIFIED from the upstream rules (MicroHealth, LLC): each rule's id is
 # prefixed `mh.<source>.`, metadata.mh_source / mh_upstream_id / mh_license
 # are added, a word in metadata.security-severity is replaced by a number
 # (the original kept as mh_upstream_security_severity), and overrides.yaml
-# is applied. Nothing else is changed. The date of each change is the date
+# is applied: a `refine` entry adds narrowing clauses or path exclusions
+# to a rule, its reason recorded as the rule's `refined` in rules.lock.json.
+# Nothing else is changed. The date of each change is the date
 # of the sast-rules commit that built this file; the unmodified upstream
 # files and the build are in https://github.com/MicroHealthLLC/sast-rules.
 # Attributions: NOTICE.md; full license texts: licenses/ (both shipped
@@ -1777,98 +1779,6 @@ rules:
     mh_upstream_id: go_crypto_rule-weakrandsource
     mh_license: Apache-2.0
   severity: WARNING
-- id: mh.gitlab.go_file-permissions_rule-fileperm
-  languages:
-  - go
-  patterns:
-  - pattern-either:
-    - pattern: os.Chmod(...,$MASK)
-    - pattern: os.OpenFile(...,$MASK)
-    - pattern: os.WriteFile(...,$MASK)
-  - metavariable-comparison:
-      metavariable: $MASK
-      comparison: int($MASK) > 0o640
-  message: "The application was found setting file permissions to overly permissive values. Consider\nusing the following values if the application user is the only process to access\nthe file:\n\n- 0400 - read only access to the file\n- 0200 - write only access to the file\n- 0600 - read/write access to the file\n\nExample creating a file with read/write permissions for the application user:\n```\nf, err := os.OpenFile(\"file.txt\", os.O_CREATE, 0600)\nif err != nil {\n  log.Fatal(err)\n}\ndefer f.Close()\n// continue to work with file here\n```\n\nFor all other values please see:\nhttps://en.wikipedia.org/wiki/File-system_permissions#Numeric_notation\n"
-  metadata:
-    shortDescription: Incorrect permission assignment for critical resource
-    cwe: CWE-732
-    owasp:
-    - A5:2017-Broken Access Control
-    - A01:2021-Broken Access Control
-    - A01:2025-Broken Access Control
-    security-severity: '5.5'
-    category: security
-    mh_upstream_security_severity: Medium
-    mh_source: gitlab
-    mh_upstream_id: go_file-permissions_rule-fileperm
-    mh_license: Apache-2.0
-  severity: WARNING
-- id: mh.gitlab.go_file-permissions_rule-mkdir
-  languages:
-  - go
-  patterns:
-  - pattern-either:
-    - pattern: os.Mkdir(...,$MASK)
-    - pattern: os.MkdirAll(...,$MASK)
-  - metavariable-comparison:
-      metavariable: $MASK
-      comparison: $MASK > 0o750
-      base: 8
-  message: "The application was found setting directory permissions to overly permissive values. Consider\nusing the following values if the application user is the only process to access\nfiles in the directory specified:\n- 0700 - read/write access to the files in the directory\n\nAnother common value is `0750` which allows the application user read/write access and group\nusers to read the files contained in the directory.\n\nExample creating a directory with read/write permissions for only the application user:\n```\nerr := os.Mkdir(\"directory\", 0700)\nif err != nil {\n  log.Fatal(err)\n}\n```\n\nFor all other values please see:\nhttps://en.wikipedia.org/wiki/File-system_permissions#Numeric_notation\n"
-  metadata:
-    shortDescription: Incorrect permission assignment for critical resource
-    cwe: CWE-732
-    owasp:
-    - A5:2017-Broken Access Control
-    - A01:2021-Broken Access Control
-    - A01:2025-Broken Access Control
-    security-severity: '5.5'
-    category: security
-    mh_upstream_security_severity: Medium
-    mh_source: gitlab
-    mh_upstream_id: go_file-permissions_rule-mkdir
-    mh_license: Apache-2.0
-  severity: WARNING
-- id: mh.gitlab.go_filesystem_rule-decompression-bomb
-  languages:
-  - go
-  mode: taint
-  pattern-sources:
-  - pattern: gzip.NewReader(...)
-  - pattern: zlib.NewReader(...)
-  - pattern: bzip2.NewReader(...)
-  - pattern: flate.NewReader(...)
-  - pattern: lzw.NewReader(...)
-  - pattern: tar.NewReader(...)
-  - pattern: zip.NewReader(...)
-  - pattern: zlib.NewReaderDict(...)
-  - pattern: flate.NewReaderDict(...)
-  - pattern: zip.OpenReader(...)
-  pattern-sanitizers:
-  - patterns:
-    - pattern: io.LimitReader($TAINTED, ...)
-    - focus-metavariable: $TAINTED
-  pattern-sinks:
-  - patterns:
-    - pattern: io.Copy($DST, $TAINTED)
-    - focus-metavariable: $TAINTED
-  - patterns:
-    - pattern: io.CopyBuffer($DST, $TAINTED, $BUF)
-    - focus-metavariable: $TAINTED
-  message: "Directly decompressing files or buffers may lead to a potential Denial of Service (DoS)\ndue to a decompression bomb. Decompression bombs are maliciously compressed files\nor data that decompresses to extremely large sizes. This can cause the process to run\nout of memory, or the disk to fill up.\n\nTo protect against decompression bombs, an\n[io.LimitReader(...)](https://pkg.go.dev/io#LimitReader)\nshould be used to limit how much can be read during the decompression routine.\n\nExample using `io.LimitReader` to protect against a decompression bomb:\n```\nf, err := os.Open(\"some.gz\")\nif err != nil {\n  log.Fatal(err)\n}\n\nr, err := gzip.NewReader(f)\nif err != nil {\n  log.Fatal(err)\n}\n\nconst oneMegabyte = 1024 * 1024\nlimitedReader := io.LimitReader(r, oneMegabyte)\n\n// use limitedReader to stop copying after 1 MB\nif _, err := io.Copy(os.Stdout, limitedReader); err != nil {\n  log.Fatal(err)\n}\n```\n"
-  metadata:
-    shortDescription: Improper handling of highly compressed data
-    cwe: CWE-409
-    owasp:
-    - A1:2017-Injection
-    - A03:2021-Injection
-    security-severity: '5.5'
-    category: security
-    mh_upstream_security_severity: Medium
-    mh_source: gitlab
-    mh_upstream_id: go_filesystem_rule-decompression-bomb
-    mh_license: Apache-2.0
-  severity: WARNING
 - id: mh.gitlab.go_filesystem_rule-fileread
   languages:
   - go
@@ -2375,47 +2285,6 @@ rules:
     mh_upstream_id: go_network_rule-bind-to-all-interfaces
     mh_license: Apache-2.0
   severity: WARNING
-- id: mh.gitlab.go_sql_rule-concat-sqli
-  languages:
-  - go
-  mode: taint
-  pattern-sources:
-  - patterns:
-    - pattern: fmt.Sprintf(...)
-    - pattern-not: 'fmt.Sprintf("...", "...")
-
-        '
-  - patterns:
-    - pattern: '"..." + $X
-
-        '
-    - pattern-not: '"..." + "..."
-
-        '
-  - pattern: '($SB : strings.Builder).String()
-
-      '
-  pattern-sinks:
-  - patterns:
-    - pattern: $DB.$METHOD(...)
-    - metavariable-regex:
-        metavariable: $METHOD
-        regex: ^(Exec(Context)?|Query(Context)?|QueryRow(Context)?)$
-  message: "SQL Injection is a critical vulnerability that can lead to data or system compromise. By\ndynamically generating SQL query strings, user input may be able to influence the logic of\nthe SQL statement. This could lead to an adversary accessing information they should\nnot have access to or in some circumstances, being able to execute OS functionality or code.\n\nReplace all dynamically generated SQL queries with parameterized queries. In situations where\ndynamic queries must be created, never use direct user input, but instead use a map or\ndictionary of valid values and resolve them using a user supplied key.\n\nFor example, some database drivers do not allow parameterized queries for `>` or `<` comparison\noperators. In these cases, do not use a user supplied `>` or `<` value, but rather have the\nuser\nsupply a `gt` or `lt` value. The alphabetical values are then used to look up the `>` and `<`\nvalues to be used in the construction of the dynamic query. The same goes for other queries\nwhere\ncolumn or table names are required but cannot be parameterized.\n\nExample using parameterized queries with `sql.Query`:\n```\nrows, err := db.Query(\"SELECT * FROM users WHERE userName = ?\", userName)\nif err != nil {\n    return nil, err\n}\ndefer rows.Close()\nfor rows.Next() {\n  // ... process rows\n}\n```\n\nFor more information on SQL Injection see OWASP:\nhttps://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html\n"
-  metadata:
-    shortDescription: Improper neutralization of special elements used in an SQL command ('SQL Injection')
-    cwe: CWE-89
-    owasp:
-    - A1:2017-Injection
-    - A03:2021-Injection
-    - A05:2025-Injection
-    security-severity: '8.0'
-    category: security
-    mh_upstream_security_severity: High
-    mh_source: gitlab
-    mh_upstream_id: go_sql_rule-concat-sqli
-    mh_license: Apache-2.0
-  severity: WARNING
 - id: mh.gitlab.go_subproc_rule-subproc
   languages:
   - go
@@ -2448,29 +2317,6 @@ rules:
     mh_upstream_id: go_subproc_rule-subproc
     mh_license: Apache-2.0
   severity: WARNING
-- id: mh.gitlab.go_unsafe_rule-unsafe
-  languages:
-  - go
-  patterns:
-  - pattern-either:
-    - pattern: unsafe.Alignof(...)
-    - pattern: unsafe.Offsetof(...)
-    - pattern: unsafe.Sizeof(...)
-    - pattern: unsafe.Pointer(...)
-  message: "The `unsafe` package in Go allows low-level access to memory management features.\nThis includes pointers and direct access to memory. The Go compiler will no longer\nbe able to enforce type safety when working with the `unsafe` pointer types.\n\nWhile powerful, access to these functions can lead to many security related issues\n such as:\n\n- [Buffer overflows](https://owasp.org/www-community/vulnerabilities/Buffer_Overflow) which\ncan lead to code execution.\n- [Use after free](https://owasp.org/www-community/vulnerabilities/Using_freed_memory) which\ncan lead to code execution.\n- [Information/Memory leaks](https://owasp.org/www-community/vulnerabilities/Memory_leak)\nwhich can leak sensitive information, including data which can\ndefeat other protection mechanisms or cause the system to run out of memory.\n\nUnless required, all calls to the `unsafe` package should be removed.\n"
-  metadata:
-    shortDescription: Use of inherently dangerous function (unsafe package)
-    cwe: CWE-242
-    owasp:
-    - A6:2017-Security Misconfiguration
-    - A04:2021-Insecure Design
-    security-severity: '8.0'
-    category: security
-    mh_upstream_security_severity: High
-    mh_source: gitlab
-    mh_upstream_id: go_unsafe_rule-unsafe
-    mh_license: Apache-2.0
-  severity: INFO
 - id: mh.gitlab.java_cookie_rule-CookieInsecure
   languages:
   - java
@@ -6056,101 +5902,6 @@ rules:
     mh_source: gitlab
     mh_upstream_id: javascript_random_rule-pseudo-random-bytes
     mh_license: MIT
-- id: mh.gitlab.javascript_react_rule-dangerouslysetinnerhtml
-  languages:
-  - typescript
-  - javascript
-  pattern-either:
-  - pattern: '<$X dangerouslySetInnerHTML=... />
-
-      '
-  - pattern: '{dangerouslySetInnerHTML: ...}
-
-      '
-  severity: WARNING
-  message: 'The application was found calling `dangerouslySetInnerHTML` which may lead to Cross Site
-
-    Scripting (XSS). By default, React components will encode the data properly before rendering.
-
-    Calling `dangerouslySetInnerHTML` disables this encoding and allows raw markup
-
-    and JavaScript to be executed.
-
-
-    XSS is an attack which exploits a web application or system to treat
-
-    user input as markup or script code. It is important to encode the data, depending on the
-
-    specific context it is used in. There are at least six context types:
-
-
-    - Inside HTML tags `<div>context 1</div>`
-
-    - Inside attributes: `<div class="context 2"></div>`
-
-    - Inside event attributes `<button onclick="context 3">button</button>`
-
-    - Inside script blocks: `<script>var x = "context 4"</script>`
-
-    - Unsafe element HTML assignment: `element.innerHTML = "context 5"`
-
-    - Inside URLs: `<iframe src="context 6"></iframe><a href="context 6">link</a>`
-
-
-    Script blocks alone have multiple ways they need to be encoded. Extra care must be taken if
-
-    user input
-
-    is ever output inside of script tags.
-
-
-    User input that is displayed within the application must be encoded, sanitized or validated
-
-    to ensure it cannot be treated as HTML or executed as Javascript code. Care must also be
-
-    taken
-
-    to not mix server-side templating with client-side templating, as the server-side templating
-
-    will
-
-    not encode things like {{ 7*7 }} which may execute client-side templating features.
-
-
-    It is _NOT_ advised to encode user input prior to inserting into a data store. The data will
-
-    need to be
-
-    encoded depending on context of where it is output. It is much safer to force the displaying
-
-    system to
-
-    handle the encoding and not attempt to guess how it should be encoded.
-
-
-    Remove the call to `dangerouslySetInnerHTML` or ensure that the data used in this call does
-
-    not come from user-supplied input.
-
-
-    For more information on dangerously setting inner HTML see:
-
-    - https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html
-
-    '
-  metadata:
-    cwe: CWE-79
-    owasp:
-    - A7:2017-Cross-Site Scripting (XSS)
-    - A03:2021-Injection
-    - A05:2025-Injection
-    shortDescription: Improper neutralization of input during web page generation ('Cross-site Scripting')
-    category: security
-    security-severity: '5.5'
-    mh_upstream_security_severity: Medium
-    mh_source: gitlab
-    mh_upstream_id: javascript_react_rule-dangerouslysetinnerhtml
-    mh_license: MIT
 - id: mh.gitlab.javascript_require_rule-non-literal-require
   languages:
   - javascript
@@ -9272,31 +9023,6 @@ rules:
   - pattern: xml.etree.cElementTree.parse(...)
   - pattern: xml.etree.cElementTree.iterparse(...)
   - pattern: xml.etree.cElementTree.XMLParser(...)
-  severity: WARNING
-- id: mh.gitlab.python_xml_rule-element
-  languages:
-  - python
-  message: "The application was found using the `xml.etree` package for processing XML.\nPythons default xml processors suffer from various XML parsing vulnerabilities\nand care must be taken when handling XML data. Additionally, depending on the\nversion of Python, more critical vulnerabilities such as eXternal XML Entity\ninjection maybe exploitable.\n\nThe `etree` package suffers from the following security risks as of Python 3.7.1:\n* Billion laughs / exponential entity expansion - May allow an adversary to cause\n  a Denial of Service (DoS) against the application parsing arbitrary XML.\n* Quadratic blowup entity expansion - Similar to above, but requires a larger input\n  to cause the Denial of Service.\n\nTo remediate the above issues, consider using the\n[defusedxml](https://pypi.org/project/defusedxml/)\nlibrary when processing untrusted XML.\n\nExample parsing an XML document using defusedxml:\n```\nfrom defusedxml.ElementTree import parse\n\n# Parse the inventory.xml file\net = parse('inventory.xml')\n# Get the root element\nroot = et.getroot()\n# Work with the root element\n# ...\n```\n\nFor more information on the various XML parsers and their vulnerabilities please see:\n- https://docs.python.org/3/library/xml.html#xml-vulnerabilities\n\nFor more information on XML security see OWASP's guide:\n- https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html#python\n"
-  metadata:
-    cwe: CWE-611
-    owasp:
-    - A4:2017-XML External Entities (XXE)
-    - A05:2021-Security Misconfiguration
-    - A02:2025-Security Misconfiguration
-    category: security
-    shortDescription: Improper restriction of XML external entity reference
-    security-severity: '5.5'
-    mh_upstream_security_severity: Medium
-    mh_source: gitlab
-    mh_upstream_id: python_xml_rule-element
-    mh_license: MIT
-  pattern-either:
-  - patterns:
-    - pattern: xml.etree.ElementTree.fromstring(...)
-    - pattern-not: xml.etree.ElementTree.fromstring("...")
-  - pattern: xml.etree.ElementTree.parse(...)
-  - pattern: xml.etree.ElementTree.iterparse(...)
-  - pattern: xml.etree.ElementTree.XMLParser(...)
   severity: WARNING
 - id: mh.gitlab.python_xml_rule-etree
   languages:
@@ -13278,6 +13004,359 @@ rules:
       '
   - pattern: $XPATH.evaluate(...)
   severity: ERROR
+- id: mh.microhealth.android.exported-activity
+  languages:
+  - regex
+  severity: WARNING
+  paths:
+    include:
+    - '*AndroidManifest.xml'
+  message: This activity is exported (android:exported="true"), so any app on the device can start it with an intent of its choosing. Unless it is meant to be launched by other apps, set android:exported="false"; if it is, validate every intent extra it reads and protect it with a permission.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - android
+    confidence: MEDIUM
+    likelihood: LOW
+    impact: MEDIUM
+    cwe:
+    - 'CWE-926: Improper Export of Android Application Components'
+    references:
+    - https://developer.android.com/privacy-and-security/risks/android-exported
+    mh_source: microhealth
+    mh_upstream_id: android.exported-activity
+    mh_license: MIT
+  patterns:
+  - pattern-regex: <activity\b[^>]*android:exported\s*=\s*"true"[^>]*>[\s\S]*?</activity>
+  - pattern-not-regex: <activity\b[^>]*android:exported\s*=\s*"true"[^>]*>\s*<intent-filter>\s*<action\s+android:name="android\.intent\.action\.MAIN"\s*/>\s*<category\s+android:name="android\.intent\.category\.LAUNCHER"\s*/>\s*</intent-filter>\s*</activity>
+- id: mh.microhealth.bash.ifs-global
+  languages:
+  - bash
+  severity: WARNING
+  message: IFS is changed for the rest of the script. Every later unquoted expansion then splits on the new separator, which can turn one argument into several (or a path into pieces) in code far from here. Set it only for one command (`IFS=, read -r a b`) or inside a subshell / function with `local IFS`.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - bash
+    confidence: MEDIUM
+    likelihood: LOW
+    impact: LOW
+    cwe:
+    - 'CWE-20: Improper Input Validation'
+    references:
+    - https://www.gnu.org/software/bash/manual/html_node/Word-Splitting.html
+    mh_source: microhealth
+    mh_upstream_id: bash.ifs-global
+    mh_license: MIT
+  patterns:
+  - pattern: IFS=$X
+  - pattern-not-inside: $(...)
+  - pattern-not-inside: (...)
+  - pattern-not-inside: 'local IFS
+
+      ...
+
+      '
+- id: mh.microhealth.dockerfile.last-user-root
+  languages:
+  - dockerfile
+  severity: WARNING
+  message: The final stage of this image switches to `USER root` and never switches back, so the container's main process runs as root. A compromise of that process (or a container escape bug) then starts with full privileges, and Kubernetes `runAsNonRoot` policies will reject the pod. Do the root-only work (package installs, chown) first, then end the stage with a numeric non-root user such as `USER 10001:10001`.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    cwe:
+    - 'CWE-250: Execution with Unnecessary Privileges'
+    owasp:
+    - A05:2021 - Security Misconfiguration
+    confidence: HIGH
+    likelihood: LOW
+    impact: HIGH
+    references:
+    - https://docs.docker.com/build/building/best-practices/#user
+    - https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html#rule-2-set-a-user
+    technology:
+    - docker
+    mh_source: microhealth
+    mh_upstream_id: dockerfile.last-user-root
+    mh_license: MIT
+  paths:
+    exclude:
+    - '**/test/**'
+    - '**/tests/**'
+    - '**/e2e/**'
+    - '**/testdata/**'
+    - '**/ci/**'
+    - '**/docker/scanners/**'
+  patterns:
+  - pattern-regex: (?m)^[ \t]*(?i:USER)[ \t]+["']?(?:root|0)(?::\S+)?["']?[ \t]*$(?![\s\S]*^[ \t]*(?i:FROM[ \t]|USER[ \t]+(?!["']?(?:root|0)(?:[:"'\s]|$))))(?![\s\S]*\b(?:su-exec|gosu|setpriv|runuser|s6-setuidgid)\b)(?![\s\S]*hadolint[ \t]+ignore=[^\n]*\bDL3002\b)
+  - pattern-not-regex: (?m)^[ \t]*#[ \t]*hadolint[ \t]+ignore=[^\n]*\bDL3002\b[^\n]*\n[ \t]*(?i:USER)[^\n]*
+- id: mh.microhealth.generic.aws-access-key-id
+  languages:
+  - regex
+  severity: ERROR
+  message: 'An AWS access key ID is in the source. An access key ID is one half of a long-term credential: remove it, load it from the environment or a secret store at run time, and deactivate and rotate the key in IAM.'
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - aws
+    - secrets
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-798: Use of Hard-coded Credentials'
+    references:
+    - https://docs.aws.amazon.com/IAM/latest/UserGuide/security-creds-programmatic-access.html
+    - https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+    mh_source: microhealth
+    mh_upstream_id: generic.aws-access-key-id
+    mh_license: MIT
+  patterns:
+  - pattern-regex: \b(?:A3T[A-Z0-9]|AKIA|ABIA|ACCA|AGPA|AIDA|AIPA|ANPA|ANVA|AROA|APKA|ASCA|ASIA)[A-Z0-9]{16}\b
+  - pattern-not-regex: \b(?:A3T[A-Z0-9]|AKIA|ABIA|ACCA|AGPA|AIDA|AIPA|ANPA|ANVA|AROA|APKA|ASCA|ASIA)[A-Z0-9]{9}EXAMPLE\b
+  - pattern-not-regex: (?m)^.*\bgitleaks:allow\b.*$
+- id: mh.microhealth.generic.gcp-service-account-key
+  languages:
+  - regex
+  severity: ERROR
+  message: 'A Google Cloud service-account key file with its private key is in the source. Anyone who reads it can act as that service account. Remove it, load the key from a secret store at run time, and rotate the key in IAM: a committed key is leaked.'
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - gcp
+    - secrets
+    confidence: HIGH
+    likelihood: HIGH
+    impact: HIGH
+    cwe:
+    - 'CWE-798: Use of Hard-coded Credentials'
+    references:
+    - https://cloud.google.com/iam/docs/keys-create-delete
+    mh_source: microhealth
+    mh_upstream_id: generic.gcp-service-account-key
+    mh_license: MIT
+  patterns:
+  - pattern-either:
+    - pattern-regex: '["'']type["'']\s*:\s*["'']service_account["''][\s\S]{0,4000}?["'']private_key["'']\s*:\s*["'']-----BEGIN (?:RSA )?PRIVATE KEY-----(?:\\n|\n)[A-Za-z0-9+/]{40,}'
+    - pattern-regex: '["'']private_key["'']\s*:\s*["'']-----BEGIN (?:RSA )?PRIVATE KEY-----(?:\\n|\n)[A-Za-z0-9+/]{40,}[\s\S]{0,4000}?["'']type["'']\s*:\s*["'']service_account["'']'
+  - pattern-not-regex: (?m)^.*\bgitleaks:allow\b.*$
+- id: mh.microhealth.generic.jwt-token
+  languages:
+  - regex
+  severity: ERROR
+  message: 'A JSON Web Token is in the source. A signed token is a bearer credential until it expires: remove it, load it from configuration at run time, and revoke or rotate whatever signed it.'
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - jwt
+    - secrets
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-798: Use of Hard-coded Credentials'
+    references:
+    - https://supabase.com/docs/guides/api/api-keys
+    mh_source: microhealth
+    mh_upstream_id: generic.jwt-token
+    mh_license: MIT
+  patterns:
+  - pattern-regex: \beyJ[A-Za-z0-9_-]{14,}\.[A-Za-z0-9_-]{13,}(?:\.[A-Za-z0-9_-]+)?
+  - pattern-not-regex: \beyJ[A-Za-z0-9_-]*\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6[A-Za-z0-9_-]{28}Iiwicm9sZSI6ImFub24i[A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]+)?
+  - pattern-not-regex: (?m)^.*\bgitleaks:allow\b.*$
+- id: mh.microhealth.go.decompression-without-limit
+  languages:
+  - go
+  severity: WARNING
+  message: Decompressed data is copied or read with no upper bound. A small archive can expand to gigabytes (a decompression bomb) and fill the disk or memory. Read through io.LimitReader (or http.MaxBytesReader) with a cap that fits the use, and treat hitting it as an error.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - go
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: MEDIUM
+    cwe:
+    - 'CWE-409: Improper Handling of Highly Compressed Data (Data Amplification)'
+    references:
+    - https://pkg.go.dev/io#LimitReader
+    mh_source: microhealth
+    mh_upstream_id: go.decompression-without-limit
+    mh_license: MIT
+  mode: taint
+  pattern-sources:
+  - pattern: gzip.NewReader(...)
+  - pattern: zlib.NewReader(...)
+  - pattern: zlib.NewReaderDict(...)
+  - pattern: bzip2.NewReader(...)
+  - pattern: flate.NewReader(...)
+  - pattern: flate.NewReaderDict(...)
+  - pattern: lzw.NewReader(...)
+  - pattern: tar.NewReader(...)
+  - pattern: zip.NewReader(...)
+  - pattern: zip.OpenReader(...)
+  pattern-sanitizers:
+  - pattern: io.LimitReader(...)
+  - pattern: http.MaxBytesReader(...)
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern: io.Copy($DST, $SRC)
+      - pattern: io.CopyBuffer($DST, $SRC, $BUF)
+      - pattern: io.ReadAll($SRC)
+    - focus-metavariable: $SRC
+- id: mh.microhealth.go.dir-mode-too-permissive
+  languages:
+  - go
+  severity: WARNING
+  message: This directory is created with mode $MASK, which lets the group create, delete or rename files in it, or lets every other user on the host list or enter it. Another local account can then plant or swap a file this program later trusts. Use 0700 when only this process needs it, or 0750 with a dedicated group; if other users really must reach it, say why in a comment.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - go
+    confidence: HIGH
+    likelihood: LOW
+    impact: MEDIUM
+    cwe:
+    - 'CWE-732: Incorrect Permission Assignment for Critical Resource'
+    references:
+    - https://pkg.go.dev/os#MkdirAll
+    mh_source: microhealth
+    mh_upstream_id: go.dir-mode-too-permissive
+    mh_license: MIT
+  patterns:
+  - pattern-either:
+    - pattern: os.Mkdir(..., $MASK)
+    - pattern: os.MkdirAll(..., $MASK)
+  - metavariable-comparison:
+      metavariable: $MASK
+      comparison: int($MASK) & 0o027 != 0
+- id: mh.microhealth.go.file-mode-too-permissive
+  languages:
+  - go
+  severity: WARNING
+  message: This file is created or chmod-ed with mode $MASK, which lets the group write or execute it or lets every other user on the host read, write or execute it. A secret, a token or a config file written this way can be read or replaced by another local account. Use 0600 when only this process needs the file, or 0640 with a dedicated group; if other users really must read it, say why in a comment.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - go
+    confidence: HIGH
+    likelihood: LOW
+    impact: MEDIUM
+    cwe:
+    - 'CWE-732: Incorrect Permission Assignment for Critical Resource'
+    references:
+    - https://pkg.go.dev/io/fs#FileMode
+    mh_source: microhealth
+    mh_upstream_id: go.file-mode-too-permissive
+    mh_license: MIT
+  patterns:
+  - pattern-either:
+    - pattern: os.Chmod(..., $MASK)
+    - pattern: os.OpenFile(..., $MASK)
+    - pattern: os.WriteFile(..., $MASK)
+  - metavariable-comparison:
+      metavariable: $MASK
+      comparison: int($MASK) & 0o037 != 0
+- id: mh.microhealth.go.sql-built-from-strings
+  languages:
+  - go
+  severity: WARNING
+  message: A SQL statement is built by formatting or concatenating strings and run with $METHOD. If any part of it comes from a request, a file or another system, it can change the statement's logic (SQL injection). Pass values as query parameters ($1, ?); for identifiers, pick from a fixed map of allowed names rather than inserting the input.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - go
+    - database/sql
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-89: Improper Neutralization of Special Elements used in an SQL Command (''SQL Injection'')'
+    owasp:
+    - A03:2021 - Injection
+    references:
+    - https://go.dev/doc/database/sql-injection
+    mh_source: microhealth
+    mh_upstream_id: go.sql-built-from-strings
+    mh_license: MIT
+  mode: taint
+  pattern-sources:
+  - patterns:
+    - pattern: fmt.Sprintf("$FMT", $ARG, ...)
+    - metavariable-regex:
+        metavariable: $FMT
+        regex: (?is).*\b(select|insert|update|delete|merge|upsert|create|drop|alter|truncate|grant|revoke|where|values|set)\b.*
+  - patterns:
+    - pattern-either:
+      - pattern: '"$LIT" + $X'
+      - pattern: $X + "$LIT"
+    - pattern-not: '"..." + "..."'
+    - metavariable-regex:
+        metavariable: $LIT
+        regex: (?is).*\b(select|insert|update|delete|merge|upsert|create|drop|alter|truncate|grant|revoke|where|values|set)\b.*
+  - pattern: '($SB : strings.Builder).String()'
+  pattern-sinks:
+  - patterns:
+    - pattern: $DB.$METHOD(...)
+    - metavariable-regex:
+        metavariable: $METHOD
+        regex: ^(Exec(Context)?|Query(Context)?|QueryRow(Context)?|Prepare(Context)?)$
+- id: mh.microhealth.go.unsafe-pointer-misuse
+  languages:
+  - go
+  severity: WARNING
+  message: unsafe.$FUNC steps outside Go's type and memory safety. A wrong length, a pointer kept as a uintptr across a statement, or arithmetic past the end of an allocation reads or writes memory the program does not own. Check the size or length against what the memory really holds, or use a safe API (encoding/binary, golang.org/x/sys wrappers); if the use is correct, say why in a comment.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - go
+    confidence: MEDIUM
+    likelihood: LOW
+    impact: HIGH
+    cwe:
+    - 'CWE-242: Use of Inherently Dangerous Function'
+    references:
+    - https://pkg.go.dev/unsafe#Pointer
+    - https://cwe.mitre.org/data/definitions/242.html
+    mh_source: microhealth
+    mh_upstream_id: go.unsafe-pointer-misuse
+    mh_license: MIT
+  patterns:
+  - pattern: unsafe.$FUNC(...)
+  - metavariable-regex:
+      metavariable: $FUNC
+      regex: ^(Pointer|Add|Slice|SliceData|String|StringData)$
+  - pattern-not:
+      patterns:
+      - pattern: unsafe.Pointer($X)
+      - pattern-either:
+        - pattern-inside: syscall.$SYSCALL(..., uintptr(unsafe.Pointer($X)), ...)
+        - pattern-inside: unix.$SYSCALL(..., uintptr(unsafe.Pointer($X)), ...)
+        - pattern-inside: windows.$SYSCALL(..., uintptr(unsafe.Pointer($X)), ...)
+        - pattern-inside: $PROC.Call(..., uintptr(unsafe.Pointer($X)), ...)
 - id: mh.microhealth.javascript.child-process-shell-command
   languages:
   - javascript
@@ -13435,22 +13514,77 @@ rules:
 
           '
     - focus-metavariable: $KEY
-- id: mh.microhealth.javascript.html-template-unescaped
+- id: mh.microhealth.javascript.express-sendfile-request-path
   languages:
   - javascript
   - typescript
   severity: WARNING
-  message: This template literal builds HTML and interpolates a value that is not passed through an escaping function. If the value can hold `<`, `&` or a quote from a user, a file or a model's output, the result can carry a script (XSS). Escape every interpolated value (an escapeHtml helper, or DOMPurify.sanitize for markup you mean to keep), or build the element with the DOM / a framework that escapes by default.
+  mode: taint
+  message: A path taken from the HTTP request is passed to res.sendFile / res.download. Without the `root` option and a check that the resolved path stays inside it, a caller can read any file the process can (`../../etc/passwd`). Pass { root } and a validated relative name, or map an identifier to a file on the server side.
   metadata:
     category: security
     subcategory:
-    - audit
+    - vuln
+    technology:
+    - express
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-22: Improper Limitation of a Pathname to a Restricted Directory (''Path Traversal'')'
+    owasp:
+    - A01:2021 - Broken Access Control
+    references:
+    - https://expressjs.com/en/api.html#res.sendFile
+    mh_source: microhealth
+    mh_upstream_id: javascript.express-sendfile-request-path
+    mh_license: MIT
+  pattern-sources:
+  - patterns:
+    - pattern-either:
+      - pattern: $REQ.query
+      - pattern: $REQ.params
+      - pattern: $REQ.body
+      - pattern: $REQ.cookies
+      - pattern: $REQ.headers
+      - pattern: $REQ.path
+      - pattern: $REQ.url
+      - pattern: $REQ.originalUrl
+    - metavariable-regex:
+        metavariable: $REQ
+        regex: ^(req|request)$
+  pattern-sanitizers:
+  - pattern: path.basename(...)
+  - pattern: basename(...)
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern: $RES.sendFile($P, ...)
+      - pattern: $RES.sendfile($P, ...)
+      - pattern: $RES.download($P, ...)
+    - pattern-not: '$RES.$M($P, {..., root: $ROOT, ...}, ...)'
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response)$
+    - focus-metavariable: $P
+- id: mh.microhealth.javascript.html-string-to-dom-sink
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  mode: taint
+  message: Markup built by string interpolation reaches an HTML sink (innerHTML, outerHTML, insertAdjacentHTML, document.write, srcdoc). Any interpolated value that is not HTML-escaped becomes markup, so a name, a database field or a model's output can inject script (XSS). Escape every interpolated value (escapeHtml) or build the elements with the DOM API / React instead of a string.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
     technology:
     - javascript
     - typescript
-    confidence: LOW
-    likelihood: LOW
-    impact: MEDIUM
+    - browser
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
     cwe:
     - 'CWE-79: Improper Neutralization of Input During Web Page Generation (''Cross-site Scripting'')'
     owasp:
@@ -13458,59 +13592,47 @@ rules:
     references:
     - https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
     mh_source: microhealth
-    mh_upstream_id: javascript.html-template-unescaped
+    mh_upstream_id: javascript.html-string-to-dom-sink
     mh_license: MIT
-  paths:
-    exclude:
-    - '*.test.*'
-    - '*.spec.*'
-    - __tests__/
-    - e2e/
-  patterns:
-  - pattern-either:
-    - pattern: '`$HTML${$VAR}...`'
-    - pattern: '`...${$VAR}$HTML`'
-  - metavariable-regex:
-      metavariable: $HTML
-      regex: (?is).*</?(a|b|body|br|button|code|div|em|form|h[1-6]|head|html|i|iframe|img|input|label|li|link|meta|ol|option|p|pre|script|section|select|span|strong|style|svg|table|tbody|td|textarea|th|thead|title|tr|u|ul)(\s|>|/>)
-  - pattern-not: '`$HTML${escapeHtml(...)}...`'
-  - pattern-not: '`...${escapeHtml(...)}$HTML`'
-  - pattern-not: '`$HTML${escapeHTML(...)}...`'
-  - pattern-not: '`...${escapeHTML(...)}$HTML`'
-  - pattern-not: '`$HTML${escape(...)}...`'
-  - pattern-not: '`...${escape(...)}$HTML`'
-  - pattern-not: '`$HTML${htmlEscape(...)}...`'
-  - pattern-not: '`...${htmlEscape(...)}$HTML`'
-  - pattern-not: '`$HTML${escapeAttr(...)}...`'
-  - pattern-not: '`...${escapeAttr(...)}$HTML`'
-  - pattern-not: '`$HTML${escapeAttribute(...)}...`'
-  - pattern-not: '`...${escapeAttribute(...)}$HTML`'
-  - pattern-not: '`$HTML${encodeURIComponent(...)}...`'
-  - pattern-not: '`...${encodeURIComponent(...)}$HTML`'
-  - pattern-not: '`$HTML${encodeURI(...)}...`'
-  - pattern-not: '`...${encodeURI(...)}$HTML`'
-  - pattern-not: '`$HTML${sanitize(...)}...`'
-  - pattern-not: '`...${sanitize(...)}$HTML`'
-  - pattern-not: '`$HTML${sanitizeHtml(...)}...`'
-  - pattern-not: '`...${sanitizeHtml(...)}$HTML`'
-  - pattern-not: '`$HTML${DOMPurify.sanitize(...)}...`'
-  - pattern-not: '`...${DOMPurify.sanitize(...)}$HTML`'
-  - pattern-not: '`$HTML${$O.escape(...)}...`'
-  - pattern-not: '`...${$O.escape(...)}$HTML`'
-  - pattern-not: '`$HTML${$O.escapeHtml(...)}...`'
-  - pattern-not: '`...${$O.escapeHtml(...)}$HTML`'
-  - pattern-not: '`$HTML${$O.encode(...)}...`'
-  - pattern-not: '`...${$O.encode(...)}$HTML`'
-  - pattern-not: '`$HTML${$O.sanitize(...)}...`'
-  - pattern-not: '`...${$O.sanitize(...)}$HTML`'
-  - pattern-not: '`$HTML${Number(...)}...`'
-  - pattern-not: '`...${Number(...)}$HTML`'
-  - pattern-not: '`$HTML${$A.length}...`'
-  - pattern-not: '`...${$A.length}$HTML`'
-  - pattern-not: '`$HTML${$A.size}...`'
-  - pattern-not: '`...${$A.size}$HTML`'
-  - pattern-not: '`$HTML${$A.toFixed(...)}...`'
-  - pattern-not: '`...${$A.toFixed(...)}$HTML`'
+  pattern-sources:
+  - patterns:
+    - pattern: '`...${$X}...`
+
+        '
+    - focus-metavariable: $X
+    - pattern-not: '"..."
+
+        '
+  - patterns:
+    - pattern-either:
+      - pattern: $A + $X
+      - pattern: $X + $A
+    - focus-metavariable: $X
+    - pattern-not: '"..."
+
+        '
+    - pattern-not: $A + $B
+  pattern-sanitizers:
+  - patterns:
+    - pattern: $F(...)
+    - metavariable-regex:
+        metavariable: $F
+        regex: ^(escapeHtml|escapeHTML|htmlEscape|escapeXml|escape|esc|xmlEsc|encodeURIComponent|sanitizeSvg|sanitizeHtml|sanitizeMarkup|String\(Number|Number|parseInt|parseFloat)$
+  - pattern: DOMPurify.sanitize(...)
+  - pattern: $P.sanitize(...)
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern: $EL.innerHTML = $SINK
+      - pattern: $EL.outerHTML = $SINK
+      - pattern: $EL.srcdoc = $SINK
+      - pattern: $EL.insertAdjacentHTML($POS, $SINK)
+      - pattern: document.write($SINK, ...)
+      - pattern: document.writeln($SINK, ...)
+      - pattern: $W.document.write($SINK, ...)
+      - pattern: $W.document.writeln($SINK, ...)
+      - pattern: $RANGE.createContextualFragment($SINK)
+    - focus-metavariable: $SINK
 - id: mh.microhealth.javascript.http-server-non-loopback
   languages:
   - javascript
@@ -13597,7 +13719,7 @@ rules:
   - javascript
   - typescript
   severity: WARNING
-  message: 'Math.random() (or crypto.pseudoRandomBytes) produces a value used as a secret: a token, password, nonce, salt or key. Its output is predictable from a few earlier values, so someone who sees some of them can guess the next. Use crypto.randomBytes / crypto.randomUUID in Node, or crypto.getRandomValues in the browser.'
+  message: 'A value that guards access (a token, secret, password, nonce, salt, session or reset code, key or identifier) is made from Math.random() or crypto.pseudoRandomBytes(). Neither is a cryptographic generator: their output can be predicted from earlier output. Use crypto.randomUUID(), crypto.getRandomValues() or crypto.randomBytes().'
   metadata:
     category: security
     subcategory:
@@ -13605,45 +13727,53 @@ rules:
     technology:
     - javascript
     - node.js
+    - browser
     confidence: MEDIUM
     likelihood: MEDIUM
-    impact: MEDIUM
+    impact: HIGH
     cwe:
     - 'CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)'
     owasp:
     - A02:2021 - Cryptographic Failures
     references:
-    - https://nodejs.org/api/crypto.html#cryptorandombytessize-callback
+    - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
     mh_source: microhealth
     mh_upstream_id: javascript.insecure-random-for-secret
     mh_license: MIT
   pattern-either:
-  - pattern: $CRYPTO.pseudoRandomBytes(...)
+  - pattern: crypto.pseudoRandomBytes(...)
+  - pattern: $C.pseudoRandomBytes(...)
   - patterns:
-    - pattern: Math.random()
     - pattern-either:
-      - pattern-inside: $NAME = <... Math.random() ...>
-      - pattern-inside: const $NAME = <... Math.random() ...>
-      - pattern-inside: let $NAME = <... Math.random() ...>
-      - pattern-inside: var $NAME = <... Math.random() ...>
-      - pattern-inside: '{..., $NAME: <... Math.random() ...>, ...}'
-      - pattern-inside: "function $NAME(...) {\n  ...\n}\n"
-      - pattern-inside: const $NAME = (...) => $BODY
+      - pattern: $NAME = <... Math.random() ...>
+      - pattern: let $NAME = <... Math.random() ...>
+      - pattern: const $NAME = <... Math.random() ...>
+      - pattern: var $NAME = <... Math.random() ...>
+      - pattern: $OBJ.$NAME = <... Math.random() ...>
+      - pattern: '{..., $NAME: <... Math.random() ...>, ...}'
+      - pattern: const $NAME = (...) => <... Math.random() ...>
     - metavariable-regex:
         metavariable: $NAME
-        regex: (?i).*(password|passwd|passphrase|secret|token|nonce|salt|otp|csrf|xsrf|api_?key|session_?id|session_?key|credential|private_?key|verifier|challenge)
+        regex: (?i).*(?:token|secret|passw|pwd|nonce|salt|otp|csrf|xsrf|session|api_?key|private_?key|signing_?key|secret_?key|credential|auth(?!or)|uuid|guid|verifier|challenge|reset_?code|invite_?code|verification)
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function $FN(...) { ... }
+      - pattern-inside: const $FN = (...) => { ... }
+    - pattern: return <... Math.random() ...>;
+    - metavariable-regex:
+        metavariable: $FN
+        regex: (?i).*(?:token|secret|passw|pwd|nonce|salt|otp|csrf|xsrf|session|api_?key|private_?key|signing_?key|secret_?key|credential|auth(?!or)|uuid|guid|verifier|challenge|reset_?code|invite_?code|verification)
 - id: mh.microhealth.javascript.insecure-websocket-url
   languages:
   - javascript
   - typescript
   severity: ERROR
-  message: 'This WebSocket address uses ws://, which is unencrypted: every message on it can be read or changed by anyone on the network path. Use wss://. (ws:// to localhost, 127.0.0.1 or [::1] is not reported -- it never leaves the machine.)'
+  message: This code opens, or builds the address of, a plaintext `ws://` WebSocket to a host that is not this computer. Everything on that socket, session tokens included, crosses the network in clear text and can be read or changed in transit. Use `wss://`.
   metadata:
     category: security
     subcategory:
     - vuln
     technology:
-    - javascript
     - websocket
     confidence: HIGH
     likelihood: MEDIUM
@@ -13659,9 +13789,11 @@ rules:
     mh_license: MIT
   patterns:
   - pattern-either:
-    - pattern: '"..."'
-    - pattern: '`...`'
-  - pattern-regex: (?<=["'`])ws://(?!(localhost|127\.0\.0\.1|\[::1\])([:/]|["'`]|$))
+    - pattern: '"$URL"'
+    - pattern: '`$URL`'
+  - metavariable-regex:
+      metavariable: $URL
+      regex: (?i)^ws://(?!(?:localhost|127(?:\.\d{1,3}){3}|\[::1\])(?:[:/?#]|$))
 - id: mh.microhealth.javascript.js-yaml-unsafe-schema
   languages:
   - javascript
@@ -13692,46 +13824,120 @@ rules:
   - pattern: import $T from "js-yaml-js-types"
   - pattern: import * as $T from "js-yaml-js-types"
   - pattern: import {...} from "js-yaml-js-types"
-- id: mh.microhealth.javascript.object-assign-parsed-json
+- id: mh.microhealth.javascript.json-parse-into-object-assign
   languages:
   - javascript
   - typescript
   severity: WARNING
-  message: An object parsed from JSON is copied with Object.assign. JSON.parse keeps a `"__proto__"` key as an ordinary property, and Object.assign then SETS it on the target -- replacing the target's prototype, so properties the program checks (isAdmin, a default option) can appear from nowhere (prototype pollution). Copy only the fields you expect, or parse with a reviver that drops `__proto__`, `constructor` and `prototype`.
+  mode: taint
+  message: An object parsed from JSON is merged into another with Object.assign. A parsed object can carry a "__proto__" (or "constructor") key, and copying it can change the target's prototype or shadow its methods (prototype pollution). Copy only the keys you expect, validate the object with a schema first, or merge into Object.create(null).
   metadata:
     category: security
     subcategory:
-    - vuln
+    - audit
     technology:
     - javascript
-    - node.js
     confidence: MEDIUM
     likelihood: LOW
     impact: MEDIUM
     cwe:
     - 'CWE-1321: Improperly Controlled Modification of Object Prototype Attributes (''Prototype Pollution'')'
-    owasp:
-    - A08:2021 - Software and Data Integrity Failures
     references:
-    - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign
+    - https://cheatsheetseries.owasp.org/cheatsheets/Prototype_Pollution_Prevention_Cheat_Sheet.html
     mh_source: microhealth
-    mh_upstream_id: javascript.object-assign-parsed-json
+    mh_upstream_id: javascript.json-parse-into-object-assign
     mh_license: MIT
-  mode: taint
   pattern-sources:
   - patterns:
     - pattern: JSON.parse(...)
     - pattern-not: JSON.parse("...", ...)
+  pattern-sanitizers:
+  - patterns:
+    - pattern-either:
+      - pattern: $SCHEMA.parse(...)
+      - pattern: $SCHEMA.safeParse(...)
+    - pattern-not: JSON.parse(...)
   pattern-sinks:
   - patterns:
     - pattern-either:
       - pattern: Object.assign($TARGET, $SRC, ...)
-      - pattern: Object.assign($TARGET, $A, $SRC, ...)
-      - pattern: Object.assign($TARGET, $A, $B, $SRC, ...)
-    - metavariable-regex:
-        metavariable: $SRC
-        regex: (?s)^(?!\s*\{)(?!\s*new\s).+
+      - pattern: Object.assign($TARGET, $OTHER, ..., $SRC, ...)
     - focus-metavariable: $SRC
+- id: mh.microhealth.javascript.open-redirect-from-url-input
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  message: A value read from the page URL (query string, fragment, referrer or window.name) decides where the browser is sent. A link to this page with that value set can bounce a user to any site while showing this site's address first (open redirect, a phishing aid), or run script with a `javascript:` URL. Redirect only to a relative path that starts with a single `/`, or to a URL whose origin is checked against an allow-list.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - browser
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: MEDIUM
+    cwe:
+    - 'CWE-601: URL Redirection to Untrusted Site (''Open Redirect'')'
+    owasp:
+    - A01:2021 - Broken Access Control
+    references:
+    - https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html
+    mh_source: microhealth
+    mh_upstream_id: javascript.open-redirect-from-url-input
+    mh_license: MIT
+  options:
+    taint_intrafile: true
+  mode: taint
+  pattern-sources:
+  - pattern-either:
+    - pattern: location.search
+    - pattern: location.hash
+    - pattern: window.location.search
+    - pattern: window.location.hash
+    - pattern: document.location.search
+    - pattern: document.location.hash
+    - pattern: document.URL
+    - pattern: document.documentURI
+    - pattern: document.referrer
+    - pattern: window.name
+    - pattern: new URLSearchParams(...)
+    - pattern: new URL(location.href).searchParams
+    - pattern: new URL(window.location.href).searchParams
+    - pattern: useSearchParams()
+    - pattern: useLocation().search
+    - pattern: useLocation().hash
+  pattern-sanitizers:
+  - pattern: encodeURIComponent(...)
+  - by-side-effect: true
+    patterns:
+    - pattern-either:
+      - pattern: $AL.includes($X)
+      - pattern: $AL.has($X)
+      - pattern: $CHECK($X, ...)
+      - pattern: $OBJ.$CHECK($X, ...)
+    - metavariable-regex:
+        metavariable: $CHECK
+        regex: (?i)^(includes|has|(assert|validate|check|ensure|verify|is|guard|safe)\w*(url|uri|redirect|path|origin|host|allowed|safe|internal|relative)\w*)$
+    - focus-metavariable: $X
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern: location.href = $U
+      - pattern: window.location.href = $U
+      - pattern: document.location.href = $U
+      - pattern: location = $U
+      - pattern: window.location = $U
+      - pattern: location.assign($U)
+      - pattern: window.location.assign($U)
+      - pattern: location.replace($U)
+      - pattern: window.location.replace($U)
+      - pattern: window.open($U, ...)
+    - metavariable-regex:
+        metavariable: $U
+        regex: ^(?!`https?://[^/`$]+/|`/[^/`$]|["']https?://[^/"']+/|["']/[^/"'])
+    - focus-metavariable: $U
 - id: mh.microhealth.javascript.path-traversal-from-request
   languages:
   - javascript
@@ -13834,169 +14040,306 @@ rules:
       - pattern: $RES.download($PATH, ...)
       - pattern: $RES.attachment($PATH)
     - focus-metavariable: $PATH
-- id: mh.microhealth.javascript.regexp-from-request
+- id: mh.microhealth.javascript.react-unsanitized-inner-html
   languages:
   - javascript
   - typescript
   severity: WARNING
-  message: A value from the HTTP request (or a WebSocket message) is compiled as a regular expression. A client can send a pattern with nested quantifiers that backtracks for minutes and blocks the event loop for every user (ReDoS), or a pattern that matches more than intended. Escape it first (an escapeRegExp helper, lodash's _.escapeRegExp) or match it as a plain string (includes, startsWith).
+  message: 'dangerouslySetInnerHTML receives markup that was not visibly sanitised. React''s escaping is off for this element, so any script, event handler or javascript: URL in the value runs in the page (XSS). Pass the value through DOMPurify (DOMPurify.sanitize or a project wrapper such as sanitizeSvg / sanitizeHtml) where it is used, or render it as text.'
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - react
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-79: Improper Neutralization of Input During Web Page Generation (''Cross-site Scripting'')'
+    owasp:
+    - A03:2021 - Injection
+    references:
+    - https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html
+    mh_source: microhealth
+    mh_upstream_id: javascript.react-unsanitized-inner-html
+    mh_license: MIT
+  patterns:
+  - pattern: '<$EL dangerouslySetInnerHTML={{__html: $X}} />
+
+      '
+  - metavariable-regex:
+      metavariable: $EL
+      regex: ^(?!style$)
+  - pattern-not: '<$EL dangerouslySetInnerHTML={{__html: "..."}} />
+
+      '
+  - pattern-not: '<$EL dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(...)}} />
+
+      '
+  - pattern-not: '<$EL dangerouslySetInnerHTML={{__html: sanitizeSvg(...)}} />
+
+      '
+  - pattern-not: '<$EL dangerouslySetInnerHTML={{__html: sanitizeHtml(...)}} />
+
+      '
+  - pattern-not: '<$EL dangerouslySetInnerHTML={{__html: sanitizeMarkup(...)}} />
+
+      '
+  - pattern-not-inside: '$V = DOMPurify.sanitize(...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = sanitizeSvg(...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = sanitizeHtml(...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = sanitizeMarkup(...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = $C ? DOMPurify.sanitize(...) : $ALT;
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = $C ? sanitizeSvg(...) : $ALT;
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = $C ? sanitizeHtml(...) : $ALT;
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = $C ? sanitizeMarkup(...) : $ALT;
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => DOMPurify.sanitize(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => sanitizeSvg(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => sanitizeHtml(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => sanitizeMarkup(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => $C ? DOMPurify.sanitize(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => $C ? sanitizeSvg(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => $C ? sanitizeHtml(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => $C ? sanitizeMarkup(...) : $ALT, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => { ... return DOMPurify.sanitize(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => { ... return sanitizeSvg(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => { ... return sanitizeHtml(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => { ... return sanitizeMarkup(...); }, ...);
+
+      ...
+
+      '
+- id: mh.microhealth.javascript.regexp-from-untrusted-input
+  languages:
+  - javascript
+  - typescript
+  severity: WARNING
+  mode: taint
+  message: 'A regular expression is compiled from input a user controls (the HTTP request, the page URL, a form field). The user then writes the pattern: a crafted one can backtrack for minutes and block the event loop for every request (ReDoS), or match far more than intended. Escape the value (escapeRegExp / `s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")`) to match it literally, or use string methods (includes, startsWith).'
   metadata:
     category: security
     subcategory:
     - vuln
     technology:
-    - node.js
-    - express
-    - koa
-    - fastify
+    - javascript
+    - typescript
     confidence: MEDIUM
     likelihood: MEDIUM
     impact: MEDIUM
     cwe:
     - 'CWE-1333: Inefficient Regular Expression Complexity'
-    owasp:
-    - A03:2021 - Injection
     references:
     - https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS
     mh_source: microhealth
-    mh_upstream_id: javascript.regexp-from-request
+    mh_upstream_id: javascript.regexp-from-untrusted-input
     mh_license: MIT
-  mode: taint
   pattern-sources:
   - patterns:
-    - pattern: $REQ.$GETTER(...)
-    - metavariable-regex:
-        metavariable: $REQ
-        regex: ^(req|request|ctx|ctx\.request)$
-    - metavariable-regex:
-        metavariable: $GETTER
-        regex: ^(get|header|param)$
-  - patterns:
-    - pattern: $REQ.$FIELD
-    - metavariable-regex:
-        metavariable: $REQ
-        regex: ^(req|request|ctx|ctx\.request)$
-    - metavariable-regex:
-        metavariable: $FIELD
-        regex: ^(query|params|body|headers|cookies|signedCookies|url|originalUrl|path|files|file)$
-  - patterns:
-    - pattern: $EVENT.$FIELD
-    - metavariable-regex:
-        metavariable: $EVENT
-        regex: ^event$
-    - metavariable-regex:
-        metavariable: $FIELD
-        regex: ^(body|queryStringParameters|multiValueQueryStringParameters|pathParameters)$
-  - patterns:
     - pattern-either:
-      - pattern-inside: $WS.on("message", function ($DATA, ...) {...})
-      - pattern-inside: $WS.on("message", ($DATA, ...) => {...})
-      - pattern-inside: $WS.on("message", async ($DATA, ...) => {...})
-    - focus-metavariable: $DATA
-    - pattern: $DATA
+      - pattern: $REQ.query
+      - pattern: $REQ.body
+      - pattern: $REQ.params
+      - pattern: $REQ.headers
+      - pattern: $REQ.url
+      - pattern: $REQ.json()
+      - pattern: $REQ.text()
+      - pattern: $REQ.formData()
+    - metavariable-regex:
+        metavariable: $REQ
+        regex: ^(req|request)$
+  - pattern: location.search
+  - pattern: location.hash
+  - pattern: window.location.search
+  - pattern: window.location.hash
+  - pattern: new URLSearchParams(...).get(...)
+  - pattern: $PARAMS.get(...)
+  - pattern: $EVT.target.value
+  - pattern: $EVT.currentTarget.value
   pattern-sanitizers:
   - patterns:
     - pattern: $F(...)
     - metavariable-regex:
         metavariable: $F
-        regex: (?i)(.*\.)?(escape(Reg(Ex|Exp)?|StringRegexp|Regex|Pattern)|quoteRegExp|regexEscape)$
+        regex: (?i)^(\w+\.)?(escape\w*reg\w*|reg\w*escape\w*|escape)$
+  - pattern: $S.replace(/[.*+?^${}()|[\]\\]/g, ...)
+  - pattern: $S.replaceAll(/[.*+?^${}()|[\]\\]/g, ...)
   pattern-sinks:
   - patterns:
     - pattern-either:
-      - pattern: new RegExp($PATTERN, ...)
-      - pattern: RegExp($PATTERN, ...)
-    - focus-metavariable: $PATTERN
+      - pattern: new RegExp($P, ...)
+      - pattern: RegExp($P, ...)
+    - focus-metavariable: $P
 - id: mh.microhealth.javascript.secret-compare-not-constant-time
   languages:
   - javascript
   - typescript
   severity: WARNING
-  message: A value from the HTTP request is compared with `$SECRET` using ==/===. String equality stops at the first differing character, so a client who can time many attempts can recover a token, an HMAC or a password hash one character at a time. Compare digests with crypto.timingSafeEqual (equal-length Buffers), or compare hashes of both values.
+  message: A secret ($S) is compared with `==` / `===`. String comparison stops at the first differing character, so the time it takes tells a caller how much of a guess was right (timing attack). Compare secrets with a constant-time function (crypto.timingSafeEqual over equal-length buffers, or the project's constant-time helper).
   metadata:
     category: security
     subcategory:
-    - vuln
+    - audit
     technology:
-    - node.js
-    - express
-    - koa
-    - fastify
+    - javascript
+    - typescript
     confidence: MEDIUM
     likelihood: LOW
     impact: MEDIUM
     cwe:
     - 'CWE-208: Observable Timing Discrepancy'
-    owasp:
-    - A02:2021 - Cryptographic Failures
     references:
     - https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b
     mh_source: microhealth
     mh_upstream_id: javascript.secret-compare-not-constant-time
     mh_license: MIT
-  mode: taint
-  pattern-sources:
-  - patterns:
-    - pattern: $REQ.$GETTER(...)
-    - metavariable-regex:
-        metavariable: $REQ
-        regex: ^(req|request|ctx|ctx\.request)$
-    - metavariable-regex:
-        metavariable: $GETTER
-        regex: ^(get|header|param)$
-  - patterns:
-    - pattern: $REQ.$FIELD
-    - metavariable-regex:
-        metavariable: $REQ
-        regex: ^(req|request|ctx|ctx\.request)$
-    - metavariable-regex:
-        metavariable: $FIELD
-        regex: ^(query|params|body|headers|cookies|signedCookies|url|originalUrl|path|files|file)$
-  - patterns:
-    - pattern: $EVENT.$FIELD
-    - metavariable-regex:
-        metavariable: $EVENT
-        regex: ^event$
-    - metavariable-regex:
-        metavariable: $FIELD
-        regex: ^(body|queryStringParameters|multiValueQueryStringParameters|pathParameters)$
-  - patterns:
-    - pattern-either:
-      - pattern-inside: $WS.on("message", function ($DATA, ...) {...})
-      - pattern-inside: $WS.on("message", ($DATA, ...) => {...})
-      - pattern-inside: $WS.on("message", async ($DATA, ...) => {...})
-    - focus-metavariable: $DATA
-    - pattern: $DATA
-  pattern-sinks:
-  - patterns:
-    - pattern-either:
-      - pattern: $SECRET == $OTHER
-      - pattern: $SECRET === $OTHER
-      - pattern: $SECRET != $OTHER
-      - pattern: $SECRET !== $OTHER
-      - pattern: $OTHER == $SECRET
-      - pattern: $OTHER === $SECRET
-      - pattern: $OTHER != $SECRET
-      - pattern: $OTHER !== $SECRET
-    - metavariable-regex:
-        metavariable: $SECRET
-        regex: (?i)^([\w$]+\.)*(password|passwd|passphrase|secret|token|api_?key|api_?secret|auth_?token|access_?token|hmac|signature|digest|password_?hash|hashed_?password|expected\w*)$
-    - focus-metavariable: $OTHER
-- id: mh.microhealth.javascript.ssrf-from-request
+  patterns:
+  - pattern-either:
+    - pattern: $S == $O
+    - pattern: $O == $S
+    - pattern: $S === $O
+    - pattern: $O === $S
+    - pattern: $S != $O
+    - pattern: $O != $S
+    - pattern: $S !== $O
+    - pattern: $O !== $S
+  - metavariable-regex:
+      metavariable: $O
+      regex: (?i)^(?!(?:[\w.]*\.)?(?:password|passwd|pass|secret|client_?secret|token|access_?token|auth_?token|api_?key|apikey|api_?secret|hmac|signature|service_?role_?key|service_?key)$)
+  - metavariable-regex:
+      metavariable: $S
+      regex: (?i)^(\w*\.)?(password|passwd|pass|secret|client_?secret|token|access_?token|auth_?token|api_?key|apikey|api_?secret|hmac|signature|service_?role_?key|service_?key)$
+  - pattern-not: $S == "..."
+  - pattern-not: '"..." == $S'
+  - pattern-not: $S == null
+  - pattern-not: null == $S
+  - pattern-not: $S == undefined
+  - pattern-not: undefined == $S
+  - pattern-not: $S == true
+  - pattern-not: true == $S
+  - pattern-not: $S == false
+  - pattern-not: false == $S
+  - pattern-not: $S === "..."
+  - pattern-not: '"..." === $S'
+  - pattern-not: $S === null
+  - pattern-not: null === $S
+  - pattern-not: $S === undefined
+  - pattern-not: undefined === $S
+  - pattern-not: $S === true
+  - pattern-not: true === $S
+  - pattern-not: $S === false
+  - pattern-not: false === $S
+  - pattern-not: $S != "..."
+  - pattern-not: '"..." != $S'
+  - pattern-not: $S != null
+  - pattern-not: null != $S
+  - pattern-not: $S != undefined
+  - pattern-not: undefined != $S
+  - pattern-not: $S != true
+  - pattern-not: true != $S
+  - pattern-not: $S != false
+  - pattern-not: false != $S
+  - pattern-not: $S !== "..."
+  - pattern-not: '"..." !== $S'
+  - pattern-not: $S !== null
+  - pattern-not: null !== $S
+  - pattern-not: $S !== undefined
+  - pattern-not: undefined !== $S
+  - pattern-not: $S !== true
+  - pattern-not: true !== $S
+  - pattern-not: $S !== false
+  - pattern-not: false !== $S
+- id: mh.microhealth.javascript.ssrf-request-to-fetch
   languages:
   - javascript
   - typescript
   severity: ERROR
-  message: A value from the HTTP request (or a WebSocket message) decides the URL this server fetches. A client can point it at an internal address -- a cloud metadata endpoint, an admin port on localhost, a service behind the firewall -- and read the answer through this server (SSRF). Build the URL from a fixed origin and take only a path or an id from the request, or check the host against an allow-list before the request is made.
+  message: Data from the incoming request reaches the URL of an outbound request made by this server. A caller who chooses that URL can make the server read internal services or the cloud metadata endpoint (169.254.169.254) on their behalf (server-side request forgery). Check the URL against an allow-list, or resolve its host and refuse loopback, private, link-local and metadata addresses before the request (and do not follow redirects without checking each hop).
   metadata:
     category: security
     subcategory:
     - vuln
     technology:
-    - node.js
+    - javascript
+    - typescript
+    - deno
     - express
-    - koa
-    - fastify
-    - next.js
     confidence: MEDIUM
     likelihood: MEDIUM
     impact: HIGH
@@ -14007,113 +14350,93 @@ rules:
     references:
     - https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html
     mh_source: microhealth
-    mh_upstream_id: javascript.ssrf-from-request
+    mh_upstream_id: javascript.ssrf-request-to-fetch
     mh_license: MIT
+  options:
+    taint_intrafile: true
+    taint_assume_safe_functions: true
   mode: taint
   pattern-sources:
   - patterns:
-    - pattern: $REQ.$GETTER(...)
-    - metavariable-regex:
-        metavariable: $REQ
-        regex: ^(req|request|ctx|ctx\.request)$
-    - metavariable-regex:
-        metavariable: $GETTER
-        regex: ^(get|header|param)$
-  - patterns:
-    - pattern: $REQ.$FIELD
-    - metavariable-regex:
-        metavariable: $REQ
-        regex: ^(req|request|ctx|ctx\.request)$
-    - metavariable-regex:
-        metavariable: $FIELD
-        regex: ^(query|params|body|headers|cookies|signedCookies|url|originalUrl|path|files|file)$
-  - patterns:
-    - pattern: $EVENT.$FIELD
-    - metavariable-regex:
-        metavariable: $EVENT
-        regex: ^event$
-    - metavariable-regex:
-        metavariable: $FIELD
-        regex: ^(body|queryStringParameters|multiValueQueryStringParameters|pathParameters)$
+    - pattern-either:
+      - pattern-inside: 'function $F(..., $REQ: Request, ...) { ... }
+
+          '
+      - pattern-inside: '($REQ: Request, ...) => { ... }
+
+          '
+      - pattern-inside: 'Deno.serve(..., ($REQ, ...) => { ... })
+
+          '
+      - pattern-inside: 'serve(($REQ, ...) => { ... }, ...)
+
+          '
+    - pattern-either:
+      - pattern: $REQ.json()
+      - pattern: $REQ.formData()
+      - pattern: $REQ.text()
+      - pattern: $REQ.url
+      - pattern: $REQ.headers.get(...)
   - patterns:
     - pattern-either:
-      - pattern-inside: $WS.on("message", function ($DATA, ...) {...})
-      - pattern-inside: $WS.on("message", ($DATA, ...) => {...})
-      - pattern-inside: $WS.on("message", async ($DATA, ...) => {...})
-    - focus-metavariable: $DATA
-    - pattern: $DATA
+      - pattern-inside: 'function $F($REQ, $RES, ...) { ... }
+
+          '
+      - pattern-inside: 'function ($REQ, $RES, ...) { ... }
+
+          '
+      - pattern-inside: '($REQ, $RES, ...) => { ... }
+
+          '
+    - metavariable-regex:
+        metavariable: $REQ
+        regex: ^(req|request)$
+    - pattern-either:
+      - pattern: $REQ.query
+      - pattern: $REQ.body
+      - pattern: $REQ.params
+      - pattern: $REQ.headers
+      - pattern: $REQ.cookies
+      - pattern: $REQ.get(...)
+      - pattern: $REQ.header(...)
+  pattern-propagators:
+  - pattern: $TO = new URL($FROM, ...)
+    from: $FROM
+    to: $TO
   pattern-sanitizers:
+  - pattern: encodeURIComponent(...)
+  - pattern-regex: '`https?://[A-Za-z0-9.-]+(:\d+)?/[^`]*`'
   - by-side-effect: true
     patterns:
-    - pattern: $F($X, ...)
+    - pattern-either:
+      - pattern: $AL.includes($X)
+      - pattern: $AL.has($X)
+      - pattern: $CHECK($X, ...)
+      - pattern: $OBJ.$CHECK($X, ...)
     - metavariable-regex:
-        metavariable: $F
-        regex: (?i)(.*\.)?(isAllowed\w*|assertAllowed\w*|isSafeUrl|validateUrl|allowlisted\w*|checkHost\w*)$
+        metavariable: $CHECK
+        regex: (?i)^(includes|has|(assert|validate|check|ensure|verify|is|guard)\w*(url|uri|host|origin|endpoint|outbound|public|allowed|safe)\w*)$
     - focus-metavariable: $X
   pattern-sinks:
   - patterns:
     - pattern-either:
-      - pattern: fetch($URL, ...)
-      - pattern: axios($URL, ...)
-      - pattern: got($URL, ...)
-      - pattern: request($URL, ...)
-      - pattern: undici.request($URL, ...)
-    - focus-metavariable: $URL
-  - patterns:
-    - pattern: $CLIENT.$METHOD($URL, ...)
+      - pattern: fetch($U, ...)
+      - pattern: new Request($U, ...)
+      - pattern: axios($U, ...)
+      - pattern: axios.$VERB($U, ...)
+      - pattern: got($U, ...)
+      - pattern: got.$VERB($U, ...)
+      - patterns:
+        - pattern-either:
+          - pattern: $HTTP.get($U, ...)
+          - pattern: $HTTP.request($U, ...)
+        - metavariable-regex:
+            metavariable: $HTTP
+            regex: ^(https?|http2|needle|superagent|undici|ky)$
     - metavariable-regex:
-        metavariable: $CLIENT
-        regex: ^(axios|got|http|https|superagent|needle|ky|undici)$
-    - metavariable-regex:
-        metavariable: $METHOD
-        regex: ^(get|post|put|patch|delete|head|request|options)$
-    - focus-metavariable: $URL
-- id: mh.microhealth.json.npm-dependency-mutable-source
-  languages:
-  - json
-  severity: WARNING
-  message: 'This dependency is taken from a source that can change under the same name: a dist-tag (`latest`, `next`), any version (`*`, `x`, empty), a git branch rather than a commit, or a plain-http URL. Whatever is published there next is installed the next time the lockfile is refreshed, unreviewed. Use a version range from the registry, or pin a git dependency to a full 40-character commit (`#<sha>`) and an http URL to https.'
-  metadata:
-    category: security
-    subcategory:
-    - audit
-    technology:
-    - npm
-    - pnpm
-    - yarn
-    confidence: MEDIUM
-    likelihood: LOW
-    impact: HIGH
-    cwe:
-    - 'CWE-829: Inclusion of Functionality from Untrusted Control Sphere'
-    owasp:
-    - A08:2021 - Software and Data Integrity Failures
-    references:
-    - https://docs.npmjs.com/cli/v10/configuring-npm/package-json#git-urls-as-dependencies
-    - https://pnpm.io/cli/install#--frozen-lockfile
-    mh_source: microhealth
-    mh_upstream_id: json.npm-dependency-mutable-source
-    mh_license: MIT
-  patterns:
-  - pattern-either:
-    - pattern-inside: '"dependencies": {...}
-
-        '
-    - pattern-inside: '"devDependencies": {...}
-
-        '
-    - pattern-inside: '"optionalDependencies": {...}
-
-        '
-  - pattern-either:
-    - pattern-regex: '"[@\w./-]+"\s*:\s*"(latest|next|canary|beta|\*|x|X|)"'
-    - pattern-regex: '"[@\w./-]+"\s*:\s*"http://[^"]*"'
-    - patterns:
-      - pattern-regex: '"[@\w./-]+"\s*:\s*"(git\+[a-z]+://|git://|github:|gitlab:|bitbucket:|[\w.-]+/[\w.-]+(#|"))[^"]*"'
-      - pattern-not-regex: '"[@\w./-]+"\s*:\s*"[^"]*#(commit:|sha:)?[0-9a-f]{40}"'
-  paths:
-    include:
-    - '*package.json'
+        metavariable: $U
+        regex: ^(?!`https?://[^/`$]+/|["']https?://[^/"']+/)
+    - focus-metavariable: $U
 - id: mh.microhealth.json.npm-js-yaml-v3
   languages:
   - json
@@ -14153,6 +14476,69 @@ rules:
   paths:
     include:
     - '*package.json'
+- id: mh.microhealth.nginx.host-header-in-response
+  languages:
+  - regex
+  severity: WARNING
+  paths:
+    include:
+    - '*.conf'
+    - '*.conf.template'
+    - '*nginx*'
+    - '*vhost*'
+    - sites-available/*
+    - sites-enabled/*
+  message: 'The client''s Host header ($host / $http_host) is written into a response: a redirect target, a header, or a rewritten Location. With `server_name _` (or a default server) any Host is accepted, so a request can make this server send users — or a shared cache — to another site (host-header injection, open redirect). Use a configured name ($server_name with an explicit server_name, or a literal).'
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - nginx
+    confidence: MEDIUM
+    likelihood: LOW
+    impact: MEDIUM
+    cwe:
+    - 'CWE-644: Improper Neutralization of HTTP Headers for Scripting Syntax'
+    references:
+    - https://portswigger.net/web-security/host-header
+    mh_source: microhealth
+    mh_upstream_id: nginx.host-header-in-response
+    mh_license: MIT
+  patterns:
+  - pattern-regex: (?m)^\s*(?:return|rewrite|add_header|proxy_redirect|sub_filter)\b[^;\n]*\$(?:http_host|host)\b[^;]*;
+- id: mh.microhealth.nginx.proxy-pass-request-variable
+  languages:
+  - regex
+  severity: WARNING
+  paths:
+    include:
+    - '*.conf'
+    - '*.conf.template'
+    - '*nginx*'
+    - '*vhost*'
+    - sites-available/*
+    - sites-enabled/*
+  message: proxy_pass takes its destination from the request (an argument, header, cookie, Host or URI variable). A client can then point this server at any host, including internal services (SSRF). Proxy to a fixed upstream or a variable set from configuration, and map request values through an allowlist (`map`) first; mark X-Accel-Redirect targets `internal`.
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - nginx
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: HIGH
+    cwe:
+    - 'CWE-918: Server-Side Request Forgery (SSRF)'
+    references:
+    - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass
+    mh_source: microhealth
+    mh_upstream_id: nginx.proxy-pass-request-variable
+    mh_license: MIT
+  pattern-either:
+  - pattern-regex: \bproxy_pass\s+(?:https?://)?[^/;\s]*\$(?:arg_\w+|http_\w+|cookie_\w+|host|args|query_string|request_body)\b[^;]*;
+  - pattern-regex: \bproxy_pass\s+(?:https?://)?\$(?:request_uri|uri|document_uri)\b[^;]*;
 - id: mh.microhealth.python.fips-non-approved-hash
   languages:
   - python
@@ -14160,6 +14546,14 @@ rules:
   message: $ALG is not a FIPS 140-3 approved hash. Under the OpenSSL FIPS provider MicroHealth's images run, hashlib refuses it and this call raises at runtime. Use SHA-256 (hashlib.sha256) or another SHA-2/SHA-3 function; if the digest is not used for security (a cache key, a checksum a third-party format requires), pass usedforsecurity=False and say why in a comment.
   metadata:
     category: security
+    subcategory:
+    - audit
+    technology:
+    - python
+    - hashlib
+    confidence: HIGH
+    likelihood: MEDIUM
+    impact: MEDIUM
     cwe:
     - 'CWE-327: Use of a Broken or Risky Cryptographic Algorithm'
     references:
@@ -14169,8 +14563,7 @@ rules:
     mh_license: MIT
   pattern-either:
   - patterns:
-    - pattern-either:
-      - pattern: hashlib.$ALG(...)
+    - pattern: hashlib.$ALG(...)
     - metavariable-regex:
         metavariable: $ALG
         regex: ^(md5|md4|blake2b|blake2s)$
@@ -14181,3 +14574,156 @@ rules:
         metavariable: $ALG
         regex: ^(?i)(md5|md4|blake2b|blake2s|ripemd160)$
     - pattern-not: hashlib.new(..., usedforsecurity=False, ...)
+- id: mh.microhealth.python.flask-returned-format-string
+  languages:
+  - python
+  severity: WARNING
+  message: This Flask code returns a string built from request input with formatting or concatenation. Flask sends a returned string as an HTML response, so markup in the input runs in the reader's browser (cross-site scripting). Render a template (autoescaped), escape with markupsafe.escape, or return JSON.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - python
+    - flask
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: MEDIUM
+    cwe:
+    - 'CWE-79: Improper Neutralization of Input During Web Page Generation (''Cross-site Scripting'')'
+    owasp:
+    - A03:2021 - Injection
+    references:
+    - https://flask.palletsprojects.com/en/stable/security/#cross-site-scripting-xss
+    mh_source: microhealth
+    mh_upstream_id: python.flask-returned-format-string
+    mh_license: MIT
+  mode: taint
+  pattern-sources:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: 'import flask
+
+          ...
+
+          '
+      - pattern-inside: 'from flask import $NAME
+
+          ...
+
+          '
+    - pattern-either:
+      - patterns:
+        - pattern-inside: "@$APP.route(...)\ndef $FUNC(..., $PARAM, ...):\n  ...\n"
+        - pattern: $PARAM
+      - pattern: request.$ATTR.get(...)
+      - pattern: request.$ATTR(...)
+      - pattern: request.$ATTR[...]
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: 'import flask
+
+          ...
+
+          '
+      - pattern-inside: 'from flask import $NAME
+
+          ...
+
+          '
+    - pattern-not-inside: return "..."
+    - pattern-either:
+      - pattern: return "...".format(...)
+      - pattern: return "..." % ...
+      - pattern: return "..." + ...
+      - pattern: return ... + "..."
+      - pattern: return f"...{...}..."
+- id: mh.microhealth.terraform.iam-data-read-unscoped
+  languages:
+  - hcl
+  severity: WARNING
+  message: This IAM statement allows reading data ($ACTION) on every resource (`Resource = "*"`). Whoever holds the role can read every secret, parameter, object or database snapshot the account can reach, not only the ones this workload needs. List the ARNs the workload reads.
+  metadata:
+    category: security
+    subcategory:
+    - audit
+    technology:
+    - terraform
+    - aws
+    confidence: HIGH
+    likelihood: LOW
+    impact: HIGH
+    cwe:
+    - 'CWE-732: Incorrect Permission Assignment for Critical Resource'
+    owasp:
+    - A01:2021 - Broken Access Control
+    references:
+    - https://cloudsplaining.readthedocs.io/en/latest/glossary/data-exfiltration/
+    mh_source: microhealth
+    mh_upstream_id: terraform.iam-data-read-unscoped
+    mh_license: MIT
+  patterns:
+  - pattern-either:
+    - patterns:
+      - pattern-either:
+        - pattern-inside: '{..., Resource = "*", ...}
+
+            '
+        - pattern-inside: '{..., Resource = [..., "*", ...], ...}
+
+            '
+      - pattern-not-inside: '{..., Effect = "Deny", ...}
+
+          '
+      - pattern: Action = $ACTION
+    - patterns:
+      - pattern-inside: "statement {\n  ...\n  resources = [..., \"*\", ...]\n  ...\n}\n"
+      - pattern-not-inside: "statement {\n  ...\n  effect = \"Deny\"\n  ...\n}\n"
+      - pattern: actions = $ACTION
+  - metavariable-pattern:
+      metavariable: $ACTION
+      pattern-either:
+      - pattern: '"s3:GetObject"'
+      - pattern: '"s3:*"'
+      - pattern: '"ssm:GetParameter"'
+      - pattern: '"ssm:GetParameters"'
+      - pattern: '"ssm:GetParametersByPath"'
+      - pattern: '"ssm:GetParameter*"'
+      - pattern: '"ssm:*"'
+      - pattern: '"secretsmanager:GetSecretValue"'
+      - pattern: '"secretsmanager:*"'
+      - pattern: '"rds:CopyDBSnapshot"'
+      - pattern: '"rds:CreateDBSnapshot"'
+      - pattern: '"rds:*"'
+      - pattern: '"*"'
+- id: mh.microhealth.yaml.github-actions-add-mask-expression
+  languages:
+  - regex
+  severity: WARNING
+  paths:
+    include:
+    - .github/workflows/*.yml
+    - .github/workflows/*.yaml
+    - action.yml
+    - action.yaml
+    - '*.yml'
+    - '*.yaml'
+  message: A `${{ … }}` expression is written straight into an `::add-mask::` workflow command. The expression is substituted into the script before it runs, so a value with a newline, a quote or a second workflow command can inject commands or end masking early. Put the value in an environment variable (`env:`), refuse an empty or multi-line value, and mask "$VAR".
+  metadata:
+    category: security
+    subcategory:
+    - vuln
+    technology:
+    - github-actions
+    confidence: MEDIUM
+    likelihood: MEDIUM
+    impact: MEDIUM
+    cwe:
+    - 'CWE-200: Exposure of Sensitive Information to an Unauthorized Actor'
+    references:
+    - https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#understanding-the-risk-of-script-injections
+    mh_source: microhealth
+    mh_upstream_id: yaml.github-actions-add-mask-expression
+    mh_license: MIT
+  pattern-regex: ::add-mask::[^\n]*\$\{\{

@@ -1,0 +1,99 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/traversal/resolve_path_traversal.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/traversal/rule-join_resolve_path_traversal.yml
+# (mh.gitlab.rules_lgpl_javascript_traversal_rule-join-resolve-path-traversal, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.traversal.join-resolve-path-traversal
+  pattern-either:
+  - patterns:
+    - pattern-inside: |
+        require('path')
+        ...
+    - pattern-either:
+      - pattern-inside: function (req, $RES, ...) {...}
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern: $PATH.join(...,<... req.$BODY ...>,...)
+      - pattern: $PATH.join(...,<... req.$QUERY.$FOO ...>,...)
+      - pattern: |
+          $VAR = <... req.$BODY ...>;
+          ...
+          $PATH.join(...,<... $VAR ...>,...)
+      - pattern: |
+          $VAR = <... req.$QUERY.$FOO ...>;
+          ...
+          $PATH.join(...,<... $VAR ...>,...)
+      - pattern: $PATH.resolve(...,<... req.$BODY ...>,...)
+      - pattern: $PATH.resolve(...,<... req.$QUERY.$FOO ...>,...)
+      - pattern: |
+          $VAR = <... req.$BODY ...>;
+          ...
+          $PATH.resolve(...,<... $VAR ...>,...)
+      - pattern: |-
+          $VAR = <... req.$QUERY.$FOO ...>;
+          ...
+          $PATH.resolve(...,<... $VAR ...>,...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-inside: |
+        require('path')
+        ...
+    - pattern-either:
+      - pattern-inside: function (request, $RES, ...) {...}
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern: $PATH.join(...,<... request.$BODY ...>,...)
+      - pattern: $PATH.join(...,<... request.$QUERY.$FOO ...>,...)
+      - pattern: |
+          $VAR = <... request.$BODY ...>;
+          ...
+          $PATH.join(...,<... $VAR ...>,...)
+      - pattern: |
+          $VAR = <... request.$QUERY.$FOO ...>;
+          ...
+          $PATH.join(...,<... $VAR ...>,...)
+      - pattern: $PATH.resolve(...,<... request.$BODY ...>,...)
+      - pattern: $PATH.resolve(...,<... request.$QUERY.$FOO ...>,...)
+      - pattern: |
+          $VAR = <... request.$BODY ...>;
+          ...
+          $PATH.resolve(...,<... $VAR ...>,...)
+      - pattern: |-
+          $VAR = <... request.$QUERY.$FOO ...>;
+          ...
+          $PATH.resolve(...,<... $VAR ...>,...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    'Path constructed with user input can result in Path Traversal. Ensure that user input does not reach `join()` or `resolve()`. '
+  languages:
+  - javascript
+  metadata:
+    shortDescription: Improper limitation of a pathname to a restricted directory ('Path Traversal')
+    cwe: CWE-22
+    owasp:
+    - A5:2017-Broken Access Control
+    - A01:2021-Broken Access Control
+    - A01:2025-Broken Access Control
+    security-severity: MEDIUM
+    category: security
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_traversal_rule-join-resolve-path-traversal
+  severity: WARNING

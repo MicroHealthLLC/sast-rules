@@ -1,0 +1,35 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: dockerfile.last-user-root
+    languages: [dockerfile]
+    severity: WARNING
+    message: >-
+      The final stage of this image switches to `USER root` and never switches
+      back, so the container's main process runs as root. A compromise of
+      that process (or a container escape bug) then starts with full
+      privileges, and Kubernetes `runAsNonRoot` policies will reject the pod.
+      Do the root-only work (package installs, chown) first, then end the
+      stage with a numeric non-root user such as `USER 10001:10001`.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      cwe: ["CWE-250: Execution with Unnecessary Privileges"]
+      owasp: ["A05:2021 - Security Misconfiguration"]
+      confidence: HIGH
+      likelihood: LOW
+      impact: HIGH
+      references:
+        - https://docs.docker.com/build/building/best-practices/#user
+        - https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html#rule-2-set-a-user
+      technology: [docker]
+    paths:
+      exclude: ["**/test/**", "**/tests/**", "**/e2e/**", "**/testdata/**", "**/ci/**", "**/docker/scanners/**"]
+    patterns:
+      # Only the last stage's USER decides the runtime user: flag USER root/0
+      # lines followed by no FROM and no USER switching to a non-root user.
+      # Skipped when the rest of the stage installs/uses a privilege-drop tool
+      # (the entrypoint starts as root and drops to a service user), or when a
+      # later root USER carries `# hadolint ignore=DL3002` (an explicit,
+      # reviewed decision).
+      - pattern-regex: (?m)^[ \t]*(?i:USER)[ \t]+["']?(?:root|0)(?::\S+)?["']?[ \t]*$(?![\s\S]*^[ \t]*(?i:FROM[ \t]|USER[ \t]+(?!["']?(?:root|0)(?:[:"'\s]|$))))(?![\s\S]*\b(?:su-exec|gosu|setpriv|runuser|s6-setuidgid)\b)(?![\s\S]*hadolint[ \t]+ignore=[^\n]*\bDL3002\b)
+      - pattern-not-regex: (?m)^[ \t]*#[ \t]*hadolint[ \t]+ignore=[^\n]*\bDL3002\b[^\n]*\n[ \t]*(?i:USER)[^\n]*

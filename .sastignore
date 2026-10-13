@@ -2,6 +2,52 @@
 # their patterns are what the rules look for, not code that does it.
 upstream/
 dist/
+# Rule-test fixture: deliberate md5/blake2b calls that `opengrep scan --test` checks the FIPS hash rule against; never executed.
+rules/microhealth/python/fips-non-approved-hash.py
+# Rule-test fixtures for the MicroHealth rules: each holds deliberate `ruleid:` cases
+# (fake keys, synthetic tokens, unsafe calls) that `opengrep scan --test` checks; never executed.
+rules/microhealth/android/exported-activity.xml
+rules/microhealth/bash/ifs-global.sh
+rules/microhealth/generic/gcp-service-account-key.txt
+rules/microhealth/generic/jwt-token.txt
+rules/microhealth/javascript/express-sendfile-request-path.js
+rules/microhealth/javascript/html-string-to-dom-sink.ts
+rules/microhealth/javascript/json-parse-into-object-assign.ts
+rules/microhealth/javascript/react-unsanitized-inner-html.tsx
+rules/microhealth/javascript/secret-compare-not-constant-time.ts
+rules/microhealth/nginx/host-header-in-response.conf
+rules/microhealth/nginx/proxy-pass-request-variable.conf
+rules/microhealth/yaml/github-actions-add-mask-expression.test.yml
+rules/microhealth/javascript/regexp-from-untrusted-input.ts
+# Rule-test fixtures for the MicroHealth copies of upstream rules: deliberate
+# vulnerable request handlers and fake secrets that `opengrep scan --test` checks
+# the rules against; never executed.
+rules/microhealth/javascript/njsscan-*.js
+rules/microhealth/generic/telegram-bot-api-key.txt
+rules/microhealth/generic/private-key.txt
+rules/microhealth/generic/generic-api-key.txt
+rules/microhealth/html/missing-integrity.html
+rules/microhealth/javascript/njsscan-crypto-node-timing-attack.js
+rules/microhealth/json/package-dependencies-check.json
+# Rule-test fixtures for the rules added from the e-aar scan: synthetic AWS key
+# IDs, plaintext WebSocket addresses and weak generators; never executed.
+rules/microhealth/generic/aws-access-key-id.txt
+rules/microhealth/javascript/insecure-websocket-url.ts
+rules/microhealth/javascript/insecure-random-for-secret.ts
+rules/microhealth/javascript/ssrf-request-to-fetch.ts
+rules/microhealth/javascript/open-redirect-from-url-input.ts
+rules/microhealth/terraform/iam-data-read-unscoped.tf
+# Fixtures for the refinements in overrides.yaml (tests/refine/run.py): deliberate
+# placeholder keys, open ports and IAM grants; never executed or deployed.
+tests/refine/
+# Rule-test fixtures: deliberate unsafe/permission/decompression/SQL/Flask/USER root cases that `opengrep scan --test` checks the rules against; never compiled, built or run.
+rules/microhealth/go/unsafe-pointer-misuse.go
+rules/microhealth/go/file-mode-too-permissive.go
+rules/microhealth/go/dir-mode-too-permissive.go
+rules/microhealth/go/decompression-without-limit.go
+rules/microhealth/go/sql-built-from-strings.go
+rules/microhealth/python/flask-returned-format-string.py
+rules/microhealth/dockerfile/last-user-root.dockerfile
 # Rule-test fixtures: deliberate vulnerable code (`ruleid:` lines) that
 # `opengrep scan --test` checks each MicroHealth rule against; never executed.
 rules/microhealth/javascript/*.ts

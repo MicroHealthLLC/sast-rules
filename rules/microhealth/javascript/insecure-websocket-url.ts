@@ -1,22 +1,16 @@
-// A comment that mentions ws://example.com is not code.
-// ok: javascript.insecure-websocket-url
-export const note = 'see the docs';
-
+// Rule-test fixture: addresses only; nothing here connects.
+// A comment that mentions ws://example.com is not a connection.
 // ruleid: javascript.insecure-websocket-url
-export const feed = new WebSocket('ws://feeds.example.com/live');
-
-export function connect(host: string) {
-  // ruleid: javascript.insecure-websocket-url
-  return new WebSocket(`ws://${host}/socket`);
-}
-
+const remote = new WebSocket("ws://example.com/socket");
+// ruleid: javascript.insecure-websocket-url
+const built = `ws://${location.host}/realtime`;
+// ruleid: javascript.insecure-websocket-url
+const upper = "WS://api.example.com";
 // ok: javascript.insecure-websocket-url
-export const secure = new WebSocket('wss://feeds.example.com/live');
-
+const secure = new WebSocket("wss://example.com/socket");
 // ok: javascript.insecure-websocket-url
-export const local = new WebSocket('ws://localhost:5173/');
-
-export function dev(port: number) {
-  // ok: javascript.insecure-websocket-url
-  return new WebSocket(`ws://127.0.0.1:${port}/`);
-}
+const local = "ws://localhost:4000";
+// ok: javascript.insecure-websocket-url
+const loop = "ws://127.0.0.1:9000/x";
+// ok: javascript.insecure-websocket-url
+const prose = "the dev server needs ws:// for HMR";

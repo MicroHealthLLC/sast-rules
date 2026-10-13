@@ -34,6 +34,7 @@ It is maintained by MicroHealth for MicroHealth's repositories.
 | Validated cryptography around the scan | The container is built FROM MicroHealth's FIPS 140-3 Python image; git, the AWS CLI and Python use the system OpenSSL with only the FIPS provider. See [FIPS](#fips) for what is outside that claim. |
 | A report says which rules ran | Every JSON report carries `ruleset.rules_evaluated`. A finding whose rule did not run is never treated as fixed. |
 | A failed upload never hides a failed scan | The scan is a blocking step; the SARIF upload is not. Both outcomes are recorded separately (`publication-status.json`). |
+| A reviewed suppression is not a code scanning alert | GitHub opens an alert for a result Opengrep marks as suppressed in source (`noopengrep: <rule id>` with its reason), so code scanning gets a copy without them (`scripts/sarif_for_code_scanning.py`). The `sast-reports` artifact (`sast.sarif`) and `sast.json` keep every result, suppressed ones with their state. |
 
 `tests/test_workflow.py` fails if any of these controls is removed.
 
@@ -175,23 +176,38 @@ move must never change it.
 [`rules.lock.json`](rules.lock.json) lists every rule ever shipped: source,
 upstream path, license, content hash, bundles and status. A rule that leaves
 upstream stays listed as `retired`; a rule MicroHealth turns off is `disabled`,
-with its reason.
+with its reason, and a rule it narrows carries `refined`, with its reason.
 
 ## Changing rules (MicroHealth)
 
 - **Never edit `upstream/`.** Turn a rule off or re-grade it in
   [`overrides.yaml`](overrides.yaml); a reason is required. Or copy it into
   `rules/microhealth/` and change the copy.
-- A search rule that is right except for one known shape of false positive
-  gets an `allow:` entry in `overrides.yaml` instead: a `not-regex` the build
-  adds as `pattern-not-regex` (a finding overlapping a match is dropped) and
-  its reason, which the lock records under the rule. The secret rules honour
-  gitleaks' own `gitleaks:allow` this way.
+- A rule that is right in general but wrong in one case is **refined** in
+  `overrides.yaml`: `add` appends narrowing clauses (`pattern-not`,
+  `pattern-not-inside`, `pattern-not-regex`, …) to its `patterns`, and
+  `exclude_paths` adds path exclusions. A refinement can only narrow a rule.
+  Each one needs a fixture in `tests/refine/` naming the rule's full `mh.*`
+  id on `ruleid:` / `ok:` lines; `tests/refine/run.py` checks them against the
+  built bundle.
+- A search rule whose one known false positive is a text shape gets an
+  `allow:` entry instead: a `not-regex` the build adds as `pattern-not-regex`
+  (a finding overlapping a match is dropped) to every rule it names, by id or
+  by an id prefix ending in `*`. The secret rules honour gitleaks' own
+  `gitleaks:allow` this way.
+- `overrides.yaml` and the other configuration files must not repeat a key:
+  YAML would keep only the last, so the build refuses it.
 - A new rule goes in `rules/microhealth/<language>/<name>.yaml`, with a test
   file of the same name beside it (`# ruleid:` and `# ok:` comments).
+- Every rule file there starts with a `# License:` header, read per file as
+  GitLab's are: `MIT` for a rule we wrote, the upstream license for a changed
+  copy of an upstream rule (an LGPL rule we narrowed is still LGPL and stays
+  out of the product bundle). A copy gets a new id, says in its header what
+  changed, carries `metadata.mh_replaces: <old id>`, and the old id is
+  disabled in `overrides.yaml` with a reason naming the copy.
 - `python3 scripts/build.py` rebuilds `dist/` and the lock. CI fails if they
   were not rebuilt, if any rule does not load in the pinned engine, or if a
-  rule test fails.
+  rule test or a refinement fixture fails.
 - GitLab's `security-severity` words (`Low`, `High`) become the numbers GitHub
   code scanning requires; the original is kept as
   `metadata.mh_upstream_security_severity`.

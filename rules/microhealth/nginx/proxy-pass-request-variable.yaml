@@ -1,0 +1,37 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: nginx.proxy-pass-request-variable
+    languages: [regex]
+    severity: WARNING
+    paths:
+      include: ["*.conf", "*.conf.template", "*nginx*", "*vhost*", "sites-available/*", "sites-enabled/*"]
+    message: >-
+      proxy_pass takes its destination from the request (an argument, header,
+      cookie, Host or URI variable). A client can then point this server at
+      any host, including internal services (SSRF). Proxy to a fixed upstream
+      or a variable set from configuration, and map request values through
+      an allowlist (`map`) first; mark X-Accel-Redirect targets `internal`.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [nginx]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      cwe: ["CWE-918: Server-Side Request Forgery (SSRF)"]
+      references:
+        - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass
+      # Replaces mh.opengrep.generic.nginx.security.missing-internal, which
+      # reported every proxy_pass to ANY variable without `internal` —
+      # including the common `set $upstream "<configured origin>"; proxy_pass
+      # $upstream;` that only makes nginx resolve the name per request. That
+      # variable comes from configuration, not the client, and `internal`
+      # would break a public reverse proxy. This rule reports the variables a
+      # client controls.
+    # A client value can move the destination only while it is still in the
+    # scheme/authority: before the first literal `/`. $request_uri / $uri
+    # always start with `/`, so after a configured origin they only add a
+    # path; they are reported when they come first.
+    pattern-either:
+      - pattern-regex: \bproxy_pass\s+(?:https?://)?[^/;\s]*\$(?:arg_\w+|http_\w+|cookie_\w+|host|args|query_string|request_body)\b[^;]*;
+      - pattern-regex: \bproxy_pass\s+(?:https?://)?\$(?:request_uri|uri|document_uri)\b[^;]*;

@@ -1,0 +1,68 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: javascript.regexp-from-untrusted-input
+    languages: [javascript, typescript]
+    severity: WARNING
+    mode: taint
+    message: >-
+      A regular expression is compiled from input a user controls (the HTTP
+      request, the page URL, a form field). The user then writes the pattern:
+      a crafted one can backtrack for minutes and block the event loop for
+      every request (ReDoS), or match far more than intended. Escape the
+      value (escapeRegExp / `s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")`) to
+      match it literally, or use string methods (includes, startsWith).
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [javascript, typescript]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: MEDIUM
+      cwe: ["CWE-1333: Inefficient Regular Expression Complexity"]
+      references:
+        - https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS
+      # Replaces mh.gitlab.javascript_dos_rule-non-literal-regexp (every
+      # RegExp built from anything but a literal, including module constants
+      # and values already escaped) and
+      # mh.opengrep.javascript.lang.security.audit.detect-non-literal-regexp
+      # (whose source is "any parameter of any function"). Together they
+      # reported 52 sites in TueriCXO, none of them user-written patterns:
+      # constant tag and attribute names, escaped glossary terms, CLI
+      # tooling. This rule's source is what a user actually controls, and
+      # escaping is a sanitiser.
+    pattern-sources:
+      - patterns:
+          - pattern-either:
+              - pattern: $REQ.query
+              - pattern: $REQ.body
+              - pattern: $REQ.params
+              - pattern: $REQ.headers
+              - pattern: $REQ.url
+              - pattern: $REQ.json()
+              - pattern: $REQ.text()
+              - pattern: $REQ.formData()
+          - metavariable-regex:
+              metavariable: $REQ
+              regex: ^(req|request)$
+      - pattern: location.search
+      - pattern: location.hash
+      - pattern: window.location.search
+      - pattern: window.location.hash
+      - pattern: new URLSearchParams(...).get(...)
+      - pattern: $PARAMS.get(...)
+      - pattern: $EVT.target.value
+      - pattern: $EVT.currentTarget.value
+    pattern-sanitizers:
+      - patterns:
+          - pattern: $F(...)
+          - metavariable-regex:
+              metavariable: $F
+              regex: (?i)^(\w+\.)?(escape\w*reg\w*|reg\w*escape\w*|escape)$
+      - pattern: $S.replace(/[.*+?^${}()|[\]\\]/g, ...)
+      - pattern: $S.replaceAll(/[.*+?^${}()|[\]\\]/g, ...)
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: new RegExp($P, ...)
+              - pattern: RegExp($P, ...)
+          - focus-metavariable: $P

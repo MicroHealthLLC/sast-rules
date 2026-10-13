@@ -1,0 +1,159 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/ssrf/ssrf_phantomjs.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/ssrf/rule-phantom_ssrf.yml
+# (mh.gitlab.rules_lgpl_javascript_ssrf_rule-phantom-ssrf, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.ssrf.phantom-ssrf
+  pattern-either:
+  - patterns:
+    - pattern-inside: |
+        require('phantom')
+        ...
+    - pattern-either:
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern: $PAGE.open(<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.setContent(<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.open(<... req.$BODY ...>,...)
+      - pattern: $PAGE.setContent(<... req.$BODY ...>,...)
+      - pattern: $PAGE.openUrl(<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.openUrl(<... req.$BODY ...>,...)
+      - pattern: $PAGE.evaluateJavaScript(<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluateJavaScript(<... req.$BODY ...>,...)
+      - pattern: $PAGE.property("content",<... req.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.property("content",<... req.$BODY ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PAGE.open(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PAGE.open(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PAGE.setContent(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PAGE.setContent(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PAGE.openUrl(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PAGE.openUrl(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluateJavaScript(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PAGE.evaluateJavaScript(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... req.$QUERY.$FOO ...>;
+          ...
+          $PAGE.property("content",<... $INPUT ...>,...)
+      - pattern: |-
+          $INPUT = <... req.$BODY ...>;
+          ...
+          $PAGE.property("content",<... $INPUT ...>,...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-inside: |
+        require('phantom')
+        ...
+    - pattern-either:
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern: $PAGE.open(<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.setContent(<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.open(<... request.$BODY ...>,...)
+      - pattern: $PAGE.setContent(<... request.$BODY ...>,...)
+      - pattern: $PAGE.openUrl(<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.openUrl(<... request.$BODY ...>,...)
+      - pattern: $PAGE.evaluateJavaScript(<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.evaluateJavaScript(<... request.$BODY ...>,...)
+      - pattern: $PAGE.property("content",<... request.$QUERY.$FOO ...>,...)
+      - pattern: $PAGE.property("content",<... request.$BODY ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PAGE.open(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PAGE.open(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PAGE.setContent(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PAGE.setContent(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PAGE.openUrl(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PAGE.openUrl(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PAGE.evaluateJavaScript(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PAGE.evaluateJavaScript(<... $INPUT ...>,...)
+      - pattern: |
+          $INPUT = <... request.$QUERY.$FOO ...>;
+          ...
+          $PAGE.property("content",<... $INPUT ...>,...)
+      - pattern: |-
+          $INPUT = <... request.$BODY ...>;
+          ...
+          $PAGE.property("content",<... $INPUT ...>,...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    'If unverified user data can reach the `phantom` methods it can result in Server-Side Request Forgery vulnerabilities.
+
+    '
+  metadata:
+    owasp:
+    - A1:2017-Injection
+    - A10:2021-Server-Side Request Forgery
+    - A01:2025-Broken Access Control
+    cwe: CWE-918
+    shortDescription: Server-side request forgery (SSRF)
+    security-severity: CRITICAL
+    category: security
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_ssrf_rule-phantom-ssrf
+  severity: ERROR
+  languages:
+  - javascript

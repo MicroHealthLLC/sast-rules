@@ -1,0 +1,14 @@
+# Rule-test fixture for yaml.github-actions-add-mask-expression; not a workflow that runs.
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          # ruleid: yaml.github-actions-add-mask-expression
+          echo "::add-mask::${{ github.event.inputs.token }}"
+      - env:
+          TOKEN: ${{ steps.login.outputs.token }}
+        run: |
+          case "$TOKEN" in ''|*$'\n'*) echo "bad token" >&2; exit 1;; esac
+          # ok: yaml.github-actions-add-mask-expression
+          echo "::add-mask::$TOKEN"

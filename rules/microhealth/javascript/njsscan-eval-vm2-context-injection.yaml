@@ -1,0 +1,411 @@
+# License: GNU Lesser General Public License v3.0
+# source (original): https://github.com/ajinabraham/njsscan/blob/master/njsscan/rules/semantic_grep/eval/eval_vm2_injection.yaml
+# hash: e7a0a61
+# Derived by MicroHealth from upstream/gitlab/rules/lgpl/javascript/eval/rule-vm2_context_injection.yml
+# (mh.gitlab.rules_lgpl_javascript_eval_rule-vm2-context-injection, disabled in overrides.yaml in favour of this copy).
+# Change: the request-handler context `function ($REQ, $RES, ...)` matched any
+# function of two or more parameters, so `parse(text, opts)` was "a handler".
+# Every handler context now also requires the parameters to be named as an
+# HTTP handler names them: the request ^(req|request)$, the response ^(res|resp|response|reply|h)$.
+# Search mode: the request name is written into the patterns, one branch per
+# name, instead of a metavariable-regex: an unbound $REQ in a sink such as
+# `$INP = <... $REQ ...>; ... $RE.test(<... $INP ...>)` matched every
+# expression of every file and timed out on large ones.
+rules:
+- id: javascript.njsscan.eval.vm2-context-injection
+  pattern-either:
+  - patterns:
+    - pattern-inside: |
+        require('vm2')
+        ...
+    - pattern-either:
+      - pattern-inside: function (req, $RES, ...) {...}
+      - pattern-inside: function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(req, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(req, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(req, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          new VM({sandbox: <... req.$QUERY.$FOO ...>},...)
+      - pattern: |
+          $CONTEXT = <... req.$QUERY.$FOO ...>;
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = <... {$NAME:req.$QUERY.$FOO} ...>;
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... req.$QUERY.$FOO ...>};
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $VAR = <... req.$QUERY.$FOO ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $OPTS = {sandbox: <... req.$QUERY.$FOO ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          $CONTEXT = <... req.$QUERY.$FOO ...>;
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... req.$QUERY.$FOO ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          $VAR = <... req.$QUERY.$FOO ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          new NodeVM({sandbox: <... req.$QUERY.$FOO ...>},...)
+      - pattern: |
+          $CONTEXT = <... req.$QUERY.$FOO ...>;
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = <... {$NAME:req.$QUERY.$FOO} ...>;
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... req.$QUERY.$FOO ...>};
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $VAR = <... req.$QUERY.$FOO ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $OPTS = {sandbox: <... req.$QUERY.$FOO ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |
+          $CONTEXT = <... req.$QUERY.$FOO ...>;
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... req.$QUERY.$FOO ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |
+          $VAR = <... req.$QUERY.$FOO ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |
+          new VM({sandbox: <... req.$BODY ...>},...)
+      - pattern: |
+          $CONTEXT = <... req.$BODY ...>;
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = <... {$NAME:req.$BODY} ...>;
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... req.$BODY ...>};
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $VAR = <... req.$BODY ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $OPTS = {sandbox: <... req.$BODY ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          $CONTEXT = <... req.$BODY ...>;
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... req.$BODY ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          $VAR = <... req.$BODY ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          new NodeVM({sandbox: <... req.$BODY ...>},...)
+      - pattern: |
+          $CONTEXT = <... req.$BODY ...>;
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = <... {$NAME:req.$BODY} ...>;
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... req.$BODY ...>};
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $VAR = <... req.$BODY ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $OPTS = {sandbox: <... req.$BODY ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |
+          $CONTEXT = <... req.$BODY ...>;
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... req.$BODY ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |-
+          $VAR = <... req.$BODY ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new NodeVM($OPTS,...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  - patterns:
+    - pattern-inside: |
+        require('vm2')
+        ...
+    - pattern-either:
+      - pattern-inside: function (request, $RES, ...) {...}
+      - pattern-inside: function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: $X = function $FUNC(request, $RES, ...) {...}
+      - pattern-inside: var $X = function $FUNC(request, $RES, ...) {...};
+      - pattern-inside: $APP.$METHOD(..., function $FUNC(request, $RES, ...) {...})
+    - pattern-either:
+      - pattern: |
+          new VM({sandbox: <... request.$QUERY.$FOO ...>},...)
+      - pattern: |
+          $CONTEXT = <... request.$QUERY.$FOO ...>;
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = <... {$NAME:request.$QUERY.$FOO} ...>;
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... request.$QUERY.$FOO ...>};
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $VAR = <... request.$QUERY.$FOO ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $OPTS = {sandbox: <... request.$QUERY.$FOO ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          $CONTEXT = <... request.$QUERY.$FOO ...>;
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... request.$QUERY.$FOO ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          $VAR = <... request.$QUERY.$FOO ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          new NodeVM({sandbox: <... request.$QUERY.$FOO ...>},...)
+      - pattern: |
+          $CONTEXT = <... request.$QUERY.$FOO ...>;
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = <... {$NAME:request.$QUERY.$FOO} ...>;
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... request.$QUERY.$FOO ...>};
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $VAR = <... request.$QUERY.$FOO ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $OPTS = {sandbox: <... request.$QUERY.$FOO ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |
+          $CONTEXT = <... request.$QUERY.$FOO ...>;
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... request.$QUERY.$FOO ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |
+          $VAR = <... request.$QUERY.$FOO ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |
+          new VM({sandbox: <... request.$BODY ...>},...)
+      - pattern: |
+          $CONTEXT = <... request.$BODY ...>;
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = <... {$NAME:request.$BODY} ...>;
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... request.$BODY ...>};
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $VAR = <... request.$BODY ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          new VM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $OPTS = {sandbox: <... request.$BODY ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          $CONTEXT = <... request.$BODY ...>;
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... request.$BODY ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          $VAR = <... request.$BODY ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new VM($OPTS,...)
+      - pattern: |
+          new NodeVM({sandbox: <... request.$BODY ...>},...)
+      - pattern: |
+          $CONTEXT = <... request.$BODY ...>;
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = <... {$NAME:request.$BODY} ...>;
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... request.$BODY ...>};
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $VAR = <... request.$BODY ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          new NodeVM({sandbox: <... $CONTEXT ...>},...)
+      - pattern: |
+          $OPTS = {sandbox: <... request.$BODY ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |
+          $CONTEXT = <... request.$BODY ...>;
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |
+          $CONTEXT = {$NAME: <... request.$BODY ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new NodeVM($OPTS,...)
+      - pattern: |-
+          $VAR = <... request.$BODY ...>;
+          ...
+          $CONTEXT = {$NAME: <... $VAR ...>};
+          ...
+          $OPTS = {sandbox: <... $CONTEXT ...>};
+          ...
+          new NodeVM($OPTS,...)
+    - metavariable-regex:
+        metavariable: $RES
+        regex: ^(res|resp|response|reply|h)$
+  message: |
+    Untrusted user input reaching `vm2` sandbox can result in context injection.
+  severity: ERROR
+  languages:
+  - javascript
+  metadata:
+    cwe: CWE-94
+    shortDescription: Improper control of generation of code (Code Injection)
+    category: security
+    owasp:
+    - A1:2017-Injection
+    - A03:2021-Injection
+    - A05:2025-Injection
+    security-severity: CRITICAL
+    mh_replaces: mh.gitlab.rules_lgpl_javascript_eval_rule-vm2-context-injection

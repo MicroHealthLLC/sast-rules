@@ -219,8 +219,10 @@ jobs:
 
       - name: Preflight — verify AWS credentials and S3 write access
         if: inputs.s3_bucket != '' && steps.dest.outputs.prefix != ''
+        env:
+          PROJECT_INPUT: ${{ inputs.project }}
         run: |
-          PROJECT="${{ inputs.project }}"; PROJECT="${PROJECT:-${GITHUB_REPOSITORY##*/}}"
+          PROJECT="${PROJECT_INPUT:-${GITHUB_REPOSITORY##*/}}"
           printf 'preflight ok: run %s commit %s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > "$RUNNER_TEMP/preflight.txt"
           docker run --rm \
             -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
@@ -263,13 +265,27 @@ jobs:
           echo "$out" | tee -a "$GITHUB_STEP_SUMMARY"
           echo "findings=${out%% *}" >> "$GITHUB_OUTPUT"
 
+      # GitHub opens an alert for a result Opengrep marks as suppressed in
+      # source, so a reviewed `noopengrep` failed the pull request that added
+      # it. Code scanning gets the copy without them; sast.sarif (the artifact)
+      # and sast.json keep every result (scripts/sarif_for_code_scanning.py).
+      - name: Leave inline suppressions out of the code scanning upload
+        id: sarif_for_github
+        if: always() && steps.scan.outcome != 'skipped'
+        run: |
+          [ -s "$RUNNER_TEMP/out/sast.sarif" ] || { echo "::error::sast.sarif was not created"; exit 1; }
+          read -r kept dropped < <(docker run --rm --network none \
+            -v "$PWD/.sast-rules:/r:ro" -v "$RUNNER_TEMP/out:/out" sast-scan:fips \
+            python3 /r/scripts/sarif_for_code_scanning.py /out/sast.sarif /out/sast.github.sarif)
+          echo "Code scanning upload: ${kept} result(s); ${dropped} suppressed in source left out (kept in sast.sarif)" | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Upload SARIF to GitHub code scanning
         id: sarif_publication
-        if: always() && steps.scan.outcome != 'skipped'
+        if: always() && steps.sarif_for_github.outcome == 'success'
         continue-on-error: true
         uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # github/codeql-action/upload-sarif v4
         with:
-          sarif_file: ${{ runner.temp }}/out/sast.sarif
+          sarif_file: ${{ runner.temp }}/out/sast.github.sarif
           category: sast
           checkout_path: ${{ github.workspace }}/src
 
@@ -307,9 +323,10 @@ jobs:
           STATUS_RECORDED_AT: ${{ steps.publication_status.outputs.recorded_at_utc }}
           RULES_COMMIT: ${{ steps.self.outputs.sha }}
           ENGINE_VERSION: ${{ steps.engine.outputs.version }}
+          PROJECT_INPUT: ${{ inputs.project }}
         run: |
           [ -s "$RUNNER_TEMP/out/sast.json" ] || { echo "::error::sast.json was not created"; exit 1; }
-          PROJECT="${{ inputs.project }}"; PROJECT="${PROJECT:-${GITHUB_REPOSITORY##*/}}"
+          PROJECT="${PROJECT_INPUT:-${GITHUB_REPOSITORY##*/}}"
           KEY="${PROJECT}/${{ steps.dest.outputs.prefix }}/dt=$(date -u +%F)/run-${GITHUB_RUN_ID}/sast.json"
           docker run --rm \
             -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \

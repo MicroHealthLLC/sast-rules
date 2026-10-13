@@ -1,0 +1,30 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: yaml.github-actions-add-mask-expression
+    languages: [regex]
+    severity: WARNING
+    paths:
+      include: [".github/workflows/*.yml", ".github/workflows/*.yaml", "action.yml", "action.yaml", "*.yml", "*.yaml"]
+    message: >-
+      A `${{ … }}` expression is written straight into an `::add-mask::`
+      workflow command. The expression is substituted into the script before
+      it runs, so a value with a newline, a quote or a second workflow
+      command can inject commands or end masking early. Put the value in an
+      environment variable (`env:`), refuse an empty or multi-line value, and
+      mask "$VAR".
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [github-actions]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: MEDIUM
+      cwe: ["CWE-200: Exposure of Sensitive Information to an Unauthorized Actor"]
+      references:
+        - https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#understanding-the-risk-of-script-injections
+      # Replaces mh.opengrep.yaml.github-actions.security.audit.unsafe-add-mask-workflow-command,
+      # whose pattern is the literal text `::add-mask::`: every masking
+      # command in every workflow, however its value is produced, with no
+      # way to satisfy it except to stop masking. Masking is the right thing
+      # to do; the risk is an expression interpolated into the command.
+    pattern-regex: '::add-mask::[^\n]*\$\{\{'

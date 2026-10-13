@@ -1,12 +1,21 @@
-# Rules we turn off or re-grade. Every entry carries its reason: a suppression
-# without a reason is a lie a security tool tells itself. Upstream files are
-# never edited; the override is applied when the bundles are built, and the
-# lock file keeps the rule listed as `disabled` with this reason.
+# Rules we turn off, re-grade or refine. Every entry carries its reason: a
+# suppression without a reason is a lie a security tool tells itself. Upstream
+# files are never edited; the override is applied when the bundles are built,
+# and the lock file keeps the rule listed as `disabled` (or `refined`) with
+# this reason. A section appears ONCE: the build refuses a duplicate key, which
+# YAML would otherwise resolve by silently dropping the first.
 #
 # disabled:
 #   mh.gitlab.some-rule-id: "what was assessed and why it does not apply"
 # severity:
 #   mh.opengrep.some.rule: {to: WARNING, reason: "why"}
+# refine:            # narrow a rule that is right in general, wrong in one case
+#   mh.opengrep.some.rule:
+#     reason: "the case it reports wrongly, and why that case is safe"
+#     add: [{pattern-not: "..."}]        # appended to the rule's `patterns`
+#     exclude_paths: ["*.lock"]          # appended to its paths.exclude
+# Each refinement has a fixture in tests/refine/ (`ruleid:` and `ok:` lines)
+# that tests/refine/run.py checks against the built bundle.
 # allow:   # a finding overlapping `not-regex` is dropped; the rule still runs
 #   - rules: [mh.opengrep.some.rule, mh.opengrep.some.prefix.*]
 #     not-regex: '...'
@@ -19,68 +28,285 @@ disabled:
     (295669632222.dkr.ecr...), 87 times in Tueri Core alone, burying real
     findings. Secret keys are still caught by the AWS access-key and secret
     rules in both upstream sources and by Trivy's secret scanner.
+  mh.opengrep.generic.secrets.security.detected-google-gcm-service-account.detected-google-gcm-service-account: >-
+    Matched the `"type": "service_account"` marker alone, so it reported form
+    placeholders and documentation that show the shape of a key file (3 of 3
+    hits in TueriCXO, all UI placeholders). The marker is not a credential;
+    the private key is. Replaced by mh.microhealth.generic.gcp-service-account-key,
+    which requires the marker AND a private key with key material in the same
+    file. A bare PEM private key is still caught by the private-key rules of
+    both upstream sources and by Trivy.
+  mh.opengrep.generic.secrets.security.detected-jwt-token.detected-jwt-token: >-
+    Replaced by mh.microhealth.generic.jwt-token. This rule and gitleaks.jwt
+    reported every token twice, and both reported the public Supabase ANON key
+    (role=anon, shipped to every browser by design) in migrations that can
+    never be edited (9 + 9 hits in TueriCXO, all anon keys). The replacement
+    keeps the same token shape and exempts only a payload whose fixed claims
+    are iss=supabase and role=anon; a service_role key or any other token is
+    still reported.
+  mh.opengrep.generic.secrets.gitleaks.jwt.jwt: >-
+    Duplicate of detected-jwt-token (the same tokens, reported twice);
+    replaced with it by mh.microhealth.generic.jwt-token (see above).
+  mh.opengrep.javascript.lang.security.audit.unsafe-formatstring.unsafe-formatstring: >-
+    Reports any template literal passed as the first argument of console.*
+    when more arguments follow (2,279 hits in TueriCXO, every one a
+    console.log/warn/error). The harm it describes is that a `%s` inside the
+    interpolated value makes console substitute a later argument into the
+    line: the text of a log line changes, nothing executes, and the value was
+    attacker-chosen log text already. Log injection proper (newlines, terminal
+    escapes) is not what it detects either, so it carries no security signal
+    and buried every real finding in the report.
+  mh.opengrep.javascript.lang.security.html-in-template-string.html-in-template-string: >-
+    Reports every template literal that contains `<...>` and an
+    interpolation: XML, SVG and PDF writers, LLM prompts, YAML comments,
+    regex sources, CLI usage text. It ignores whether each value is escaped
+    and whether the string is ever parsed as HTML (85 hits in TueriCXO, 84
+    false). Replaced by mh.microhealth.javascript.html-string-to-dom-sink,
+    which follows interpolated values to the sinks that parse HTML
+    (innerHTML, outerHTML, insertAdjacentHTML, document.write, srcdoc) and
+    treats escaping helpers and DOMPurify as sanitisers; it finds the one
+    real case (a document.write of unescaped vendor and model text).
+  mh.gitlab.javascript_react_rule-dangerouslysetinnerhtml: >-
+    Reports every dangerouslySetInnerHTML, including values produced by
+    DOMPurify in the same component (10 of 10 sanitised in TueriCXO).
+    Replaced by mh.microhealth.javascript.react-unsanitized-inner-html, which
+    reports only a value whose sanitiser call is not visible at the attribute
+    or in the const it reads.
+  mh.opengrep.typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml: >-
+    Same finding as mh.gitlab.javascript_react_rule-dangerouslysetinnerhtml
+    (reported twice); replaced with it by
+    mh.microhealth.javascript.react-unsanitized-inner-html.
+  mh.opengrep.javascript.express.security.audit.express-res-sendfile.express-res-sendfile: >-
+    Its sources include ANY function parameter typed `string`, and its sink
+    is any method named sendFile on any object, so a storage client's own
+    `sendFile(path: string)` upload method was reported as Express (6 of 6 in
+    TueriCXO). Replaced by mh.microhealth.javascript.express-sendfile-request-path:
+    request data to an Express response's sendFile/download without `root`.
+  mh.gitlab.javascript_timing_rule-possible-timing-attacks: >-
+    Also reports a secret-named variable compared with a literal (`if (token
+    === "") continue;` while splitting a list), which reveals nothing about
+    any secret. Replaced by mh.microhealth.javascript.secret-compare-not-constant-time:
+    a secret compared with a value that is neither a literal nor another
+    secret we hold, in any expression (not only `if`).
+  mh.opengrep.java.android.security.exported_activity.exported_activity: >-
+    Reports the app's MAIN/LAUNCHER activity, which Android 12+ requires to
+    be exported, so every Android/Capacitor app carried a finding it could
+    not fix. Replaced by mh.microhealth.android.exported-activity, which
+    exempts only an activity whose sole intent filter is MAIN + LAUNCHER.
+  mh.opengrep.bash.lang.security.ifs-tampering.ifs-tampering: >-
+    Reports every `IFS=`, including the scoped forms its own message
+    recommends (inside `$( … )`, a subshell, or after `local IFS`).
+    Replaced by mh.microhealth.bash.ifs-global.
+  mh.opengrep.generic.nginx.security.missing-internal.missing-internal: >-
+    Reports every proxy_pass to a variable without `internal`, including
+    `set $upstream "<configured origin>"; proxy_pass $upstream;`, whose
+    variable comes from configuration (it only makes nginx re-resolve DNS);
+    `internal` would break a public reverse proxy. Replaced by
+    mh.microhealth.nginx.proxy-pass-request-variable, which reports a
+    client-controlled variable in the destination's scheme or authority.
+  mh.opengrep.generic.nginx.security.request-host-used.request-host-used: >-
+    Reports every `$host` / `$http_host`, including `proxy_set_header Host
+    $host`, which only forwards the request's own Host upstream. Replaced by
+    mh.microhealth.nginx.host-header-in-response: Host reflected in a
+    redirect, header or Location this server sends.
+  mh.opengrep.javascript.lang.security.insecure-object-assign.insecure-object-assign: >-
+    Its sink is every argument of Object.assign, including the TARGET, so
+    writing a literal of fixed keys into a parsed object was "prototype
+    pollution". Replaced by mh.microhealth.javascript.json-parse-into-object-assign:
+    parsed JSON as a source argument, schema-validated values excluded.
+  mh.opengrep.yaml.github-actions.security.audit.unsafe-add-mask-workflow-command.unsafe-add-mask-workflow-command: >-
+    Its pattern is the literal text `::add-mask::`, so it reports every
+    masking command however its value is produced, and the only way to
+    satisfy it is to stop masking secrets. Replaced by
+    mh.microhealth.yaml.github-actions-add-mask-expression: a `${{ … }}`
+    expression interpolated into the command, the case that can inject.
+  mh.gitlab.javascript_dos_rule-non-literal-regexp: >-
+    Reports every RegExp built from anything but a literal, including module
+    constants and values already escaped (30 hits in TueriCXO, none a
+    user-written pattern). Replaced, together with detect-non-literal-regexp,
+    by mh.microhealth.javascript.regexp-from-untrusted-input: request, URL
+    and form input compiled into a RegExp without escaping.
+  mh.opengrep.javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp: >-
+    Its taint source is "any parameter of any function", so a helper
+    called only with constant tag names was user input (22 hits in TueriCXO,
+    all false). Replaced by mh.microhealth.javascript.regexp-from-untrusted-input
+    (see above).
+  mh.gitlab.rules_lgpl_javascript_crypto_rule-node-timing-attack: "Replaced by mh.microhealth.javascript.njsscan.crypto.node-timing-attack: comparing a secret-named variable with a literal (null, undefined, '', a number or boolean) is a presence check, not a secret comparison; upstream's pattern-nots for those never matched (trailing ';')."
+  mh.gitlab.rules_lgpl_javascript_dos_rule-layer7-object-dos: "Replaced by mh.microhealth.javascript.njsscan.dos.layer7-object-dos: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_dos_rule-regex-dos: "Replaced by mh.microhealth.javascript.njsscan.dos.regex-dos: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_eval_rule-eval-nodejs: "Replaced by mh.microhealth.javascript.njsscan.eval.eval-nodejs: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_eval_rule-eval-require: "Replaced by mh.microhealth.javascript.njsscan.eval.eval-require: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_eval_rule-sandbox-code-injection: "Replaced by mh.microhealth.javascript.njsscan.eval.sandbox-code-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_eval_rule-server-side-template-injection: "Replaced by mh.microhealth.javascript.njsscan.eval.server-side-template-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_eval_rule-vm-code-injection: "Replaced by mh.microhealth.javascript.njsscan.eval.vm-code-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_eval_rule-vm-compilefunction-injection: "Replaced by mh.microhealth.javascript.njsscan.eval.vm-compilefunction-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_eval_rule-vm-runincontext-injection: "Replaced by mh.microhealth.javascript.njsscan.eval.vm-runincontext-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_eval_rule-vm-runinnewcontext-injection: "Replaced by mh.microhealth.javascript.njsscan.eval.vm-runinnewcontext-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_eval_rule-vm2-code-injection: "Replaced by mh.microhealth.javascript.njsscan.eval.vm2-code-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_eval_rule-vm2-context-injection: "Replaced by mh.microhealth.javascript.njsscan.eval.vm2-context-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_exec_rule-shelljs-os-command-exec: "Replaced by mh.microhealth.javascript.njsscan.exec.shelljs-os-command-exec: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_headers_rule-express-cors: "Replaced by mh.microhealth.javascript.njsscan.headers.express-cors: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_headers_rule-generic-header-injection: "Replaced by mh.microhealth.javascript.njsscan.headers.generic-header-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_headers_rule-header-xss-generic: "Replaced by mh.microhealth.javascript.njsscan.headers.header-xss-generic: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_headers_rule-host-header-injection: "Replaced by mh.microhealth.javascript.njsscan.headers.host-header-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_redirect_rule-express-open-redirect2: "Replaced by mh.microhealth.javascript.njsscan.redirect.express-open-redirect2: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_redirect_rule-express-open-redirect: "Replaced by mh.microhealth.javascript.njsscan.redirect.express-open-redirect: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_ssrf_rule-node-ssrf: "Replaced by mh.microhealth.javascript.njsscan.ssrf.node-ssrf: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_ssrf_rule-phantom-ssrf: "Replaced by mh.microhealth.javascript.njsscan.ssrf.phantom-ssrf: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_ssrf_rule-playwright-ssrf: "Replaced by mh.microhealth.javascript.njsscan.ssrf.playwright-ssrf: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_ssrf_rule-puppeteer-ssrf: "Replaced by mh.microhealth.javascript.njsscan.ssrf.puppeteer-ssrf: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_ssrf_rule-wkhtmltoimage-ssrf: "Replaced by mh.microhealth.javascript.njsscan.ssrf.wkhtmltoimage-ssrf: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_ssrf_rule-wkhtmltopdf-ssrf: "Replaced by mh.microhealth.javascript.njsscan.ssrf.wkhtmltopdf-ssrf: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_traversal_rule-express-lfr: "Replaced by mh.microhealth.javascript.njsscan.traversal.express-lfr: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_traversal_rule-generic-path-traversal: "Replaced by mh.microhealth.javascript.njsscan.traversal.generic-path-traversal: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_traversal_rule-join-resolve-path-traversal: "Replaced by mh.microhealth.javascript.njsscan.traversal.join-resolve-path-traversal: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_xml_rule-node-entity-expansion: "Replaced by mh.microhealth.javascript.njsscan.xml.node-entity-expansion: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_xml_rule-node-xpath-injection: "Replaced by mh.microhealth.javascript.njsscan.xml.node-xpath-injection: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_xml_rule-node-xxe: "Replaced by mh.microhealth.javascript.njsscan.xml.node-xxe: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_xml_rule-xxe-expat: "Replaced by mh.microhealth.javascript.njsscan.xml.xxe-expat: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_xss_rule-express-xss: "Replaced by mh.microhealth.javascript.njsscan.xss.express-xss: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_xss_rule-handlebars-noescape: "Replaced by mh.microhealth.javascript.njsscan.xss.handlebars-noescape: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.gitlab.rules_lgpl_javascript_xss_rule-handlebars-safestring: "Replaced by mh.microhealth.javascript.njsscan.xss.handlebars-safestring: the same rule with its request-handler context narrowed to parameters named as an HTTP handler names them (req/request, res/resp/response/reply/h). The original treated every function of two or more parameters as a handler (FPs in TueriTerm: plain parsers, Electron/IPC callbacks, API clients) and, in search mode, timed out on large files."
+  mh.opengrep.generic.secrets.gitleaks.generic-api-key.generic-api-key: "Replaced by mh.microhealth.generic.secrets.generic-api-key: OAuth client identifiers (client_id-named values, GitHub's Ov23li/Iv23li/Iv1. formats) are public by definition (RFC 6749 2.2) and no longer match; everything else is unchanged."
+  mh.opengrep.generic.secrets.gitleaks.private-key.private-key: "Replaced by mh.microhealth.generic.secrets.private-key: a PEM armour whose only body is a template interpolation (${...}) is code that encodes a run-time key, not key material; the body is also matched lazily so each block is its own finding."
+  mh.opengrep.generic.secrets.security.detected-telegram-bot-api-key.detected-telegram-bot-api-key: "Replaced by mh.microhealth.generic.secrets.telegram-bot-api-key: the token now needs a boundary on both sides; the original matched '256:AAAA...' inside SSH fingerprints 'SHA256:AAAA...'."
+  mh.opengrep.html.security.audit.missing-integrity.missing-integrity: "Replaced by mh.microhealth.html.missing-integrity: only URLs that start with scheme:// or // count as externally hosted; the original matched '://' anywhere in the value, e.g. inside an inline data: URI."
+  mh.opengrep.json.npm.security.package-dependencies-check.package-dependencies-check: "Replaced by mh.microhealth.json.npm.package-dependencies-check: the value is judged as an npm spec, so exact versions, file:/link:/workspace: paths, npm: aliases to an exact version and pinned .tgz tarball URLs no longer fire (upstream matched any '-' or 'x'), while ranges, wildcards, partial versions, dist-tags and unpinned git specs do, scoped packages included."
+  mh.opengrep.generic.secrets.gitleaks.aws-access-token.aws-access-token: >-
+    Reported every AWS key ID a second time beside
+    detected-aws-access-key-id-value, and reported AWS's own documentation
+    example (AKIAIOSFODNN7EXAMPLE), which gitleaks itself allow-lists (12 hits
+    in e-aar, all test fixtures). Replaced, together with the rule below, by
+    mh.microhealth.generic.aws-access-key-id: the union of both prefix lists,
+    exempting only an ID that ends in EXAMPLE, which IAM never issues.
+  mh.opengrep.generic.secrets.security.detected-aws-access-key-id-value.detected-aws-access-key-id-value: >-
+    Duplicate of gitleaks.aws-access-token (the same key IDs, reported twice)
+    and its exemption was too wide: it dropped any ID containing TEST, FAKE or
+    SAMPLE, which a real random key ID can contain. Replaced by
+    mh.microhealth.generic.aws-access-key-id (see above).
+  mh.opengrep.javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket: >-
+    A `regex` rule over every file, so `ws://` in a comment, a JSDoc block or
+    Markdown prose was a HIGH finding (2 of 2 in e-aar: an ADR and a
+    vite.config.ts comment explaining why the dev server's HMR uses ws://).
+    Replaced by mh.microhealth.javascript.insecure-websocket-url, which reads
+    JavaScript/TypeScript string and template literals only and keeps the
+    upstream loopback exemption.
+  mh.gitlab.rules_lgpl_javascript_crypto_rule-node-insecure-random-generator: >-
+    Reported every Math.random() whatever it was for (2 of 2 in e-aar: retry
+    jitter and a skeleton loader's width). Predicting those gives an attacker
+    nothing. Replaced by mh.microhealth.javascript.insecure-random-for-secret:
+    Math.random() whose result is bound to, or returned by, a name that says
+    it must not be guessed (token, secret, nonce, salt, session, key, ...),
+    and crypto.pseudoRandomBytes() wherever it appears.
+  mh.opengrep.javascript.browser.security.open-redirect-from-function.js-open-redirect-from-function: >-
+    Its taint source is any parameter of any function, so a click handler
+    building `${config.edgeFunctionUrl}/…?id=${row.id}` was an open redirect
+    (2 of 2 in Gnosis, both a fixed origin). Replaced by
+    mh.microhealth.javascript.open-redirect-from-url-input: the query
+    string, fragment, referrer or window.name reaching a navigation.
+  mh.opengrep.terraform.lang.security.iam.no-iam-data-exfiltration.no-iam-data-exfiltration: >-
+    Checks whether ANY statement of a policy has `Resource = "*"`, then
+    reports the data actions of EVERY statement, so a GetSecretValue scoped
+    to named secret ARNs was reported because another statement granted
+    ecr:GetAuthorizationToken (which AWS only accepts on "*"). Replaced by
+    mh.microhealth.terraform.iam-data-read-unscoped, which reads the action
+    and the resource from the same statement.
+  mh.gitlab.python_xml_rule-element: >-
+    Reports every xml.etree.ElementTree parse. The Python documentation's
+    XML-vulnerability table lists ElementTree as not vulnerable to external
+    entity expansion, and, with expat 2.4.1 or later (every supported
+    Python build, including the FIPS Python images), not vulnerable to
+    billion-laughs or quadratic blow-up either; defusedxml, which the rule
+    recommends, documents the same. The parsers that remain unsafe (lxml
+    with entity resolution, xmlrpc decompression) have their own rules.
+  # --- Code scan of TueriCore, 2026-10-13: false-positive classes proven on real code ---
+  mh.opengrep.dockerfile.security.last-user-is-root.last-user-is-root: "superseded by mh.microhealth.dockerfile.last-user-root: more precise; the original flags USER root in every build stage, but only the last stage is the image that runs. On TueriCore it reported 10 lines, 7 of them throwaway builder stages (apk add before a COPY --from); the replacement flags the final stage only, and keeps a final USER root unless the line carries a reviewed hadolint DL3002 ignore or the stage drops privileges itself (tests)."
+  mh.opengrep.go.lang.security.audit.unsafe.use-of-unsafe-block: "superseded by mh.microhealth.go.unsafe-pointer-misuse: more precise; the original matches every unsafe.X(...) call, including unsafe.Sizeof (a compile-time constant) and uintptr(unsafe.Pointer(x)) written in a syscall/Proc.Call argument list, the pattern unsafe.Pointer's documentation gives as the valid way to call the Windows API. On TueriCore's agent it reported 48 lines, 43 of them that pattern; the replacement reports the 5 that need review (unsafe.Slice over OS buffers, a pointer conversion) and keeps uintptr arithmetic and nested unsafe.Add (tests)."
+  mh.gitlab.go_unsafe_rule-unsafe: "superseded by mh.microhealth.go.unsafe-pointer-misuse: same reason as mh.opengrep.go.lang.security.audit.unsafe.use-of-unsafe-block, which this gosec rule duplicates (44 of the same 48 lines on TueriCore's agent); the MIT replacement also enters the product bundle, so product coverage is kept."
+  mh.gitlab.go_file-permissions_rule-fileperm: "superseded by mh.microhealth.go.file-mode-too-permissive: more precise; the original compares the mode as a number (int($MASK) > 0o640), so 0o700 (owner only) is reported and 0o604 (world-readable) is not. Same 0640 threshold, tested as bits (mode & 0o037). On TueriCore it reported 0o700 files in agent-go enroll.go and runner-go executor.go."
+  mh.gitlab.go_file-permissions_rule-mkdir: "superseded by mh.microhealth.go.dir-mode-too-permissive: more precise; the original compares the mode as a number ($MASK > 0o750), which is not a permission order. Same 0750 threshold, tested as bits (mode & 0o027); 0755 and setgid 2770 are still reported (tests)."
+  mh.gitlab.go_sql_rule-concat-sqli: "superseded by mh.microhealth.go.sql-built-from-strings: more precise; the original's source is any fmt.Sprintf or string concatenation and its sink any $X.Exec/Query call, so TueriCore's process launcher access.Exec(ctx, \"launchctl\", \"bootout\", \"system/\"+label) was reported as SQL injection. The replacement keeps the same sinks (plus Prepare) and strings.Builder, and treats a formatted or concatenated string as a source when its literal part reads as SQL. Trade-off: a format string with no SQL keyword at all (\"%s\") is no longer a source."
+  mh.opengrep.go.lang.security.decompression_bomb.potential-dos-via-decompression-bomb: "superseded by mh.microhealth.go.decompression-without-limit: the original's io.LimitReader sanitizer focuses on the argument inside the call, so the call's result stays tainted and io.Copy(f, io.LimitReader(tr, n)) -- the fix its own message asks for -- is reported (verified on TueriCore's code/runner-go actions.go). The replacement sanitizes the bounded reader itself and adds io.ReadAll as a sink."
+  mh.gitlab.go_filesystem_rule-decompression-bomb: "superseded by mh.microhealth.go.decompression-without-limit: same sanitizer defect as mh.opengrep.go.lang.security.decompression_bomb.potential-dos-via-decompression-bomb, which this rule duplicates line for line."
+  mh.opengrep.python.flask.security.audit.directly-returned-format-string.directly-returned-format-string: "superseded by mh.microhealth.python.flask-returned-format-string: more precise; the original's sources (request.X.get(...)) and sinks (a formatted return) apply in every Python file, so TueriCore's FastAPI helpers that build a base URL from a header and return it into a JSON body (routers/cr26_reports.py, routers/oauth.py) were reported as Flask XSS. A returned string is an HTML response only in Flask; the replacement keeps the same sources and sinks in files that import Flask (verified: it still reports both Flask cases and not the FastAPI helper)."
   # --- Superseded by request-taint and narrower MicroHealth JavaScript/JSON rules (2026-10-13; findings sampled on TueriDev, every replacement tested with ruleid/ok cases) ---
   mh.gitlab.javascript_pathtraversal_rule-non-literal-fs-filename: "superseded by mh.microhealth.javascript.path-traversal-from-request: more precise; the original reports every fs call whose path is not a string literal, so a file the program computes inside its own data folder is \"path traversal\"; 821 findings in TueriDev, none reachable from a client. The replacement is taint from request fields and WebSocket messages to the fs call, with basename and containment checks as sanitizers."
   mh.opengrep.javascript.lang.security.audit.detect-non-literal-fs-filename.detect-non-literal-fs-filename: "superseded by mh.microhealth.javascript.path-traversal-from-request: more precise; the original the same \"any non-literal path\" audit as the GitLab rule (152 findings in TueriDev, none from a client); the replacement needs a value a client sent."
   mh.opengrep.javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal: "superseded by mh.microhealth.javascript.path-traversal-from-request: more precise; the original treats every function parameter as attacker input and every path.join/resolve as a sink, with no file access needed (212 findings in TueriDev, e.g. path.join(homedir, \".local\", \"bin\")); the replacement needs request input to reach a file system call."
-  mh.gitlab.rules_lgpl_javascript_traversal_rule-join-resolve-path-traversal: "superseded by mh.microhealth.javascript.path-traversal-from-request: more precise; the original its source is the first parameter of ANY two-parameter function (it assumes `function (req, res)`), so `path.join(plan.homedir, \".profile\")` was reported; the replacement uses real request fields."
-  mh.gitlab.javascript_dos_rule-non-literal-regexp: "superseded by mh.microhealth.javascript.regexp-from-request: more precise; the original reports every RegExp built from a variable, including ones built from the program's own constants and from escaped text (53 findings in TueriDev, none from a client); the replacement needs the pattern to come from a request."
-  mh.opengrep.javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp: "superseded by mh.microhealth.javascript.regexp-from-request: more precise; the original the same \"any non-literal RegExp\" audit as the GitLab rule; ReDoS-prone LITERAL patterns stay covered by mh.opengrep.javascript.lang.security.audit.detect-redos."
-  mh.gitlab.rules_lgpl_javascript_dos_rule-regex-dos: "superseded by mh.microhealth.javascript.regexp-from-request: more precise; the original reports any regex .test/.exec on the first parameter of any two-parameter function, whether or not the regex can backtrack (55 findings in TueriDev: `(_, ctx)` helpers, `/^\\d{1,15}$/.test(id)`). A pattern a client controls is the replacement's job; a literal pattern that can backtrack catastrophically is mh.opengrep.javascript.lang.security.audit.detect-redos's, which analyses the regex itself."
-  mh.gitlab.rules_lgpl_javascript_ssrf_rule-node-ssrf: "superseded by mh.microhealth.javascript.ssrf-from-request: more precise; the original its source is the first parameter of ANY two-parameter function, so `(port, path) => fetch(...)` in a test and a CLI's documentation fetch were \"SSRF\"; the replacement is taint from request fields to fetch/axios/got/http(s) with allow-list checks as sanitizers."
-  mh.opengrep.javascript.lang.security.html-in-template-string.html-in-template-string: "superseded by mh.microhealth.javascript.html-template-unescaped: more precise; the original its test for HTML is any `<` followed by a letter, so usage text (`set <key> <value>`), file-name placeholders (`<chain>`) and HTML whose every value was already passed through escapeHtml were reported (71 in TueriDev); the replacement needs a real HTML element and an interpolated value that is not an escaping call or a number."
-  mh.opengrep.json.npm.security.package-dependencies-check.package-dependencies-check: "superseded by mh.microhealth.json.npm-dependency-mutable-source: more precise; the original reports every caret/tilde range; a range is pinned (with its integrity hash) by the committed lockfile and moves only in a reviewed lockfile change, so all 49 dependencies of a --frozen-lockfile repository were findings. The replacement reports the sources a lockfile cannot make reviewable: dist-tags, `*`, git branches, plain http."
-  mh.gitlab.javascript_timing_rule-possible-timing-attacks: "superseded by mh.microhealth.javascript.secret-compare-not-constant-time: more precise; the original excludes a null/undefined comparison only in a braced `if {...};`, so `if (token === null) return;` and `if (token === \"%s\")` were reported (11 in TueriDev, none comparing a secret with attacker input); the replacement excludes any comparison with a literal, null, undefined or typeof, and adds hmac/signature/digest."
-  mh.gitlab.rules_lgpl_javascript_crypto_rule-node-timing-attack: "superseded by mh.microhealth.javascript.secret-compare-not-constant-time: more precise; the original the same patterns as mh.gitlab.javascript_timing_rule-possible-timing-attacks (one report per line from each); see that entry."
-  mh.gitlab.rules_lgpl_javascript_crypto_rule-node-insecure-random-generator: "superseded by mh.microhealth.javascript.insecure-random-for-secret: more precise; the original reports every Math.random() call -- display ids, jitter, a greeting's choice (19 in TueriDev, none a secret); the replacement, like mh.microhealth.python.insecure-random-for-secret, reports it where the value is named as a token, password, nonce, salt, key or session id, and still reports crypto.pseudoRandomBytes always."
   mh.opengrep.javascript.lang.security.detect-child-process.detect-child-process: "superseded by mh.microhealth.javascript.child-process-shell-command: more precise; the original reports every exec/spawn whose program is a function parameter, including spawn(file, argv, { shell: false }) -- the form its own message recommends, where there is no shell to inject into. The replacement reports what makes a command injectable: a non-constant command line run through a shell (exec/execSync, or spawn/execFile with `shell` set)."
   mh.opengrep.problem-based-packs.insecure-transport.js-node.using-http-server.using-http-server: "superseded by mh.microhealth.javascript.http-server-non-loopback: more precise; the original reports any `http.<anything>(...)` call, including the loopback redirect server RFC 8252 section 7.3 REQUIRES of a native OAuth client; the replacement reports an http server that does not listen on 127.0.0.1, localhost or ::1."
-  mh.opengrep.javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket: "superseded by mh.microhealth.javascript.insecure-websocket-url: more precise; the original a text regex over the whole file: it reported `ws://` written in a comment and missed ws://[::1]; the replacement checks strings and templates that are code."
   mh.opengrep.javascript.lang.security.audit.unsafe-dynamic-method.unsafe-dynamic-method: "superseded by mh.microhealth.javascript.dynamic-method-from-request: more precise; the original reports every obj[key](...) with a non-literal key -- dispatch tables keyed by the program's own command names, toast levels, language loaders (20 in TueriDev); the replacement needs the key to come from a request, with Object.hasOwn / Set.has / includes as sanitizers."
-  mh.opengrep.javascript.lang.security.insecure-object-assign.insecure-object-assign: "superseded by mh.microhealth.javascript.object-assign-parsed-json: more precise; the original reports Object.assign when parsed JSON reaches ANY argument, including the target and an object literal the program builds (`Object.assign(new Error(parsed.message), { kind })`), which cannot carry a __proto__ key into the copy; the replacement needs the parsed object itself as a source argument."
   mh.opengrep.javascript.lang.security.audit.incomplete-sanitization.incomplete-sanitization: "superseded by mh.microhealth.javascript.incomplete-escape-replace: more precise; the original reports a one-character string replace() of `%`, `|`, `*`, `$`, brackets or quotes whatever it is for, so stripping the `%` from \"50%\" was \"incomplete sanitization\"; the replacement needs an escapable character (<, >, &, quotes, backslash) replaced by its escape."
   mh.gitlab.rules_lgpl_javascript_eval_rule-yaml-deserialize: "superseded by mh.microhealth.javascript.js-yaml-unsafe-schema and mh.microhealth.json.npm-js-yaml-v3: more precise; the original reports every js-yaml load() as remote code execution (ERROR). Since js-yaml 4 (2021) load() uses the safe default schema and cannot build functions; the danger is a v3 install (json.npm-js-yaml-v3) or a schema that adds the JavaScript types back (javascript.js-yaml-unsafe-schema)."
-  mh.opengrep.yaml.github-actions.security.audit.unsafe-add-mask-workflow-command.unsafe-add-mask-workflow-command: >-
-    Reports every use of `::add-mask::`, GitHub's own and only mechanism for
-    keeping a value a workflow GENERATES (a keychain password, a decoded
-    certificate passphrase) out of the log. The bypass it describes,
-    `::stop-commands::`, needs someone who can already edit the workflow on a
-    branch with the same secrets, who can print the value directly; not
-    masking would be strictly worse. No change to the code it flags makes it
-    safer, so it is an audit note that can only be silenced line by line.
 severity: {}
+refine:
+  mh.opengrep.generic.secrets.gitleaks.stripe-access-token.stripe-access-token:
+    reason: >-
+      Reports the documentation placeholder `sk_live_xxxxxxxxxxxxxxxx` (3
+      hits in Gnosis's API reference). A key body made only of x, 0 or *
+      is a placeholder; generic-api-key already skips such runs. Any key
+      with real characters is still reported.
+    add:
+      - pattern-not-regex: (?i)\b(?:sk|rk)_(?:test|live|prod)_(?:x+|0+|\*+)\b
+  mh.opengrep.yaml.kubernetes.security.run-as-non-root-security-context-pod-level.run-as-non-root-security-context-pod-level:
+    reason: >-
+      Its "already set" check only recognises a pod securityContext whose
+      sole key is runAsNonRoot, so `securityContext: {runAsNonRoot: true,
+      runAsUser: 10001, …}` was reported as missing it (2 of 2 in Gnosis's
+      k8s manifests). This accepts runAsNonRoot among other keys.
+    add:
+      - pattern-not-inside: |
+          spec:
+            ...
+            securityContext:
+              ...
+              runAsNonRoot: true
+              ...
+            ...
+  mh.opengrep.terraform.aws.security.aws-ec2-security-group-allows-public-ingress.aws-ec2-security-group-allows-public-ingress:
+    reason: >-
+      A public web endpoint (an internet-facing load balancer) has to accept
+      ports 80 and 443 from anywhere; that is its design, not a finding (2
+      of 2 in Gnosis: the ALB's HTTP-redirect and HTTPS listeners). Any
+      other port open to the internet (SSH, a database, a range) is still
+      reported.
+    add:
+      - pattern-not: |
+          ingress {
+            ...
+            from_port = 443
+            ...
+            to_port = 443
+            ...
+          }
+      - pattern-not: |
+          ingress {
+            ...
+            from_port = 80
+            ...
+            to_port = 80
+            ...
+          }
+  mh.opengrep.terraform.lang.security.iam.no-iam-creds-exposure.no-iam-creds-exposure:
+    reason: >-
+      ecr:GetAuthorizationToken returns a registry login that carries only
+      the caller's own ECR permissions (it grants nothing the role cannot
+      already do), and AWS accepts it only on Resource "*". Every ECS task
+      execution role that pulls from ECR needs it (it is in AWS's managed
+      AmazonECSTaskExecutionRolePolicy). A statement whose only action it
+      is is no longer reported; every other credential action still is.
+    add:
+      - pattern-not: Action = "ecr:GetAuthorizationToken"
+      - pattern-not: Action = ["ecr:GetAuthorizationToken"]
+      - pattern-not: actions = ["ecr:GetAuthorizationToken"]
 allow:
-  - rules: [mh.opengrep.generic.secrets.*]
+  - rules: [mh.opengrep.generic.secrets.*, mh.microhealth.generic.*]
     not-regex: '(?m)^.*\bgitleaks:allow\b.*$'
     reason: >-
       `gitleaks:allow` on the line is gitleaks' own inline allow, and these
-      rules are its ported patterns (gitleaks/) or the same idea (security/).
+      rules are its ported patterns (gitleaks/), the same idea (security/), or
+      MicroHealth replacements of either (mh.microhealth.generic.*).
       Repositories mark reviewed test fixtures with it for the gitleaks job in
       their CI; without this, the same fixture is allowed by one scanner and
       a CRITICAL finding in the other. The marker is visible in review and in
       the diff that adds it, as `nosemgrep` is.
-  - rules: [mh.opengrep.generic.secrets.gitleaks.aws-access-token.aws-access-token]
-    not-regex: '\b(?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z0-9]{9}EXAMPLE\b'
-    reason: >-
-      AWS publishes AKIAIOSFODNN7EXAMPLE (and keys ending EXAMPLE) as the
-      documentation key every example uses; it is not issued to anyone.
-      gitleaks' own aws-access-token rule allow-lists `.+EXAMPLE$`, and
-      mh.opengrep.generic.secrets.security.detected-aws-access-key-id-value
-      already drops "example". A real key ends in EXAMPLE with a probability
-      of about 1 in 32^7.
-  - rules: [mh.opengrep.generic.secrets.gitleaks.generic-api-key.generic-api-key]
-    not-regex: '(?i)\bclient_?id\b["'']?\s*(?:[:=]|=>)\s*["'']?[\w.\-]+'
-    reason: >-
-      An OAuth client identifier is public by design (RFC 6749 section 2.2;
-      it is printed in every authorization URL), so `clientId`/`client_id`
-      values were reported as API keys. `client_secret` is not matched by
-      this regex and is still reported.
-  - rules: [mh.opengrep.java.android.security.exported_activity.exported_activity]
-    not-regex: '(?s)<activity\b[^>]*>\s*<intent-filter>\s*<action android:name="android\.intent\.action\.MAIN"\s*/>\s*<category android:name="android\.intent\.category\.LAUNCHER"\s*/>\s*</intent-filter>\s*</activity>'
-    reason: >-
-      An activity whose ONLY intent filter is MAIN + LAUNCHER is the app's
-      entry point: Android requires it to be exported (android:exported is
-      mandatory and must be true for the launcher to start it since API 31)
-      and it receives only the launcher's empty MAIN intent. An activity with
-      any other intent filter -- a deep link, a share target -- is still
-      reported.

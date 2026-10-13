@@ -45,6 +45,18 @@ class SharedWorkflowTests(unittest.TestCase):
         self.assertIn("steps.scan.outcome", env)
         self.assertIn("steps.sarif_publication.outcome", env)
 
+    def test_code_scanning_gets_no_inline_suppressions(self) -> None:
+        # GitHub opens an alert for a SARIF result marked suppressed, so a
+        # reviewed noopengrep failed the pull request that added it.
+        s = steps("opengrep.yml")
+        filt = s["sarif_for_github"]
+        self.assertIn("sarif_for_code_scanning.py /out/sast.sarif /out/sast.github.sarif", filt["run"])
+        self.assertIn("--network none", filt["run"])
+        self.assertTrue(s["sarif_publication"]["with"]["sarif_file"].endswith("/out/sast.github.sarif"))
+        self.assertIn("steps.sarif_for_github.outcome", s["sarif_publication"]["if"])
+        # The artifact is still the full report, suppressed results included.
+        self.assertIn("/out/sast.sarif", s["Upload report artifacts"]["with"]["path"])
+
     def test_scan_has_no_network_and_prints_no_source(self) -> None:
         run = steps("opengrep.yml")["scan"]["run"]
         self.assertIn("--network none", run)
@@ -95,6 +107,18 @@ class SharedWorkflowTests(unittest.TestCase):
                             # stage (engines.yml); nothing runs in it.
                             if line.strip().startswith("FROM ") and line.strip() != "FROM scratch":
                                 self.assertRegex(line, r"microhealthllc/fips-[a-z0-9-]+:dev-latest@sha256:[0-9a-f]{64}", path.name)
+
+    def test_network_reaches_only_github_gitlab_and_aws(self) -> None:
+        # Reports go to GitHub (code scanning, artifacts) and AWS (S3, ECR) and
+        # nowhere else; downloads come from GitHub, and upstream rules are
+        # cloned read-only from GitHub and GitLab. A new host fails here first.
+        allowed = {"github.com", "api.github.com", "raw.githubusercontent.com", "gitlab.com"}
+        root = WORKFLOWS.parents[1]
+        files = [*WORKFLOWS.glob("*.yml"), *(root / "scripts").glob("*.py"), *(root / "scripts").glob("*.sh"),
+                 *(root / "local").glob("*"), root / "sources.yaml", root / "engine.json"]
+        for path in files:
+            for host in re.findall(r"https?://([A-Za-z0-9.-]+)", path.read_text()):
+                self.assertIn(host.lower(), allowed, f"{path.relative_to(root)}: {host}")
 
 
 if __name__ == "__main__":

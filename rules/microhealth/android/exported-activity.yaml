@@ -1,0 +1,30 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: android.exported-activity
+    languages: [regex]
+    severity: WARNING
+    paths:
+      include: ["*AndroidManifest.xml"]
+    message: >-
+      This activity is exported (android:exported="true"), so any app on the
+      device can start it with an intent of its choosing. Unless it is meant
+      to be launched by other apps, set android:exported="false"; if it is,
+      validate every intent extra it reads and protect it with a permission.
+    metadata:
+      category: security
+      subcategory: [audit]
+      technology: [android]
+      confidence: MEDIUM
+      likelihood: LOW
+      impact: MEDIUM
+      cwe: ["CWE-926: Improper Export of Android Application Components"]
+      references:
+        - https://developer.android.com/privacy-and-security/risks/android-exported
+      # Replaces mh.opengrep.java.android.security.exported_activity, which
+      # also reported the app's MAIN/LAUNCHER activity. Android 12+ REQUIRES
+      # that activity to be exported (the launcher starts it), so every
+      # Capacitor or Android app had a finding it could not fix. An exported
+      # activity whose only intent filter is MAIN + LAUNCHER is excluded.
+    patterns:
+      - pattern-regex: <activity\b[^>]*android:exported\s*=\s*"true"[^>]*>[\s\S]*?</activity>
+      - pattern-not-regex: <activity\b[^>]*android:exported\s*=\s*"true"[^>]*>\s*<intent-filter>\s*<action\s+android:name="android\.intent\.action\.MAIN"\s*/>\s*<category\s+android:name="android\.intent\.category\.LAUNCHER"\s*/>\s*</intent-filter>\s*</activity>

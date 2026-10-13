@@ -1,34 +1,30 @@
-import express from 'express';
+// Rule-test fixture for javascript.secret-compare-not-constant-time; never executed.
+declare const provided: string;
+declare const apiKey: string | null;
+declare const raw: string;
 
-const app = express();
-declare const config: { apiKey: string; webhookSecret: string };
-declare function hmacOf(body: unknown): string;
-
-app.post('/hook', (req, res) => {
-  const signature = hmacOf(req.body);
+export function check(secret: string) {
   // ruleid: javascript.secret-compare-not-constant-time
-  if (req.headers['x-signature'] !== signature) return res.status(401).end();
-  res.end();
-});
-
-app.get('/admin', (req, res) => {
+  if (provided === secret) return true;
   // ruleid: javascript.secret-compare-not-constant-time
-  if (req.query.key === config.apiKey) res.send('ok');
-});
-
-app.get('/status', (req, res) => {
-  // ok: javascript.secret-compare-not-constant-time
-  if (req.query.token === undefined) return res.status(400).end();
-  // ok: javascript.secret-compare-not-constant-time
-  if (req.query.mode === 'full') res.send('full');
-});
-
-export function confirmPassword(password: string, again: string) {
-  // ok: javascript.secret-compare-not-constant-time
-  return again !== password;
+  return apiKey !== provided;
 }
 
-export function sameIntegrity(digest: string, want: string) {
+export class Session {
+  token = "";
+  refresh(token: string) {
+    // ok: javascript.secret-compare-not-constant-time
+    if (token !== this.token) this.token = token;
+  }
+}
+
+export function split(text: string) {
+  for (const part of text.split(",")) {
+    const token = part.trim();
+    // ok: javascript.secret-compare-not-constant-time
+    if (token === "") continue;
+  }
   // ok: javascript.secret-compare-not-constant-time
-  return digest === want;
+  if (apiKey === null) return raw;
+  return raw;
 }
