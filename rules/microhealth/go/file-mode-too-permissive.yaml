@@ -1,0 +1,36 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: go.file-mode-too-permissive
+    languages: [go]
+    severity: WARNING
+    message: >-
+      This file is created or chmod-ed with mode $MASK, which lets the group
+      write or execute it or lets every other user on the host read, write or
+      execute it. A secret, a token or a config file written this way can be
+      read or replaced by another local account. Use 0600 when only this
+      process needs the file, or 0640 with a dedicated group; if other users
+      really must read it, say why in a comment.
+    metadata:
+      category: security
+      subcategory: [audit]
+      technology: [go]
+      confidence: HIGH
+      likelihood: LOW
+      impact: MEDIUM
+      cwe: ["CWE-732: Incorrect Permission Assignment for Critical Resource"]
+      references:
+        - https://pkg.go.dev/io/fs#FileMode
+    # Replaces mh.gitlab.go_file-permissions_rule-fileperm, which compared the
+    # mode as a NUMBER (`int($MASK) > 0o640`): 0o700 (owner only) is larger
+    # than 0o640 and was flagged, while 0o604 (world-readable) is smaller and
+    # was not. The same threshold, tested as bits: anything beyond 0640 that
+    # reaches the group (write, execute) or other users (any bit). The owner's
+    # own bits never make a file more exposed.
+    patterns:
+      - pattern-either:
+          - pattern: os.Chmod(..., $MASK)
+          - pattern: os.OpenFile(..., $MASK)
+          - pattern: os.WriteFile(..., $MASK)
+      - metavariable-comparison:
+          metavariable: $MASK
+          comparison: int($MASK) & 0o037 != 0

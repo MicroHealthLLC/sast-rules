@@ -1,0 +1,33 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: go.dir-mode-too-permissive
+    languages: [go]
+    severity: WARNING
+    message: >-
+      This directory is created with mode $MASK, which lets the group create,
+      delete or rename files in it, or lets every other user on the host list
+      or enter it. Another local account can then plant or swap a file this
+      program later trusts. Use 0700 when only this process needs it, or 0750
+      with a dedicated group; if other users really must reach it, say why in
+      a comment.
+    metadata:
+      category: security
+      subcategory: [audit]
+      technology: [go]
+      confidence: HIGH
+      likelihood: LOW
+      impact: MEDIUM
+      cwe: ["CWE-732: Incorrect Permission Assignment for Critical Resource"]
+      references:
+        - https://pkg.go.dev/os#MkdirAll
+    # Replaces mh.gitlab.go_file-permissions_rule-mkdir, which compared the
+    # mode as a number (`$MASK > 0o750`): owner-only modes are never the
+    # problem, and a numeric order is not a permission order. The same
+    # threshold, tested as bits: group write, or any bit for other users.
+    patterns:
+      - pattern-either:
+          - pattern: os.Mkdir(..., $MASK)
+          - pattern: os.MkdirAll(..., $MASK)
+      - metavariable-comparison:
+          metavariable: $MASK
+          comparison: int($MASK) & 0o027 != 0

@@ -2,3 +2,11 @@
 # their patterns are what the rules look for, not code that does it.
 upstream/
 dist/
+# Rule-test fixtures: deliberate unsafe/permission/decompression/SQL/Flask/USER root cases that `opengrep scan --test` checks the rules against; never compiled, built or run.
+rules/microhealth/go/unsafe-pointer-misuse.go
+rules/microhealth/go/file-mode-too-permissive.go
+rules/microhealth/go/dir-mode-too-permissive.go
+rules/microhealth/go/decompression-without-limit.go
+rules/microhealth/go/sql-built-from-strings.go
+rules/microhealth/python/flask-returned-format-string.py
+rules/microhealth/dockerfile/last-user-root.dockerfile

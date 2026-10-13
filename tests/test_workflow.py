@@ -45,6 +45,18 @@ class SharedWorkflowTests(unittest.TestCase):
         self.assertIn("steps.scan.outcome", env)
         self.assertIn("steps.sarif_publication.outcome", env)
 
+    def test_code_scanning_gets_no_inline_suppressions(self) -> None:
+        # GitHub opens an alert for a SARIF result marked suppressed, so a
+        # reviewed noopengrep failed the pull request that added it.
+        s = steps("opengrep.yml")
+        filt = s["sarif_for_github"]
+        self.assertIn("sarif_for_code_scanning.py /out/sast.sarif /out/sast.github.sarif", filt["run"])
+        self.assertIn("--network none", filt["run"])
+        self.assertTrue(s["sarif_publication"]["with"]["sarif_file"].endswith("/out/sast.github.sarif"))
+        self.assertIn("steps.sarif_for_github.outcome", s["sarif_publication"]["if"])
+        # The artifact is still the full report, suppressed results included.
+        self.assertIn("/out/sast.sarif", s["Upload report artifacts"]["with"]["path"])
+
     def test_scan_has_no_network_and_prints_no_source(self) -> None:
         run = steps("opengrep.yml")["scan"]["run"]
         self.assertIn("--network none", run)

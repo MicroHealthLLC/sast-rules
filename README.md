@@ -34,6 +34,7 @@ It is maintained by MicroHealth for MicroHealth's repositories.
 | Validated cryptography around the scan | The container is built FROM MicroHealth's FIPS 140-3 Python image; git, the AWS CLI and Python use the system OpenSSL with only the FIPS provider. See [FIPS](#fips) for what is outside that claim. |
 | A report says which rules ran | Every JSON report carries `ruleset.rules_evaluated`. A finding whose rule did not run is never treated as fixed. |
 | A failed upload never hides a failed scan | The scan is a blocking step; the SARIF upload is not. Both outcomes are recorded separately (`publication-status.json`). |
+| A reviewed suppression is not a code scanning alert | GitHub opens an alert for a result Opengrep marks as suppressed in source (`noopengrep: <rule id>` with its reason), so code scanning gets a copy without them (`scripts/sarif_for_code_scanning.py`). The `sast-reports` artifact (`sast.sarif`) and `sast.json` keep every result, suppressed ones with their state. |
 
 `tests/test_workflow.py` fails if any of these controls is removed.
 

@@ -1,0 +1,50 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: go.decompression-without-limit
+    languages: [go]
+    severity: WARNING
+    message: >-
+      Decompressed data is copied or read with no upper bound. A small archive
+      can expand to gigabytes (a decompression bomb) and fill the disk or
+      memory. Read through io.LimitReader (or http.MaxBytesReader) with a cap
+      that fits the use, and treat hitting it as an error.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [go]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: MEDIUM
+      cwe: ["CWE-409: Improper Handling of Highly Compressed Data (Data Amplification)"]
+      references:
+        - https://pkg.go.dev/io#LimitReader
+    # Replaces mh.opengrep.go.lang.security.decompression_bomb.potential-dos-via-decompression-bomb
+    # and mh.gitlab.go_filesystem_rule-decompression-bomb. Both meant to accept
+    # io.LimitReader, but their sanitizer focused on the argument INSIDE the
+    # call (`io.LimitReader($TAINTED, ...)` + focus $TAINTED), so the call's
+    # result still carried taint and `io.Copy(f, io.LimitReader(tr, n))` -- the
+    # fix their own message asks for -- was reported. Here the whole bounded
+    # reader is the sanitizer. io.ReadAll of a decompressor is added: it is
+    # the same bomb, read into memory.
+    mode: taint
+    pattern-sources:
+      - pattern: gzip.NewReader(...)
+      - pattern: zlib.NewReader(...)
+      - pattern: zlib.NewReaderDict(...)
+      - pattern: bzip2.NewReader(...)
+      - pattern: flate.NewReader(...)
+      - pattern: flate.NewReaderDict(...)
+      - pattern: lzw.NewReader(...)
+      - pattern: tar.NewReader(...)
+      - pattern: zip.NewReader(...)
+      - pattern: zip.OpenReader(...)
+    pattern-sanitizers:
+      - pattern: io.LimitReader(...)
+      - pattern: http.MaxBytesReader(...)
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: io.Copy($DST, $SRC)
+              - pattern: io.CopyBuffer($DST, $SRC, $BUF)
+              - pattern: io.ReadAll($SRC)
+          - focus-metavariable: $SRC
