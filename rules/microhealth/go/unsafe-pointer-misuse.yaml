@@ -1,0 +1,51 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: go.unsafe-pointer-misuse
+    languages: [go]
+    severity: WARNING
+    message: >-
+      unsafe.$FUNC steps outside Go's type and memory safety. A wrong length,
+      a pointer kept as a uintptr across a statement, or arithmetic past the
+      end of an allocation reads or writes memory the program does not own.
+      Check the size or length against what the memory really holds, or use a
+      safe API (encoding/binary, golang.org/x/sys wrappers); if the use is
+      correct, say why in a comment.
+    metadata:
+      category: security
+      subcategory: [audit]
+      technology: [go]
+      confidence: MEDIUM
+      likelihood: LOW
+      impact: HIGH
+      cwe: ["CWE-242: Use of Inherently Dangerous Function"]
+      references:
+        - https://pkg.go.dev/unsafe#Pointer
+        - https://cwe.mitre.org/data/definitions/242.html
+    # Every unsafe.Pointer/Add/Slice/String use is reported EXCEPT two that the
+    # unsafe package documents as valid and that a reviewer can do nothing
+    # about:
+    #   - unsafe.Sizeof/Alignof/Offsetof: compile-time constants; they read
+    #     and write no memory.
+    #   - `uintptr(unsafe.Pointer(x))` written directly in the argument list of
+    #     syscall.Syscall*/SyscallN or a (Lazy)Proc's .Call — pattern (4) of
+    #     unsafe.Pointer's documentation, the one way to pass a pointer to the
+    #     Windows API. The compiler keeps the object alive for that call.
+    # The two upstream rules this replaces flag both, so a Windows file that
+    # calls a DLL produced one finding per argument and buried the conversions
+    # and unsafe.Slice calls that do need review.
+    patterns:
+      - pattern: unsafe.$FUNC(...)
+      - metavariable-regex:
+          metavariable: $FUNC
+          regex: ^(Pointer|Add|Slice|SliceData|String|StringData)$
+      # pattern-not (not -inside) so only the exact unsafe.Pointer(x) written
+      # as `uintptr(unsafe.Pointer(x))` in the argument list is exempt: an
+      # unsafe.Add or a uintptr sum elsewhere in the same call is still found.
+      - pattern-not:
+          patterns:
+            - pattern: unsafe.Pointer($X)
+            - pattern-either:
+                - pattern-inside: syscall.$SYSCALL(..., uintptr(unsafe.Pointer($X)), ...)
+                - pattern-inside: unix.$SYSCALL(..., uintptr(unsafe.Pointer($X)), ...)
+                - pattern-inside: windows.$SYSCALL(..., uintptr(unsafe.Pointer($X)), ...)
+                - pattern-inside: $PROC.Call(..., uintptr(unsafe.Pointer($X)), ...)

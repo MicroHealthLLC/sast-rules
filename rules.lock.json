@@ -14,8 +14,8 @@
   "microhealth": {}
  },
  "bundles": {
-  "internal": 2592,
-  "product": 277
+  "internal": 2590,
+  "product": 278
  },
  "rules": {
   "mh.gitlab.c_access_rule-RpcImpersonateClient-ImpersonateLoggedOnUser": {
@@ -1078,11 +1078,9 @@
    "path": "upstream/gitlab/go/file_permissions/rule-fileperm.yml",
    "license": "Apache-2.0",
    "sha256": "9d1cc13e6d258817f8cd91f6159d414e97933b1d6bf21d42f7dc1a4dcb6d55c2",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "superseded by mh.microhealth.go.file-mode-too-permissive: more precise; the original compares the mode as a number (int($MASK) > 0o640), so 0o700 (owner only) is reported and 0o604 (world-readable) is not. Same 0640 threshold, tested as bits (mode & 0o037). On TueriCore it reported 0o700 files in agent-go enroll.go and runner-go executor.go."
   },
   "mh.gitlab.go_file-permissions_rule-mkdir": {
    "source": "gitlab",
@@ -1090,11 +1088,9 @@
    "path": "upstream/gitlab/go/file_permissions/rule-mkdir.yml",
    "license": "Apache-2.0",
    "sha256": "929e3672984d1176fbbacf7a4d9140e8ded46a36f0dfc666d28d5b2e30ba93c0",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "superseded by mh.microhealth.go.dir-mode-too-permissive: more precise; the original compares the mode as a number ($MASK > 0o750), which is not a permission order. Same 0750 threshold, tested as bits (mode & 0o027); 0755 and setgid 2770 are still reported (tests)."
   },
   "mh.gitlab.go_filesystem_rule-decompression-bomb": {
    "source": "gitlab",
@@ -1102,11 +1098,9 @@
    "path": "upstream/gitlab/go/filesystem/rule-decompression-bomb.yml",
    "license": "Apache-2.0",
    "sha256": "9471073ad50e63a7ab1337c6730c1cc411143f7ae4ff05fcb9da496e219099b0",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "superseded by mh.microhealth.go.decompression-without-limit: same sanitizer defect as mh.opengrep.go.lang.security.decompression_bomb.potential-dos-via-decompression-bomb, which this rule duplicates line for line."
   },
   "mh.gitlab.go_filesystem_rule-fileread": {
    "source": "gitlab",
@@ -1258,11 +1252,9 @@
    "path": "upstream/gitlab/go/sql/rule-concat-sqli.yml",
    "license": "Apache-2.0",
    "sha256": "066f494fcf9bf12ae2721469efe1fe6967ad192d9ea6e843072a3aa8efe6629d",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "superseded by mh.microhealth.go.sql-built-from-strings: more precise; the original's source is any fmt.Sprintf or string concatenation and its sink any $X.Exec/Query call, so TueriCore's process launcher access.Exec(ctx, \"launchctl\", \"bootout\", \"system/\"+label) was reported as SQL injection. The replacement keeps the same sinks (plus Prepare) and strings.Builder, and treats a formatted or concatenated string as a source when its literal part reads as SQL. Trade-off: a format string with no SQL keyword at all (\"%s\") is no longer a source."
   },
   "mh.gitlab.go_subproc_rule-subproc": {
    "source": "gitlab",
@@ -1282,11 +1274,9 @@
    "path": "upstream/gitlab/go/unsafe/rule-unsafe.yml",
    "license": "Apache-2.0",
    "sha256": "e306a8271b571ee8a51e6912a2016b975e1aa7ff5cad17eafdef8dc80b28370e",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "superseded by mh.microhealth.go.unsafe-pointer-misuse: same reason as mh.opengrep.go.lang.security.audit.unsafe.use-of-unsafe-block, which this gosec rule duplicates (44 of the same 48 lines on TueriCore's agent); the MIT replacement also enters the product bundle, so product coverage is kept."
   },
   "mh.gitlab.java_cookie_rule-CookieHTTPOnly": {
    "source": "gitlab",
@@ -6762,6 +6752,78 @@
    ],
    "status": "active"
   },
+  "mh.microhealth.dockerfile.last-user-root": {
+   "source": "microhealth",
+   "upstream_id": "dockerfile.last-user-root",
+   "path": "rules/microhealth/dockerfile/last-user-root.yaml",
+   "license": "MIT",
+   "sha256": "24ec5d35f491de86f64a8b27e02c723e1c4d6f89c116048709f876b998deb3f5",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.go.decompression-without-limit": {
+   "source": "microhealth",
+   "upstream_id": "go.decompression-without-limit",
+   "path": "rules/microhealth/go/decompression-without-limit.yaml",
+   "license": "MIT",
+   "sha256": "3f68f6cb789cb9d9f54e7c6f36ed9ec81572912b4942eebf5646276e0e122fd7",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.go.dir-mode-too-permissive": {
+   "source": "microhealth",
+   "upstream_id": "go.dir-mode-too-permissive",
+   "path": "rules/microhealth/go/dir-mode-too-permissive.yaml",
+   "license": "MIT",
+   "sha256": "151460e24617bcfaf0b785e4f5a80ef10938cf501899fa6051a8b50a6f8dd55d",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.go.file-mode-too-permissive": {
+   "source": "microhealth",
+   "upstream_id": "go.file-mode-too-permissive",
+   "path": "rules/microhealth/go/file-mode-too-permissive.yaml",
+   "license": "MIT",
+   "sha256": "4b72fad7f1c42034954be8d9d299cb800f4cb3d96e40feaca30715592c4dc65f",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.go.sql-built-from-strings": {
+   "source": "microhealth",
+   "upstream_id": "go.sql-built-from-strings",
+   "path": "rules/microhealth/go/sql-built-from-strings.yaml",
+   "license": "MIT",
+   "sha256": "38f7213a39a8bc9fc9b358ce60748573e6601d60afd88ee8dafdf956855ac3d8",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.go.unsafe-pointer-misuse": {
+   "source": "microhealth",
+   "upstream_id": "go.unsafe-pointer-misuse",
+   "path": "rules/microhealth/go/unsafe-pointer-misuse.yaml",
+   "license": "MIT",
+   "sha256": "7fb0edfafa4c2063ae2c0a6f78f0d18c5a096938fe228e046d0f6199d22a99b6",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
   "mh.microhealth.python.fips-non-approved-hash": {
    "source": "microhealth",
    "upstream_id": "python.fips-non-approved-hash",
@@ -8463,10 +8525,9 @@
    "path": "upstream/opengrep/dockerfile/security/last-user-is-root.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "104fd34bf14f87c793e658c177b1feaa33479498c25ef87b985721ba3d9f44e3",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "superseded by mh.microhealth.dockerfile.last-user-root: more precise; the original flags USER root in every build stage, but only the last stage is the image that runs. On TueriCore it reported 10 lines, 7 of them throwaway builder stages (apk add before a COPY --from); the replacement flags the final stage only, and keeps a final USER root unless the line carries a reviewed hadolint DL3002 ignore or the stage drops privileges itself (tests)."
   },
   "mh.opengrep.dockerfile.security.missing-user-entrypoint.missing-user-entrypoint": {
    "source": "opengrep",
@@ -12049,10 +12110,9 @@
    "path": "upstream/opengrep/go/lang/security/audit/unsafe.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "20330f434da82f8c39a399504125a76115da960cc5cf90759761fffd67c8d6cb",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "superseded by mh.microhealth.go.unsafe-pointer-misuse: more precise; the original matches every unsafe.X(...) call, including unsafe.Sizeof (a compile-time constant) and uintptr(unsafe.Pointer(x)) written in a syscall/Proc.Call argument list, the pattern unsafe.Pointer's documentation gives as the valid way to call the Windows API. On TueriCore's agent it reported 48 lines, 43 of them that pattern; the replacement reports the 5 that need review (unsafe.Slice over OS buffers, a pointer conversion) and keeps uintptr arithmetic and nested unsafe.Add (tests)."
   },
   "mh.opengrep.go.lang.security.audit.xss.import-text-template.import-text-template": {
    "source": "opengrep",
@@ -12170,10 +12230,9 @@
    "path": "upstream/opengrep/go/lang/security/decompression_bomb.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "97995fff729ca02c82a853c29ddf0af1a56873577b81173626071a0184b6feb0",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "superseded by mh.microhealth.go.decompression-without-limit: the original's io.LimitReader sanitizer focuses on the argument inside the call, so the call's result stays tainted and io.Copy(f, io.LimitReader(tr, n)) -- the fix its own message asks for -- is reported (verified on TueriCore's code/runner-go actions.go). The replacement sanitizes the bounded reader itself and adds io.ReadAll as a sink."
   },
   "mh.opengrep.go.lang.security.filepath-clean-misuse.filepath-clean-misuse": {
    "source": "opengrep",

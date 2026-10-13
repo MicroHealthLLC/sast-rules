@@ -1,2 +1,9 @@
 # Rule-test fixture: deliberate md5/blake2b calls that `opengrep scan --test` checks the FIPS hash rule against; never executed.
 rules/microhealth/python/fips-non-approved-hash.py
+# Rule-test fixtures: deliberate unsafe.Pointer/unsafe.Slice uses and a final `USER root` that `opengrep scan --test` checks the rules against; never compiled, built or run.
+rules/microhealth/go/unsafe-pointer-misuse.go
+rules/microhealth/dockerfile/last-user-root.dockerfile
+rules/microhealth/go/file-mode-too-permissive.go
+rules/microhealth/go/dir-mode-too-permissive.go
+rules/microhealth/go/decompression-without-limit.go
+rules/microhealth/go/sql-built-from-strings.go

@@ -1,0 +1,52 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: go.sql-built-from-strings
+    languages: [go]
+    severity: WARNING
+    message: >-
+      A SQL statement is built by formatting or concatenating strings and run
+      with $METHOD. If any part of it comes from a request, a file or another
+      system, it can change the statement's logic (SQL injection). Pass values
+      as query parameters ($1, ?); for identifiers, pick from a fixed map of
+      allowed names rather than inserting the input.
+    metadata:
+      category: security
+      subcategory: [vuln]
+      technology: [go, database/sql]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      cwe: ["CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"]
+      owasp: ["A03:2021 - Injection"]
+      references:
+        - https://go.dev/doc/database/sql-injection
+    # Replaces mh.gitlab.go_sql_rule-concat-sqli, whose sources are ANY
+    # fmt.Sprintf or `"..." + x` and whose sink is any `$X.Exec/Query/QueryRow`
+    # call: `access.Exec(ctx, "launchctl", "bootout", "system/"+label)` -- a
+    # process launcher -- was reported as SQL injection. Here a formatted or
+    # concatenated string is a source only when its literal part reads as SQL
+    # (a statement keyword), so the same database calls are covered and
+    # command runners or loggers named Exec are not. strings.Builder output is
+    # kept as a source, as before: its content is not visible to the rule.
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern: fmt.Sprintf("$FMT", $ARG, ...)
+          - metavariable-regex:
+              metavariable: $FMT
+              regex: (?is).*\b(select|insert|update|delete|merge|upsert|create|drop|alter|truncate|grant|revoke|where|values|set)\b.*
+      - patterns:
+          - pattern-either:
+              - pattern: '"$LIT" + $X'
+              - pattern: '$X + "$LIT"'
+          - pattern-not: '"..." + "..."'
+          - metavariable-regex:
+              metavariable: $LIT
+              regex: (?is).*\b(select|insert|update|delete|merge|upsert|create|drop|alter|truncate|grant|revoke|where|values|set)\b.*
+      - pattern: '($SB : strings.Builder).String()'
+    pattern-sinks:
+      - patterns:
+          - pattern: $DB.$METHOD(...)
+          - metavariable-regex:
+              metavariable: $METHOD
+              regex: ^(Exec(Context)?|Query(Context)?|QueryRow(Context)?|Prepare(Context)?)$
