@@ -1,0 +1,65 @@
+# License: MIT (c) MicroHealth, LLC
+rules:
+  - id: python.flask-returned-format-string
+    languages: [python]
+    severity: WARNING
+    message: >-
+      This Flask code returns a string built from request input with
+      formatting or concatenation. Flask sends a returned string as an HTML
+      response, so markup in the input runs in the reader's browser
+      (cross-site scripting). Render a template (autoescaped), escape with
+      markupsafe.escape, or return JSON.
+    metadata:
+      category: security
+      subcategory: [audit]
+      technology: [python, flask]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: MEDIUM
+      cwe: ["CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')"]
+      owasp: ["A03:2021 - Injection"]
+      references:
+        - https://flask.palletsprojects.com/en/stable/security/#cross-site-scripting-xss
+    # Replaces mh.opengrep.python.flask.security.audit.directly-returned-format-string,
+    # whose source is any `request.X.get(...)` and sink any formatted
+    # `return` in ANY Python file. A FastAPI helper that builds a base URL
+    # from a header and returns it into a JSON body was reported as Flask XSS
+    # (TueriCore routers/cr26_reports.py, routers/oauth.py). A returned string
+    # is an HTML response only in Flask, so the same sources and sinks now
+    # apply in files that import Flask.
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern-either:
+              - pattern-inside: |
+                  import flask
+                  ...
+              - pattern-inside: |
+                  from flask import $NAME
+                  ...
+          - pattern-either:
+              - patterns:
+                  - pattern-inside: |
+                      @$APP.route(...)
+                      def $FUNC(..., $PARAM, ...):
+                        ...
+                  - pattern: $PARAM
+              - pattern: request.$ATTR.get(...)
+              - pattern: request.$ATTR(...)
+              - pattern: request.$ATTR[...]
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern-inside: |
+                  import flask
+                  ...
+              - pattern-inside: |
+                  from flask import $NAME
+                  ...
+          - pattern-not-inside: return "..."
+          - pattern-either:
+              - pattern: return "...".format(...)
+              - pattern: return "..." % ...
+              - pattern: return "..." + ...
+              - pattern: return ... + "..."
+              - pattern: return f"...{...}..."
