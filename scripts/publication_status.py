@@ -43,7 +43,7 @@ def summary_for_status(status: dict[str, str], run_url: str) -> str:
         f"| Scan execution | **{scan}** (`{status['scan_step_outcome']}`) |",
         (
             f"| GitHub SARIF publication | **{publication}** "
-            f"(`{status['sarif_upload_step_outcome']}`) |"
+            + f"(`{status['sarif_upload_step_outcome']}`) |"
         ),
         f"| Recorded (UTC) | `{status['recorded_at_utc']}` |",
         f"| Workflow run | {run_url} |",
@@ -53,8 +53,8 @@ def summary_for_status(status: dict[str, str], run_url: str) -> str:
         lines.extend(
             [
                 "::warning::SARIF publication was not confirmed. "
-                "The scan result is reported separately; inspect the upload step "
-                "for Code Security, token-permission, licensing, or fork restrictions.",
+                + "The scan result is reported separately; inspect the upload step "
+                + "for Code Security, token-permission, licensing, or fork restrictions.",
                 "",
             ]
         )
@@ -62,7 +62,7 @@ def summary_for_status(status: dict[str, str], run_url: str) -> str:
         lines.extend(
             [
                 "::error::The SAST scan did not succeed. SARIF publication status "
-                "does not change the scanner outcome.",
+                + "does not change the scanner outcome.",
                 "",
             ]
         )
