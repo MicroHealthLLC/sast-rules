@@ -251,7 +251,10 @@ jobs:
                     -v "$SCRATCH/tmp:/scratch" \
                     -v "$out:/out" -v "$SCRATCH/cache:/cache" -w /src sast-trivy:fips trivy "$@"; }
           if [ "$KIND" = repo ]; then
-            ignore=(); [ -f src/.trivyignore ] && ignore=(--ignorefile .trivyignore)
+            # .trivyignore.yaml can scope an ignore to paths; .trivyignore only to ids.
+            ignore=()
+            if [ -f src/.trivyignore.yaml ]; then ignore=(--ignorefile .trivyignore.yaml)
+            elif [ -f src/.trivyignore ]; then ignore=(--ignorefile .trivyignore); fi
             run fs "${common[@]}" "${ignore[@]}" --format json --output /out/trivy-fs.json \
               --scanners vuln,secret,misconfig --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL .
             run convert --format sarif --output /out/trivy.sarif /out/trivy-fs.json

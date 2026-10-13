@@ -40,3 +40,11 @@ rules/microhealth/terraform/iam-data-read-unscoped.tf
 # Fixtures for the refinements in overrides.yaml (tests/refine/run.py): deliberate
 # placeholder keys, open ports and IAM grants; never executed or deployed.
 tests/refine/
+# Rule-test fixtures: deliberate unsafe/permission/decompression/SQL/Flask/USER root cases that `opengrep scan --test` checks the rules against; never compiled, built or run.
+rules/microhealth/go/unsafe-pointer-misuse.go
+rules/microhealth/go/file-mode-too-permissive.go
+rules/microhealth/go/dir-mode-too-permissive.go
+rules/microhealth/go/decompression-without-limit.go
+rules/microhealth/go/sql-built-from-strings.go
+rules/microhealth/python/flask-returned-format-string.py
+rules/microhealth/dockerfile/last-user-root.dockerfile
