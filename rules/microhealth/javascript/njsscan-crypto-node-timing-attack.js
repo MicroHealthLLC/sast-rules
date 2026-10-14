@@ -54,3 +54,18 @@ function ask(password, again) {
     return false;
   }
 }
+
+async function stale(latest, token, read) {
+  await read();
+  // ok: javascript.njsscan.crypto.node-timing-attack
+  if (latest.current !== token) {
+    return;
+  }
+}
+
+function presented(request, token) {
+  // ruleid: javascript.njsscan.crypto.node-timing-attack
+  if (request.current === token) {
+    return true;
+  }
+}
