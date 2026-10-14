@@ -62,8 +62,10 @@ jobs:
           VERSION: ${{ steps.need.outputs.version }}
         run: |
           mkdir -p "$RUNNER_TEMP/trivy"
-          docker build --build-arg TRIVY_VERSION="$VERSION" --output "type=local,dest=$RUNNER_TEMP/trivy" - <<'DOCKERFILE'
-          FROM 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-go:dev-latest@sha256:8851dd0e45806ba6e5242152e2abc1219e3f0cf8754a95c92fde1d3fc753c7f2 AS build
+          base="$(scripts/fips-image.sh go)"
+          docker build --build-arg BASE="$base" --build-arg TRIVY_VERSION="$VERSION" --output "type=local,dest=$RUNNER_TEMP/trivy" - <<'DOCKERFILE'
+          ARG BASE
+          FROM ${BASE} AS build
           ARG TRIVY_VERSION
           # GOEXPERIMENT=jsonv2 is what upstream's own release build sets.
           # Checked here, where the Go toolchain is: built with the Go

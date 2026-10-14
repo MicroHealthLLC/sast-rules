@@ -19,7 +19,8 @@ name: SAST (Opengrep)
 #   * The bundle's sha256 must match dist/SHA256SUMS, and the Opengrep binary's
 #     must match engine.json, or the run stops before scanning.
 #   * The scan runs in a container built FROM the MicroHealth FIPS Python image
-#     (pinned tag@digest; scripts/fips_bump.py moves it), with `--network none`:
+#     (pinned tag@digest in fips-images.json, read and checked by
+#     scripts/fips-image.sh; scripts/fips_bump.py moves it), with `--network none`:
 #     Opengrep's binary can make HTTPS calls of its own, outside the system
 #     OpenSSL, and a scan with every rule local has no reason to.
 #   * The JSON report is stamped with the ruleset and engine
@@ -196,9 +197,11 @@ jobs:
 
       - name: Build the scanner image (FIPS)
         run: |
-          docker build --build-arg APK_REFRESH=${{ github.run_id }} \
+          base="$(.sast-rules/scripts/fips-image.sh python)"
+          docker build --build-arg BASE="$base" --build-arg APK_REFRESH=${{ github.run_id }} \
             -t sast-scan:fips -f - "$RUNNER_TEMP/image" <<'DOCKERFILE'
-          FROM 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-python:dev-latest@sha256:0e33bb16875879bff135f8a53972cbad7e1b6d24e82b16f2f2c55f17828c64ec
+          ARG BASE
+          FROM ${BASE}
           # Per-run package refresh: a new value re-runs the layer below.
           ARG APK_REFRESH
           # git: Opengrep takes its targets from `git ls-files`, which keeps

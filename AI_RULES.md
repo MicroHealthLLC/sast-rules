@@ -19,8 +19,8 @@ re-litigate them.
 
 ### 0.2 Plan before execute
 State the plan (files to change, tests that prove it) before editing. Flag any
-change that touches a workflow, `engine.json`, `licenses.yaml` or a guarantee
-in README's "What a scan guarantees".
+change that touches a workflow, `engine.json`, `fips-images.json`,
+`licenses.yaml` or a guarantee in README's "What a scan guarantees".
 
 ### 0.3 Self-audit after every task
 Report: files changed, the §4 commands run and their actual result, anything
@@ -108,7 +108,9 @@ PR until it is green. Never report "done" on an unverified push.
 - Subjects say what changed in plain words ("Narrow nine rules that reported
   false positives on Fluenta"); the body lists each rule and why.
 - `upstream.yml` (daily) opens update PRs; they target `integration` like
-  everything else. `release.yml` tags `vYYYY.M.N` on `main`.
+  everything else. It pushes with an Actions token, which GitHub never lets
+  change `.github/workflows/`: anything a bot moves (FIPS image pins:
+  `fips-images.json`) lives outside the workflow files, never inside them. `release.yml` tags `vYYYY.M.N` on `main`.
 
 ## §6 Documentation
 

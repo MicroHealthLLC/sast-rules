@@ -42,8 +42,7 @@ if ! echo "${want}  ${cache}" | sha256sum -c --quiet - 2>/dev/null; then
   mv "$cache.tmp" "$cache"; chmod 0755 "$cache"
 fi
 
-image="$(grep -m1 -o '295669632222\.dkr\.ecr\.us-east-1\.amazonaws\.com/microhealthllc/fips-python:[^ ]*' \
-  "$here/.github/workflows/opengrep.yml")"
+image="$("$here/scripts/fips-image.sh" python)"
 # SAST_IMAGE: the same FIPS image under another name (a mirror, or a copy
 # already pulled when ECR cannot be reached). Never another base.
 image="${SAST_IMAGE:-$image}"

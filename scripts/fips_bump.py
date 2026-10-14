@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-"""Move every MicroHealth FIPS image pin in this repository to the digest its
+"""Move every MicroHealth FIPS image pin in fips-images.json to the digest its
 tag points at now (fips-container rebuilds the images nightly).
+
+The pins live only there: every workflow and script reads them through
+scripts/fips-image.sh. upstream.yml runs this daily and pushes the result with
+an Actions token, which GitHub never lets change .github/workflows/.
 
 Pins look like `<registry>/microhealthllc/<image>:<tag>@sha256:<digest>`. The
 digest is read with `aws ecr batch-get-image`, which needs only the pull
@@ -42,29 +46,26 @@ def resolve(image: str, tag: str) -> str | None:
 
 
 def main() -> int:
-    files = [p for p in ROOT.rglob("*") if p.is_file() and p.suffix in (".yml", ".yaml", ".sh", ".md")
-             and ".git" not in p.parts and "upstream" not in p.parts and "dist" not in p.parts]
+    path = ROOT / "fips-images.json"
+    text = path.read_text(encoding="utf-8")
     latest: dict[tuple[str, str], str | None] = {}
-    changed = []
-    for path in files:
-        text = path.read_text(encoding="utf-8")
-        def sub(m: re.Match) -> str:
-            key = (m.group(2), m.group(3))
-            if key not in latest:
-                latest[key] = resolve(*key)
-            new = latest[key]
-            if new is None:
-                return m.group(0)
-            return f"{m.group(1)}{m.group(2)}:{m.group(3)}@{new}"
-        new_text = PIN.sub(sub, text)
-        if new_text != text:
-            path.write_text(new_text, encoding="utf-8")
-            changed.append(str(path.relative_to(ROOT)))
+
+    def sub(m: re.Match) -> str:
+        key = (m.group(2), m.group(3))
+        if key not in latest:
+            latest[key] = resolve(*key)
+        new = latest[key]
+        if new is None:
+            return m.group(0)
+        return f"{m.group(1)}{m.group(2)}:{m.group(3)}@{new}"
+
+    new_text = PIN.sub(sub, text)
+    if new_text != text:
+        path.write_text(new_text, encoding="utf-8")
     for (image, tag), digest in sorted(latest.items()):
         print(f"{image}:{tag} -> {digest or 'UNRESOLVED (pin kept)'}")
-    print("changed: " + (", ".join(changed) or "nothing"))
+    print("changed: " + ("fips-images.json" if new_text != text else "nothing"))
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())
