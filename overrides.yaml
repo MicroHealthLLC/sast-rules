@@ -447,8 +447,14 @@ refine:
       `administrator_login_password = "Sup3rS3cret99"`). The upstream regex
       never matched a value containing `!` or `@`, so
       `"Fluenta@Admin2026!"` was not reported before this change either.
+
+      Reports a password-HASHING setting: Fluenta's seed script
+      `PASSWORD_ALGORITHM = "pbkdf2-sha256"` (deploy/utils/database_utils/
+      seed_admin.py, 1 hit) names the KDF, not a credential. A
+      password-named key ending in _algorithm/_algo/_scheme is no longer
+      reported; `ADMIN_PASSWORD = "FluentaAdmin2026"` in the same file still is.
     add:
-      - pattern-not-regex: (?m)^[^\n]*?\b\w*[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]\w*?(?:_secret_name|_SECRET_NAME|_name|_NAME|_var|_VAR|_env|_ENV)["']?[ \t]*(?:=|:)[ \t]*(?:"[^"\n]*"|'[^'\n]*')[^\n]*\n?|(?m)^[^\n]*?\b\w*[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]\w*["']?[ \t]*(?:=|:)[ \t]*(["'])[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\1[^\n]*\n?
+      - pattern-not-regex: (?m)^[^\n]*?\b\w*[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]\w*?(?:_secret_name|_SECRET_NAME|_name|_NAME|_var|_VAR|_env|_ENV|_algorithm|_ALGORITHM|_algo|_ALGO|_scheme|_SCHEME)["']?[ \t]*(?:=|:)[ \t]*(?:"[^"\n]*"|'[^'\n]*')[^\n]*\n?|(?m)^[^\n]*?\b\w*[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]\w*["']?[ \t]*(?:=|:)[ \t]*(["'])[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\1[^\n]*\n?
     exclude_paths: ["*.ts", "*.tsx", "*.mts", "*.cts", "*.js", "*.jsx", "*.mjs", "*.cjs"]
   mh.opengrep.generic.nginx.security.possible-h2c-smuggling.possible-nginx-h2c-smuggling:
     reason: >-
