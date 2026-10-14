@@ -217,7 +217,9 @@ with its reason, and a rule it narrows carries `refined`, with its reason.
 1. `upstream.yml` (daily) opens one pull request per kind of update: a new
    GitLab release, with the rules added, changed, retired and relicensed
    listed; a new Opengrep release; newer FIPS image digests.
-2. A MicroHealth maintainer reviews and merges it.
+2. A MicroHealth maintainer reviews and merges it into `integration`, then
+   merges `integration` into `main` by pull request. Every change takes that
+   path; nothing is pushed to `main` directly ([`AI_RULES.md`](AI_RULES.md) §1).
 3. `release.yml` tags `vYYYY.M.N` and publishes the bundles, `SHA256SUMS`
    and `NOTICE.md`. Every push to `main` that changes what a scan runs is a
    release, so `main` is always the newest one.
@@ -235,7 +237,7 @@ down:
 - Issues, discussions, the wiki and projects are off; interactions are limited
   to collaborators.
 - `main` and the release tags are protected: no force pushes, no deletion, and
-  changes to `main` go through a reviewed pull request.
+  changes to `main` go through a reviewed pull request from `integration`.
 - Workflows from forks need a maintainer's approval before they run, and
   never receive secrets. No workflow uses `pull_request_target`.
 - The default `GITHUB_TOKEN` is read-only; each job asks for what it needs.
