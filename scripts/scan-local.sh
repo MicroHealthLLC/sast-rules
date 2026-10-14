@@ -48,15 +48,12 @@ image="$("$here/scripts/fips-image.sh" python)"
 image="${SAST_IMAGE:-$image}"
 src="$(cd "$target" && git rev-parse --show-toplevel 2>/dev/null || pwd)"
 out="$(mktemp -d)"
-# Scan what git would see, as CI does: tracked files and new files that are
-# not ignored, including uncommitted edits, and never build output or other
-# .gitignore'd files (the scan image has no git to decide that itself).
+# Scan what git would see, as CI does: scripts/git-view.sh copies the tracked
+# and new-but-not-ignored files into a scratch directory (the scan image has no
+# git to decide that itself). Outside a git checkout, the directory as it is.
 if git -C "$src" rev-parse --git-dir >/dev/null 2>&1; then
   view="$(mktemp -d)"
-  (cd "$src" && git ls-files -z --cached --others --exclude-standard \
-     | xargs -0 -r -I{} sh -c '[ -f "$1" ] && printf "%s\0" "$1"' _ {} \
-     | tar --null -T - -cf -) | tar -xf - -C "$view"
-  cp "$src/.sastignore" "$view/" 2>/dev/null || true
+  "$here/scripts/git-view.sh" "$src" "$view"
   src_view="$view"
 else
   src_view="$src"
