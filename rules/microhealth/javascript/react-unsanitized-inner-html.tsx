@@ -83,3 +83,14 @@ export function RawMemo({ md }: { md: string }) {
   // ruleid: javascript.react-unsanitized-inner-html
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }
+
+export function MarkdownInline({ md }: { md: string }) {
+  // ok: javascript.react-unsanitized-inner-html
+  return <div className="prose" dangerouslySetInnerHTML={{ __html: markdownToSafeHtml(md) }} />;
+}
+
+export function MarkdownMemo({ md }: { md: string }) {
+  const html = useMemo(() => markdownToSafeHtml(md), [md]);
+  // ok: javascript.react-unsanitized-inner-html
+  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+}

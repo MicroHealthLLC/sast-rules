@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Run a command in the tools image: FROM MicroHealth's FIPS Python image (the
 # pin every workflow uses, from fips-images.json), plus Alpine's git, py3-yaml
-# and aws-cli.
+# and aws-cli, and bash and GNU tar: scripts/git-view.sh runs on a developer's
+# host (bash, a tar with --null) and tests/test_git_view.py runs it here, where
+# the base has neither (busybox sh and tar only).
 # Every CI job runs its Python, git and AWS calls here, never on the runner.
 #   scripts/ci-run.sh python3 scripts/build.py --check
 set -euo pipefail
@@ -14,7 +16,7 @@ ARG BASE
 FROM ${BASE}
 ARG APK_REFRESH
 USER root
-RUN apk add --no-cache git py3-yaml aws-cli && apk upgrade --no-cache \
+RUN apk add --no-cache git py3-yaml aws-cli bash tar && apk upgrade --no-cache \
     && git config --system --add safe.directory '*'
 DOCKERFILE
 fi
