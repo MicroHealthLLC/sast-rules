@@ -248,7 +248,10 @@ down:
 - AWS access is by OIDC only — no stored keys. The role trusts MicroHealth's
   repositories and is scoped to pulling the FIPS images and writing scan
   evidence.
-- Secret scanning and push protection are on.
+- Secret scanning and push protection are on. `.github/secret_scanning.yml`
+  skips only rule material whose fake credentials exist to be matched: the
+  secret rules' test files (`rules/microhealth/generic/*.txt`), `upstream/`
+  and `dist/`. Every other path is still scanned.
 
 ## FIPS
 
