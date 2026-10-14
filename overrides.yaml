@@ -238,6 +238,16 @@ disabled:
   mh.opengrep.javascript.lang.security.audit.unsafe-dynamic-method.unsafe-dynamic-method: "superseded by mh.microhealth.javascript.dynamic-method-from-request: more precise; the original reports every obj[key](...) with a non-literal key -- dispatch tables keyed by the program's own command names, toast levels, language loaders (20 in TueriDev); the replacement needs the key to come from a request, with Object.hasOwn / Set.has / includes as sanitizers."
   mh.opengrep.javascript.lang.security.audit.incomplete-sanitization.incomplete-sanitization: "superseded by mh.microhealth.javascript.incomplete-escape-replace: more precise; the original reports a one-character string replace() of `%`, `|`, `*`, `$`, brackets or quotes whatever it is for, so stripping the `%` from \"50%\" was \"incomplete sanitization\"; the replacement needs an escapable character (<, >, &, quotes, backslash) replaced by its escape."
   mh.gitlab.rules_lgpl_javascript_eval_rule-yaml-deserialize: "superseded by mh.microhealth.javascript.js-yaml-unsafe-schema and mh.microhealth.json.npm-js-yaml-v3: more precise; the original reports every js-yaml load() as remote code execution (ERROR). Since js-yaml 4 (2021) load() uses the safe default schema and cannot build functions; the danger is a v3 install (json.npm-js-yaml-v3) or a schema that adds the JavaScript types back (javascript.js-yaml-unsafe-schema)."
+  # --- Code scan of Fluenta, 2026-10-14 ---
+  mh.opengrep.javascript.express.security.injection.tainted-sql-string.tainted-sql-string: >-
+    Its sink is any string whose literal part contains a SQL keyword as a
+    word, so error messages and log lines (`Failed to create folder:
+    ${errorText}`, `attachment row insert failed for ${att.filename}`) were
+    SQL injection: 8 of 8 hits in Fluenta. A taint rule cannot be refined, so
+    it is replaced by mh.microhealth.javascript.express-tainted-sql-string:
+    the same sources, keyword test and sinks, except a string built inside a
+    throw, new Error, console.* or a logger/log* call, which is shown to a
+    person and never run as SQL.
 severity: {}
 refine:
   mh.opengrep.generic.secrets.gitleaks.stripe-access-token.stripe-access-token:
@@ -299,6 +309,32 @@ refine:
       - pattern-not: Action = "ecr:GetAuthorizationToken"
       - pattern-not: Action = ["ecr:GetAuthorizationToken"]
       - pattern-not: actions = ["ecr:GetAuthorizationToken"]
+  mh.opengrep.python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query:
+    reason: >-
+      Its `$SQL.format(...)` and `$SQL + ...` patterns also match psycopg's
+      safe composition API, `cur.execute(sql.SQL("DROP SCHEMA IF EXISTS {}
+      CASCADE").format(sql.Identifier(s)))`, where `format` quotes each
+      sql.Identifier/sql.Literal argument and the template is a constant (22
+      of 24 hits in Fluenta's database tooling, directly or through an
+      assigned `stmt = pgsql.SQL(...).format(...)`). A LITERAL template passed
+      through any module alias's `.SQL("...")` and composed with `.format` or
+      `+` is no longer reported, executed directly or through the variable it
+      was assigned to. A template built from a variable (`sql.SQL('CREATE
+      ROLE {} ' + opts)`), %-formatting, str.format and f-strings are still
+      reported. Known ceiling: a raw `sql.SQL(variable)` passed as a format
+      ARGUMENT, and a raw execute placed between such an assignment and the
+      execute of that variable, are not told apart from the safe form.
+    add:
+      - pattern-not: $C.execute($M.SQL("...").format(...), ...)
+      - pattern-not: $C.execute($M.SQL("...") + ..., ...)
+      - pattern-not-inside: |
+          $QUERY = $M.SQL("...").format(...)
+          ...
+          $CONNECTION.execute($QUERY, ...)
+      - pattern-not-inside: |
+          $QUERY = $M.SQL("...") + ...
+          ...
+          $CONNECTION.execute($QUERY, ...)
   mh.opengrep.generic.secrets.gitleaks.hashicorp-tf-password.hashicorp-tf-password:
     reason: >-
       gitleaks scopes this rule to Terraform (.tf, .hcl); ported as a generic
@@ -309,7 +345,34 @@ refine:
       excluded; a password assigned there is still reported by
       generic-api-key (its keywords include password), and every other file
       type, Terraform included, is unchanged.
+
+      Reports the NAME of a secret, not its value: Terraform's azurerm
+      `registry { password_secret_name = "acr-password" }` names the Container
+      App secret that holds the password (6 hits in Fluenta), and
+      `ECR_PASSWORD_VAR = "RAILWAY_ECR_PASSWORD"` names the environment
+      variable that does (1 hit). A password-named key ending in
+      _secret_name/_name/_var/_env, or a password-named key whose value is an
+      ALL-CAPS identifier with an underscore (an environment variable name),
+      is no longer reported. Every other quoted password value still is (e.g.
+      `administrator_login_password = "Sup3rS3cret99"`). The upstream regex
+      never matched a value containing `!` or `@`, so
+      `"Fluenta@Admin2026!"` was not reported before this change either.
+    add:
+      - pattern-not-regex: (?m)^[^\n]*?\b\w*[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]\w*?(?:_secret_name|_SECRET_NAME|_name|_NAME|_var|_VAR|_env|_ENV)["']?[ \t]*(?:=|:)[ \t]*(?:"[^"\n]*"|'[^'\n]*')[^\n]*\n?|(?m)^[^\n]*?\b\w*[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]\w*["']?[ \t]*(?:=|:)[ \t]*(["'])[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\1[^\n]*\n?
     exclude_paths: ["*.ts", "*.tsx", "*.mts", "*.cts", "*.js", "*.jsx", "*.mjs", "*.cjs"]
+  mh.opengrep.generic.nginx.security.possible-h2c-smuggling.possible-nginx-h2c-smuggling:
+    reason: >-
+      h2c smuggling needs the client's `Upgrade: h2c` to reach the upstream.
+      A location that pins the header to a constant (`proxy_set_header
+      Upgrade '';`, which drops it, or `proxy_set_header Upgrade websocket;`,
+      the rule's own recommended fix) never forwards the client's value, yet
+      was reported because it sets Upgrade and Connection with HTTP/1.1 (2
+      of 2 hits in Fluenta: deploy/nginx and deploy/railway/nginx
+      default.conf).
+      Such a location is no longer reported; `proxy_set_header Upgrade
+      $http_upgrade;` (or any other variable) still is.
+    add:
+      - pattern-not-regex: (?i)proxy_set_header\s+Upgrade\s+(?:''|""|(["']?)websocket\1)\s*;
 allow:
   - rules: [mh.opengrep.generic.secrets.*, mh.microhealth.generic.*]
     not-regex: '(?m)^.*\bgitleaks:allow\b.*$'

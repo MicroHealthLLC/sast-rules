@@ -56,6 +56,15 @@ rules:
               - pattern: $REQ.text()
               - pattern: $REQ.url
               - pattern: $REQ.headers.get(...)
+          # `new Request(req.url, { method, headers, body })` re-wraps the
+          # INCOMING request under its own, unmodified URL (to replace a
+          # consumed body or rewrite headers before handing it on); it names
+          # no destination a caller picked beyond the one already requested,
+          # so it is not an outbound request. Assessed on Fluenta (2026-10-14:
+          # 5 hits, its edge router, auth throttle and storage function). Any
+          # other use of the URL, or of
+          # request data, is still a source.
+          - pattern-not-inside: new Request($REQ.url, ...)
       # Express / Connect style: `(req, res) => ... req.query.url`.
       - patterns:
           - pattern-either:

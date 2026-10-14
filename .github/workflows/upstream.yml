@@ -1,6 +1,7 @@
 name: Upstream updates
 # Daily. Each kind of update gets its own pull request, so a reviewer reads one
-# thing at a time; nothing here changes `main` without review.
+# thing at a time. It targets `integration`, like every change (AI_RULES.md
+# §1); `main` moves only by the integration -> main pull request.
 #   rules   GitLab's newest vX.Y.Z tag (scripts/sync_upstream.py), with the
 #           rules added, changed, retired and relicensed listed in the PR
 #   engine  the newest Opengrep release (scripts/bump_engine.py)
@@ -63,5 +64,5 @@ jobs:
           if [ "$(gh pr view "$branch" --json state -q .state 2>/dev/null)" = OPEN ]; then
             gh pr edit "$branch" --body-file "$RUNNER_TEMP/body.md"
           else
-            gh pr create --base main --head "$branch" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+            gh pr create --base integration --head "$branch" --title "$title" --body-file "$RUNNER_TEMP/body.md"
           fi
