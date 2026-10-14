@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Run a command in the tools image: FROM MicroHealth's FIPS Python image (the
-# same pin as the shared workflow), plus Alpine's git, py3-yaml and aws-cli.
+# pin every workflow uses, from fips-images.json), plus Alpine's git, py3-yaml
+# and aws-cli.
 # Every CI job runs its Python, git and AWS calls here, never on the runner.
 #   scripts/ci-run.sh python3 scripts/build.py --check
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
-base="$(grep -m1 -o '295669632222\.dkr\.ecr\.us-east-1\.amazonaws\.com/microhealthllc/fips-python:[^ ]*' \
-  "$root/.github/workflows/opengrep.yml")"
+base="$("$root/scripts/fips-image.sh" python)"
 if ! docker image inspect sast-tools:fips >/dev/null 2>&1; then
   docker build -q --build-arg BASE="$base" --build-arg APK_REFRESH="${GITHUB_RUN_ID:-local}" \
     -t sast-tools:fips -f - "$root" >/dev/null <<'DOCKERFILE'

@@ -10,18 +10,26 @@ the scan guarantees is decided here, so it is tested here:
   engine.json before anything runs;
 * rule ids are reported as published (--no-rewrite-rule-ids);
 * every action is pinned to a commit with a version comment, every job's
-  permissions are explicit, and nothing runs on pull_request_target.
+  permissions are explicit, and nothing runs on pull_request_target;
+* every image is built FROM a FIPS base pinned by digest in fips-images.json,
+  never written into a workflow (upstream.yml's daily bump pushes with an
+  Actions token, which GitHub refuses for .github/workflows/).
 """
 
 from __future__ import annotations
 
+import json
 import re
+import shutil
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
 import yaml
 
-WORKFLOWS = Path(__file__).resolve().parents[1] / ".github" / "workflows"
+ROOT = Path(__file__).resolve().parents[1]
+WORKFLOWS = ROOT / ".github" / "workflows"
 PIN = re.compile(r"^\s*(?:-\s*)?uses:\s*([^\s#]+)(?:\s+#\s*(.*))?$")
 
 
@@ -101,12 +109,46 @@ class SharedWorkflowTests(unittest.TestCase):
             for name, job in wf["jobs"].items():
                 self.assertIsInstance(job.get("permissions"), dict, f"{path.name}:{name}")
                 for step in job.get("steps") or []:
-                    if "docker build" in step.get("run", ""):
-                        for line in step["run"].splitlines():
-                            # `FROM scratch` only exports files from a FIPS
-                            # stage (engines.yml); nothing runs in it.
-                            if line.strip().startswith("FROM ") and line.strip() != "FROM scratch":
-                                self.assertRegex(line, r"microhealthllc/fips-[a-z0-9-]+:dev-latest@sha256:[0-9a-f]{64}", path.name)
+                    run = step.get("run", "")
+                    if "docker build" not in run:
+                        continue
+                    froms = [ln.strip() for ln in run.splitlines() if ln.strip().startswith("FROM ")]
+                    # `FROM scratch` only exports files from a FIPS stage
+                    # (engines.yml); nothing runs in it.
+                    for line in froms:
+                        self.assertIn(line, ("FROM ${BASE}", "FROM ${BASE} AS build", "FROM scratch"), path.name)
+                    self.assertRegex(run, r'base="\$\((\.sast-rules/)?scripts/fips-image\.sh (python|go)\)"', path.name)
+                    self.assertEqual(run.count("docker build"), run.count('--build-arg BASE="$base"'), path.name)
+                    self.assertEqual(run.count("docker build"), run.count("ARG BASE\n"), path.name)
+
+    def test_no_fips_pin_is_written_into_a_workflow(self) -> None:
+        for path in WORKFLOWS.glob("*.yml"):
+            self.assertNotRegex(path.read_text(), r"microhealthllc/fips-[a-z0-9-]+:", path.name)
+        up = (WORKFLOWS / "upstream.yml").read_text()
+        self.assertIn("grep -q '^\\.github/workflows/'", up)
+        bump = (ROOT / "scripts" / "fips_bump.py").read_text()
+        self.assertIn('ROOT / "fips-images.json"', bump)
+        self.assertNotIn("rglob", bump)
+
+    def test_fips_images_are_pinned_and_checked(self) -> None:
+        images = json.loads((ROOT / "fips-images.json").read_text())
+        for kind in ("python", "go"):
+            out = subprocess.run([str(ROOT / "scripts" / "fips-image.sh"), kind],
+                                 capture_output=True, text=True, check=True).stdout.strip()
+            self.assertEqual(out, images[kind])
+            self.assertRegex(out, rf"^295669632222\.dkr\.ecr\.us-east-1\.amazonaws\.com/microhealthllc/fips-{kind}:[\w.-]+@sha256:[0-9a-f]{{64}}$")
+        bad = {
+            "python": "295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-python:dev-latest",
+            "go": "docker.io/library/golang:1.26@sha256:" + "0" * 64,
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "scripts").mkdir()
+            shutil.copy(ROOT / "scripts" / "fips-image.sh", Path(tmp) / "scripts")
+            (Path(tmp) / "fips-images.json").write_text(json.dumps(bad))
+            for kind in bad:
+                res = subprocess.run([str(Path(tmp) / "scripts" / "fips-image.sh"), kind], capture_output=True, text=True)
+                self.assertNotEqual(res.returncode, 0, kind)
+                self.assertEqual(res.stdout, "", kind)
 
     def test_network_reaches_only_github_gitlab_and_aws(self) -> None:
         # Reports go to GitHub (code scanning, artifacts) and AWS (S3, ECR) and

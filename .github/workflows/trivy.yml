@@ -208,8 +208,10 @@ jobs:
           curl -fsSL -o "$RUNNER_TEMP/trivy-bin/trivy" "$url"
           echo "${sum}  $RUNNER_TEMP/trivy-bin/trivy" | sha256sum -c -
           chmod 0755 "$RUNNER_TEMP/trivy-bin/trivy"
-          docker build --build-arg APK_REFRESH=${{ github.run_id }} -t sast-trivy:fips -f - "$RUNNER_TEMP/trivy-bin" <<'DOCKERFILE'
-          FROM 295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-python:dev-latest@sha256:0e33bb16875879bff135f8a53972cbad7e1b6d24e82b16f2f2c55f17828c64ec
+          base="$(.sast-rules/scripts/fips-image.sh python)"
+          docker build --build-arg BASE="$base" --build-arg APK_REFRESH=${{ github.run_id }} -t sast-trivy:fips -f - "$RUNNER_TEMP/trivy-bin" <<'DOCKERFILE'
+          ARG BASE
+          FROM ${BASE}
           # Per-run package refresh: a new value re-runs the layer below.
           ARG APK_REFRESH
           # git: Trivy reads the checkout; aws-cli uploads the reports. Root:

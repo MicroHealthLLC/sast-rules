@@ -5,7 +5,10 @@ name: Upstream updates
 #   rules   GitLab's newest vX.Y.Z tag (scripts/sync_upstream.py), with the
 #           rules added, changed, retired and relicensed listed in the PR
 #   engine  the newest Opengrep release (scripts/bump_engine.py)
-#   fips    the FIPS image pins (scripts/fips_bump.py)
+#   fips    the FIPS image pins in fips-images.json (scripts/fips_bump.py)
+# No update may touch .github/workflows/: GitHub refuses a push of workflow
+# files from an Actions token (GITHUB_TOKEN has no `workflows` permission),
+# so data the bots move lives outside them. The job checks it before pushing.
 # opengrep-rules is archived and frozen; it is never synced.
 on:
   schedule:
@@ -58,6 +61,10 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$branch"
           git add -A
+          if git diff --cached --name-only | grep -q '^\.github/workflows/'; then
+            echo "::error::This update changes workflow files, which an Actions token may not push. Move what it edits out of .github/workflows/ (as fips-images.json is)."
+            git diff --cached --name-only; exit 1
+          fi
           git commit -qm "$title"
           git push -f origin "$branch"
           cat "$RUNNER_TEMP/body.md" >> "$GITHUB_STEP_SUMMARY"

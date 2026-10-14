@@ -216,7 +216,10 @@ with its reason, and a rule it narrows carries `refined`, with its reason.
 
 1. `upstream.yml` (daily) opens one pull request per kind of update: a new
    GitLab release, with the rules added, changed, retired and relicensed
-   listed; a new Opengrep release; newer FIPS image digests.
+   listed; a new Opengrep release; newer FIPS image digests
+   (`fips-images.json`). No update edits `.github/workflows/`: GitHub
+   refuses a workflow change pushed with an Actions token, and the job checks
+   for one before it pushes.
 2. A MicroHealth maintainer reviews and merges it into `integration`, then
    merges `integration` into `main` by pull request. Every change takes that
    path; nothing is pushed to `main` directly ([`AI_RULES.md`](AI_RULES.md) §1).
@@ -253,10 +256,19 @@ The scan runs in a container built FROM MicroHealth's FIPS 140-3 Python image.
 Python, git and the AWS CLI there use the system OpenSSL with only the FIPS
 provider (OpenSSL FIPS Provider 3.1.2, CMVP #4985).
 
-**Trivy** is built from source on every run on MicroHealth's FIPS Go image
-with the Go Cryptographic Module (`GOFIPS140`, CMVP #5247); every Go module is
-checked against sum.golang.org. Its vulnerability database is downloaded on
-each run.
+Every image the workflows and scripts build starts FROM a FIPS base pinned by
+tag and digest in [`fips-images.json`](fips-images.json), read through
+`scripts/fips-image.sh`, which refuses anything but a `microhealthllc/fips-*`
+image in MicroHealth's ECR pinned by `sha256`. The pins are kept out of the
+workflow files on purpose: `upstream.yml` moves them daily
+(`scripts/fips_bump.py`) and pushes with an Actions token, and GitHub never
+lets such a token change `.github/workflows/`.
+
+**Trivy** is built from source once per version (`engines.yml`) on
+MicroHealth's FIPS Go image with the Go Cryptographic Module (`GOFIPS140`,
+CMVP #5247); every Go module is checked against sum.golang.org, and every scan
+refuses a binary whose sha256 is not the one `engine.json` records. Its
+vulnerability database is downloaded on each run.
 
 **ZAP is outside the FIPS claim.** It is Java, and its TLS is the JDK's. It is
 a test tool attacking a target, not part of any product. Its release tarball
