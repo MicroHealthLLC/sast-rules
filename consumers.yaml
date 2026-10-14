@@ -1,7 +1,7 @@
-# Repositories that pin this one. On every release, .github/workflows/release.yml
-# opens a pull request in each (scripts/bump_consumers.sh) moving every
-# `MicroHealthLLC/sast-rules…@<sha>` pin to the release commit. Merging it is
-# how a repository takes new rules: reviewed, never silently.
+# Repositories that run this one. They call it `@main` and take every release
+# on their next run. On a release, .github/workflows/release.yml still opens a
+# pull request in any of them that pins a commit instead
+# (scripts/bump_consumers.sh); one on `@main` has no pin and is skipped.
 consumers:
   - {repo: MicroHealthLLC/TueriCore, branch: integration}
   - {repo: MicroHealthLLC/TueriCXO, branch: integration}
@@ -14,3 +14,4 @@ consumers:
   - {repo: MicroHealthLLC/TueriTerm, branch: integration}
   - {repo: MicroHealthLLC/mh-vllm, branch: integration}
   - {repo: MicroHealthLLC/SimplrSSH, branch: integration}
+  - {repo: MicroHealthLLC/kb-saas, branch: integration}
