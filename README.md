@@ -188,7 +188,7 @@ with its reason, and a rule it narrows carries `refined`, with its reason.
   `pattern-not-inside`, `pattern-not-regex`, …) to its `patterns`, and
   `exclude_paths` adds path exclusions. A refinement can only narrow a rule.
   Each one needs a fixture in `tests/refine/` naming the rule's full `mh.*`
-  id on `ruleid:` / `ok:` lines; `tests/refine/run.py` checks them against the
+  id on `ruleid:` / `ok:` lines (several on one line where rules overlap); `tests/refine/run.py` checks them against the
   built bundle.
 - A search rule whose one known false positive is a text shape gets an
   `allow:` entry instead: a `not-regex` the build adds as `pattern-not-regex`

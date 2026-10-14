@@ -3,7 +3,8 @@
 
 The rule is taken exactly as dist/internal.yaml ships it, so the build's
 refinement is what is tested. A fixture line `ruleid: <mh id>` expects that
-rule to report the NEXT line; `ok: <mh id>` expects it not to; any other
+rule to report the NEXT line; `ok: <mh id>` expects it not to (one line may
+carry several marks, for rules that overlap); any other
 finding fails. Every refined rule must be named by at least one fixture.
 
     OPENGREP=<engine command> python3 tests/refine/run.py
@@ -54,18 +55,17 @@ def main() -> int:
     expected, named, bad = set(), set(), []
     for f in fixtures:
         for i, line in enumerate(f.read_text().splitlines(), 1):
-            m = MARK.search(line)
-            if not m:
-                continue
-            kind, rid = m.groups()
-            named.add(rid)
-            key = (str(f), i + 1, rid)
-            if kind == "ruleid":
-                expected.add(key)
-                if key not in found:
-                    bad.append(f"{f}:{i + 1}: expected a finding from {rid}")
-            elif key in found:
-                bad.append(f"{f}:{i + 1}: unexpected finding from {rid}")
+            # Several marks on one line: rules that overlap report the same line.
+            for m in MARK.finditer(line):
+                kind, rid = m.groups()
+                named.add(rid)
+                key = (str(f), i + 1, rid)
+                if kind == "ruleid":
+                    expected.add(key)
+                    if key not in found:
+                        bad.append(f"{f}:{i + 1}: expected a finding from {rid}")
+                elif key in found:
+                    bad.append(f"{f}:{i + 1}: unexpected finding from {rid}")
     for p, line, rid in sorted(found - expected):
         if not any(b.startswith(f"{p}:{line}:") for b in bad):
             bad.append(f"{p}:{line}: unannotated finding from {rid}")

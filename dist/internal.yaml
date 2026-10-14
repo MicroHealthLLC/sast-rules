@@ -83802,28 +83802,73 @@ rules:
   severity: WARNING
   languages:
   - python
-  pattern-either:
-  - pattern: $DB.execute("..." % ...)
-  - pattern: $DB.execute("...".format(...))
-  - pattern: $DB.execute(f"...")
-  - patterns:
-    - pattern-either:
-      - pattern-inside: '$SQL = "..." % ...
+  patterns:
+  - pattern-either:
+    - pattern: $DB.execute("..." % ...)
+    - pattern: $DB.execute("...".format(...))
+    - pattern: $DB.execute(f"...")
+    - patterns:
+      - pattern-either:
+        - pattern-inside: '$SQL = "..." % ...
 
-          ...
+            ...
 
-          '
-      - pattern-inside: '$SQL = "...".format(...)
+            '
+        - pattern-inside: '$SQL = "...".format(...)
 
-          ...
+            ...
 
-          '
-      - pattern-inside: '$SQL = f"...{$X}..."
+            '
+        - pattern-inside: '$SQL = f"...{$X}..."
 
-          ...
+            ...
 
-          '
-    - pattern: $DB.execute($SQL)
+            '
+      - pattern: $DB.execute($SQL)
+  - &id001
+    pattern-not:
+      patterns:
+      - pattern-either:
+        - pattern-inside: "for $A in $LIST:\n  ...\n"
+        - pattern-inside: "$L = $LIST\n...\nfor $A in $L:\n  ...\n"
+      - pattern: $X.$M(f"...{$A}...")
+      - pattern: $X.$M($ARG)
+      - metavariable-regex:
+          metavariable: $ARG
+          regex: ^f["'][^{}]*\{\w+\}[^{}]*["']$
+      - metavariable-regex:
+          metavariable: $LIST
+          regex: ^[\[(]\s*(?:(?:"[^"\\\n]*"|'[^'\\\n]*')|\(\s*(?:"[^"\\\n]*"|'[^'\\\n]*')(?:\s*,\s*(?:"[^"\\\n]*"|'[^'\\\n]*'))*\s*,?\s*\))(?:\s*,\s*(?:(?:"[^"\\\n]*"|'[^'\\\n]*')|\(\s*(?:"[^"\\\n]*"|'[^'\\\n]*')(?:\s*,\s*(?:"[^"\\\n]*"|'[^'\\\n]*'))*\s*,?\s*\)))*\s*,?\s*[\])]$
+  - &id002
+    pattern-not:
+      patterns:
+      - pattern-either:
+        - pattern-inside: "for $A, $B in $LIST:\n  ...\n"
+        - pattern-inside: "$L = $LIST\n...\nfor $A, $B in $L:\n  ...\n"
+      - pattern-either:
+        - pattern: $X.$M(f"...{$A}...")
+        - pattern: $X.$M(f"...{$B}...")
+      - pattern: $X.$M($ARG)
+      - metavariable-regex:
+          metavariable: $ARG
+          regex: ^f["'][^{}]*\{\w+\}[^{}]*["']$
+      - metavariable-regex:
+          metavariable: $LIST
+          regex: ^[\[(]\s*(?:(?:"[^"\\\n]*"|'[^'\\\n]*')|\(\s*(?:"[^"\\\n]*"|'[^'\\\n]*')(?:\s*,\s*(?:"[^"\\\n]*"|'[^'\\\n]*'))*\s*,?\s*\))(?:\s*,\s*(?:(?:"[^"\\\n]*"|'[^'\\\n]*')|\(\s*(?:"[^"\\\n]*"|'[^'\\\n]*')(?:\s*,\s*(?:"[^"\\\n]*"|'[^'\\\n]*'))*\s*,?\s*\)))*\s*,?\s*[\])]$
+  - &id003
+    pattern-not:
+      patterns:
+      - pattern-either:
+        - pattern-inside: "for $A, $B in $LIST:\n  ...\n"
+        - pattern-inside: "$L = $LIST\n...\nfor $A, $B in $L:\n  ...\n"
+      - pattern: $X.$M(f"...{$A}...{$B}...")
+      - pattern: $X.$M($ARG)
+      - metavariable-regex:
+          metavariable: $ARG
+          regex: ^f["'][^{}]*\{\w+\}[^{}]*\{\w+\}[^{}]*["']$
+      - metavariable-regex:
+          metavariable: $LIST
+          regex: ^[\[(]\s*(?:(?:"[^"\\\n]*"|'[^'\\\n]*')|\(\s*(?:"[^"\\\n]*"|'[^'\\\n]*')(?:\s*,\s*(?:"[^"\\\n]*"|'[^'\\\n]*'))*\s*,?\s*\))(?:\s*,\s*(?:(?:"[^"\\\n]*"|'[^'\\\n]*')|\(\s*(?:"[^"\\\n]*"|'[^'\\\n]*')(?:\s*,\s*(?:"[^"\\\n]*"|'[^'\\\n]*'))*\s*,?\s*\)))*\s*,?\s*[\])]$
 - id: mh.opengrep.python.lang.security.audit.hardcoded-password-default-argument.hardcoded-password-default-argument
   message: Hardcoded password is used as a default argument to '$FUNC'. This could be dangerous if a real password is not supplied.
   languages:
@@ -85641,6 +85686,9 @@ rules:
   - metavariable-regex:
       metavariable: $METHOD
       regex: ^(execute|executemany|mogrify)$
+  - *id001
+  - *id002
+  - *id003
   severity: WARNING
 - id: mh.opengrep.python.lang.security.audit.ssl-wrap-socket-is-deprecated.ssl-wrap-socket-is-deprecated
   pattern: ssl.wrap_socket(...)
@@ -88771,6 +88819,9 @@ rules:
       $CONNECTION.execute($QUERY, ...)
 
       '
+  - *id001
+  - *id002
+  - *id003
 - id: mh.opengrep.python.sqlalchemy.security.sqlalchemy-sql-injection.sqlalchemy-sql-injection
   patterns:
   - pattern-either:
