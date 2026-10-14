@@ -299,6 +299,17 @@ refine:
       - pattern-not: Action = "ecr:GetAuthorizationToken"
       - pattern-not: Action = ["ecr:GetAuthorizationToken"]
       - pattern-not: actions = ["ecr:GetAuthorizationToken"]
+  mh.opengrep.generic.secrets.gitleaks.hashicorp-tf-password.hashicorp-tf-password:
+    reason: >-
+      gitleaks scopes this rule to Terraform (.tf, .hcl); ported as a generic
+      regex it runs on every file, and its `=` and `:` also match a
+      comparison and a ternary. So TypeScript's `passwordResult.code ===
+      "weak_password" ? "weak_password" : "unavailable"` was reported as a
+      Terraform password (1 hit in simplr-ehr). JavaScript and TypeScript are
+      excluded; a password assigned there is still reported by
+      generic-api-key (its keywords include password), and every other file
+      type, Terraform included, is unchanged.
+    exclude_paths: ["*.ts", "*.tsx", "*.mts", "*.cts", "*.js", "*.jsx", "*.mjs", "*.cjs"]
 allow:
   - rules: [mh.opengrep.generic.secrets.*, mh.microhealth.generic.*]
     not-regex: '(?m)^.*\bgitleaks:allow\b.*$'

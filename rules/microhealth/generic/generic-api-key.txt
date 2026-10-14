@@ -17,3 +17,11 @@ const wsKey = 'dGhlIHNhbXBsZSBub25jZQ==';
 const api_token = 'tok-0123456789abcdef';
 # ruleid: generic.secrets.generic-api-key
 const access_token = 'abc123-Zq81xk-77Lw9';
+# ok: generic.secrets.generic-api-key
+    key: "eag-from-hba1c",
+# ok: generic.secrets.generic-api-key
+    connectorKey: "hl7v2_oru_lab",
+# ok: generic.secrets.generic-api-key
+  { key: "hypoglycemia-01", id: "NEMSQA Hypoglycemia-01" },
+# ruleid: generic.secrets.generic-api-key
+const api_token = 'abc123-zq81xk-77lw9';

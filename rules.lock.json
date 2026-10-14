@@ -6778,7 +6778,7 @@
    "upstream_id": "generic.secrets.generic-api-key",
    "path": "rules/microhealth/generic/generic-api-key.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "3a17a267778aeea349b9a747978ed74e3bc6969e4c50496b0d383c02e262e6a7",
+   "sha256": "73a7c3ea2a93ed8d1d1807e20062d813cb5543b3726f0918ccac1e7cddfb79d3",
    "bundles": [
     "internal"
    ],
@@ -7011,7 +7011,7 @@
    "upstream_id": "javascript.njsscan.crypto.node-timing-attack",
    "path": "rules/microhealth/javascript/njsscan-crypto-node-timing-attack.yaml",
    "license": "LGPL-3.0",
-   "sha256": "1091c98a65d0337830c3e14e51f7d9cd8c867eb9852b13afee5e20cd624e0864",
+   "sha256": "02de4fb2fab5da4217530090fd151423b8eb7d73818e69faf9665a9c49ba18e6",
    "bundles": [
     "internal"
    ],
@@ -7455,7 +7455,7 @@
    "upstream_id": "javascript.secret-compare-not-constant-time",
    "path": "rules/microhealth/javascript/secret-compare-not-constant-time.yaml",
    "license": "MIT",
-   "sha256": "ca83c53b479eff79237e32d96e6985f7666ad3ff89fd5db7954085272df3398a",
+   "sha256": "635e60aa25c250f82bda3215992ee5a31e5815194a1a369e6c95512f81f4776c",
    "bundles": [
     "internal",
     "product"
@@ -10648,11 +10648,12 @@
    "upstream_id": "hashicorp-tf-password",
    "path": "upstream/opengrep/generic/secrets/gitleaks/hashicorp-tf-password.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "c9faa0ceb8102ec1f338fbf65221f4359842581b7812a32329c2b3adb2fa0907",
+   "sha256": "b3848450247e17a5b99ad7111e15bbbb32e032ed3971703c1be69d5d07f0b1a0",
    "bundles": [
     "internal"
    ],
    "status": "active",
+   "refined": "gitleaks scopes this rule to Terraform (.tf, .hcl); ported as a generic regex it runs on every file, and its `=` and `:` also match a comparison and a ternary. So TypeScript's `passwordResult.code === \"weak_password\" ? \"weak_password\" : \"unavailable\"` was reported as a Terraform password (1 hit in simplr-ehr). JavaScript and TypeScript are excluded; a password assigned there is still reported by generic-api-key (its keywords include password), and every other file type, Terraform included, is unchanged.",
    "allow": [
     "`gitleaks:allow` on the line is gitleaks' own inline allow, and these rules are its ported patterns (gitleaks/), the same idea (security/), or MicroHealth replacements of either (mh.microhealth.generic.*). Repositories mark reviewed test fixtures with it for the gitleaks job in their CI; without this, the same fixture is allowed by one scanner and a CRITICAL finding in the other. The marker is visible in review and in the diff that adds it, as `nosemgrep` is."
    ]

@@ -68,3 +68,24 @@ export function prompted(password: string, again: string, passwordRepeat: string
   // ok: javascript.secret-compare-not-constant-time
   return passwordRepeat === password;
 }
+
+declare const latest: { current: number };
+declare const routeLoadToken: { current: number };
+export async function stale(token: number, read: () => Promise<void>) {
+  await read();
+  // ok: javascript.secret-compare-not-constant-time
+  if (latest.current !== token) return;
+  // ok: javascript.secret-compare-not-constant-time
+  if (routeLoadToken.current !== token) return;
+}
+
+export function blur(pass: number) {
+  // ok: javascript.secret-compare-not-constant-time
+  return pass === 0;
+}
+
+declare const request: { current: string };
+export function presented(token: string) {
+  // ruleid: javascript.secret-compare-not-constant-time
+  return request.current === token;
+}
