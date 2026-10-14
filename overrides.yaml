@@ -337,6 +337,15 @@ refine:
           $CONNECTION.execute($QUERY, ...)
   mh.opengrep.generic.secrets.gitleaks.hashicorp-tf-password.hashicorp-tf-password:
     reason: >-
+      gitleaks scopes this rule to Terraform (.tf, .hcl); ported as a generic
+      regex it runs on every file, and its `=` and `:` also match a
+      comparison and a ternary. So TypeScript's `passwordResult.code ===
+      "weak_password" ? "weak_password" : "unavailable"` was reported as a
+      Terraform password (1 hit in simplr-ehr). JavaScript and TypeScript are
+      excluded; a password assigned there is still reported by
+      generic-api-key (its keywords include password), and every other file
+      type, Terraform included, is unchanged.
+
       Reports the NAME of a secret, not its value: Terraform's azurerm
       `registry { password_secret_name = "acr-password" }` names the Container
       App secret that holds the password (6 hits in Fluenta), and
@@ -350,6 +359,7 @@ refine:
       `"Fluenta@Admin2026!"` was not reported before this change either.
     add:
       - pattern-not-regex: (?m)^[^\n]*?\b\w*[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]\w*?(?:_secret_name|_SECRET_NAME|_name|_NAME|_var|_VAR|_env|_ENV)["']?[ \t]*(?:=|:)[ \t]*(?:"[^"\n]*"|'[^'\n]*')[^\n]*\n?|(?m)^[^\n]*?\b\w*[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]\w*["']?[ \t]*(?:=|:)[ \t]*(["'])[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\1[^\n]*\n?
+    exclude_paths: ["*.ts", "*.tsx", "*.mts", "*.cts", "*.js", "*.jsx", "*.mjs", "*.cjs"]
   mh.opengrep.generic.nginx.security.possible-h2c-smuggling.possible-nginx-h2c-smuggling:
     reason: >-
       h2c smuggling needs the client's `Upgrade: h2c` to reach the upstream.

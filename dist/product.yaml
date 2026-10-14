@@ -14349,7 +14349,7 @@ rules:
       regex: (?i)^(?!(?:[\w$?.]*\.)?(?:confirm\w*|\w*confirm(?:ation)?\w*|again|\w*again|repeat\w*|\w*repeat(?:ed)?|re_?type\w*|\w*retyped|re_?enter\w*|\w*reentered)$)
   - metavariable-regex:
       metavariable: $O
-      regex: ^(?!-?\d[\w.]*$|[\w$?.]*\.current$|[\w$?.]*?(?:(?:^|[._$?])(?i:last|prev|previous|ref)|(?<=[a-z0-9])(?:Last|Prev|Previous|Ref))(?=[A-Z0-9_$.?]|$))
+      regex: ^(?!-?\d[\w.]*$|(?![\w$?.]*(?i:provided|given|input|incoming|received|supplied|request|req\b|header|query|body|param|cookie))[\w$?.]*\.current$|[\w$?.]*?(?:(?:^|[._$?])(?i:last|prev|previous|ref)|(?<=[a-z0-9])(?:Last|Prev|Previous|Ref))(?=[A-Z0-9_$.?]|$))
   - metavariable-regex:
       metavariable: $S
       regex: (?i)^(\w*\.)?(password|passwd|pass|secret|client_?secret|token|access_?token|auth_?token|api_?key|apikey|api_?secret|hmac|signature|service_?role_?key|service_?key)$

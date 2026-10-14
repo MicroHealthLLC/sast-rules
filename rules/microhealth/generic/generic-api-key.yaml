@@ -15,6 +15,12 @@
 #   variable name, not a value (letters only, so mixed secrets still match);
 # - a documentation placeholder holding a sequential run (`0123456789`,
 #   `123456789`, `abcdefghij`).
+# - a lowercase identifier spelled in words (`key: "eag-from-hba1c"`,
+#   `connectorKey: "hl7v2_oru_lab"`, `key: "hypoglycemia-01"`): catalog and
+#   registry keys, 11 hits in simplr-ehr. Every segment is a word of at most
+#   16 letters, a number, or a short (<= 6) alphanumeric, and one segment is a
+#   word of 3+ letters. A random lowercase value (`abc123-zq81xk-77lw9`), a
+#   long random run, or anything with an upper-case letter is still reported.
 # Narrowed after Fluenta (2026-10-14), three more shapes that are not secrets:
 # - a UUID assigned to a name that says it is an identifier (`*_id`, `*Id`,
 #   `*ID`, `*uuid`, `*guid`): `WHERE api_credential_id = '5aba6a0b-...'` is a
@@ -87,7 +93,7 @@ rules:
   - pattern-not-regex: (?i)[0-9a-z_.\-]*client[_\-.]?id[0-9a-z_]*['"]?\s*(?:=|:|:=|=>)\s*(?:'|"|\x60)?[0-9a-z\-_.=~@]{10,150}(?:'|"|\x60)?
   - metavariable-regex:
       metavariable: $CONTENT
-      regex: ^(?!(?:Ov23li|Iv23li)[0-9A-Za-z]{14}$|Iv1\.[0-9a-f]{16}$|dGhlIHNhbXBsZSBub25jZQ==$|[a-z]+(?:[A-Z][a-z]+)+$|.*(?:0123456789|123456789|abcdefghij))
+      regex: ^(?!(?:Ov23li|Iv23li)[0-9A-Za-z]{14}$|Iv1\.[0-9a-f]{16}$|dGhlIHNhbXBsZSBub25jZQ==$|[a-z]+(?:[A-Z][a-z]+)+$|.*(?:0123456789|123456789|abcdefghij)|(?=[a-z0-9_-]*?(?:^|[-_])[a-z]{3,16}(?:[-_]|$))(?:[a-z]{2,16}|[0-9]+|[a-z0-9]{1,6})(?:[-_](?:[a-z]{2,16}|[0-9]+|[a-z0-9]{1,6}))+$)
   - pattern-not-regex: \b[\w.]*(?:_id|Id|ID|[_.]?uuid|[_.]?UUID|[_.]?guid|[_.]?GUID)['"]?\s*(?:=|:|:=|=>)\s*['"\x60]?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b
   - metavariable-regex:
       metavariable: $CONTENT

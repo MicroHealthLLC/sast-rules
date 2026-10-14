@@ -6778,7 +6778,7 @@
    "upstream_id": "generic.secrets.generic-api-key",
    "path": "rules/microhealth/generic/generic-api-key.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "1d61b05c38df4b558e496ef0d8a0b534595fa359b66b6832fc0456e1ce57ba68",
+   "sha256": "070a1dd7df743ffd4f3f26c87ea916e468a7f1869da8e918c5db1ec4e03f3d7e",
    "bundles": [
     "internal"
    ],
@@ -7022,7 +7022,7 @@
    "upstream_id": "javascript.njsscan.crypto.node-timing-attack",
    "path": "rules/microhealth/javascript/njsscan-crypto-node-timing-attack.yaml",
    "license": "LGPL-3.0",
-   "sha256": "1091c98a65d0337830c3e14e51f7d9cd8c867eb9852b13afee5e20cd624e0864",
+   "sha256": "02de4fb2fab5da4217530090fd151423b8eb7d73818e69faf9665a9c49ba18e6",
    "bundles": [
     "internal"
    ],
@@ -7466,7 +7466,7 @@
    "upstream_id": "javascript.secret-compare-not-constant-time",
    "path": "rules/microhealth/javascript/secret-compare-not-constant-time.yaml",
    "license": "MIT",
-   "sha256": "ce92a5b298fb5b881c098f364f4bca10f6c308d0ac16155bb12332569f262cdb",
+   "sha256": "2900ede4fa87cc5e0c2c6dac92f0418f2580748d8bc7407fceacb8b0a729c720",
    "bundles": [
     "internal",
     "product"
@@ -10660,12 +10660,12 @@
    "upstream_id": "hashicorp-tf-password",
    "path": "upstream/opengrep/generic/secrets/gitleaks/hashicorp-tf-password.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "5a34b11b0a9b18840b24dbdbad4228fb6166fee1924c29ea6f614d82d76fe72e",
+   "sha256": "39cabb1249d67760d8dc97b61b3ee21121105e4b086031eabeab2fe6698d6d2f",
    "bundles": [
     "internal"
    ],
    "status": "active",
-   "refined": "Reports the NAME of a secret, not its value: Terraform's azurerm `registry { password_secret_name = \"acr-password\" }` names the Container App secret that holds the password (6 hits in Fluenta), and `ECR_PASSWORD_VAR = \"RAILWAY_ECR_PASSWORD\"` names the environment variable that does (1 hit). A password-named key ending in _secret_name/_name/_var/_env, or a password-named key whose value is an ALL-CAPS identifier with an underscore (an environment variable name), is no longer reported. Every other quoted password value still is (e.g. `administrator_login_password = \"Sup3rS3cret99\"`). The upstream regex never matched a value containing `!` or `@`, so `\"Fluenta@Admin2026!\"` was not reported before this change either.",
+   "refined": "gitleaks scopes this rule to Terraform (.tf, .hcl); ported as a generic regex it runs on every file, and its `=` and `:` also match a comparison and a ternary. So TypeScript's `passwordResult.code === \"weak_password\" ? \"weak_password\" : \"unavailable\"` was reported as a Terraform password (1 hit in simplr-ehr). JavaScript and TypeScript are excluded; a password assigned there is still reported by generic-api-key (its keywords include password), and every other file type, Terraform included, is unchanged. Reports the NAME of a secret, not its value: Terraform's azurerm `registry { password_secret_name = \"acr-password\" }` names the Container App secret that holds the password (6 hits in Fluenta), and `ECR_PASSWORD_VAR = \"RAILWAY_ECR_PASSWORD\"` names the environment variable that does (1 hit). A password-named key ending in _secret_name/_name/_var/_env, or a password-named key whose value is an ALL-CAPS identifier with an underscore (an environment variable name), is no longer reported. Every other quoted password value still is (e.g. `administrator_login_password = \"Sup3rS3cret99\"`). The upstream regex never matched a value containing `!` or `@`, so `\"Fluenta@Admin2026!\"` was not reported before this change either.",
    "allow": [
     "`gitleaks:allow` on the line is gitleaks' own inline allow, and these rules are its ported patterns (gitleaks/), the same idea (security/), or MicroHealth replacements of either (mh.microhealth.generic.*). Repositories mark reviewed test fixtures with it for the gitleaks job in their CI; without this, the same fixture is allowed by one scanner and a CRITICAL finding in the other. The marker is visible in review and in the diff that adds it, as `nosemgrep` is."
    ]

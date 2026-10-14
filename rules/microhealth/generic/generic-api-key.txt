@@ -29,3 +29,11 @@ SELECT * FROM send_recipients WHERE token = '739f2cb6-aed0-45c8-8fbd-63e07a430f7
   { name: 'GitHub Enterprise', 'License Key': 'GH-ENT-ZZZZZ' },
 # ruleid: generic.secrets.generic-api-key
 auth_token = "sk_9fK2pQ7xLm3RtV8wZ1bN"
+# ok: generic.secrets.generic-api-key
+    key: "eag-from-hba1c",
+# ok: generic.secrets.generic-api-key
+    connectorKey: "hl7v2_oru_lab",
+# ok: generic.secrets.generic-api-key
+  { key: "hypoglycemia-01", id: "NEMSQA Hypoglycemia-01" },
+# ruleid: generic.secrets.generic-api-key
+const api_token = 'abc123-zq81xk-77lw9';

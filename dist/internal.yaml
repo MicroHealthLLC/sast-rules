@@ -26030,7 +26030,7 @@ rules:
   - pattern-not-regex: (?i)[0-9a-z_.\-]*client[_\-.]?id[0-9a-z_]*['"]?\s*(?:=|:|:=|=>)\s*(?:'|"|\x60)?[0-9a-z\-_.=~@]{10,150}(?:'|"|\x60)?
   - metavariable-regex:
       metavariable: $CONTENT
-      regex: ^(?!(?:Ov23li|Iv23li)[0-9A-Za-z]{14}$|Iv1\.[0-9a-f]{16}$|dGhlIHNhbXBsZSBub25jZQ==$|[a-z]+(?:[A-Z][a-z]+)+$|.*(?:0123456789|123456789|abcdefghij))
+      regex: ^(?!(?:Ov23li|Iv23li)[0-9A-Za-z]{14}$|Iv1\.[0-9a-f]{16}$|dGhlIHNhbXBsZSBub25jZQ==$|[a-z]+(?:[A-Z][a-z]+)+$|.*(?:0123456789|123456789|abcdefghij)|(?=[a-z0-9_-]*?(?:^|[-_])[a-z]{3,16}(?:[-_]|$))(?:[a-z]{2,16}|[0-9]+|[a-z0-9]{1,6})(?:[-_](?:[a-z]{2,16}|[0-9]+|[a-z0-9]{1,6}))+$)
   - pattern-not-regex: \b[\w.]*(?:_id|Id|ID|[_.]?uuid|[_.]?UUID|[_.]?guid|[_.]?GUID)['"]?\s*(?:=|:|:=|=>)\s*['"\x60]?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b
   - metavariable-regex:
       metavariable: $CONTENT
@@ -27275,6 +27275,9 @@ rules:
   - metavariable-regex:
       metavariable: $X
       regex: (?i)^(?!(?![\w$?.\[\]'"-]*(?:provided|given|input|incoming|received|supplied|request|req\b|header|query|body|param|cookie))[\w$?.]*(?:password|passwd|pass|secret|token|api_?key|apikey|api_?secret|hmac|signature|hash|service_?role_?key|service_?key)$)
+  - metavariable-regex:
+      metavariable: $X
+      regex: (?i)^(?!(?![\w$?.]*(?:provided|given|input|incoming|received|supplied|request|req\b|header|query|body|param|cookie))[\w$?.]*\.current$|-?\d+(?:\.\d+)?$)
   - metavariable-regex:
       metavariable: $X
       regex: (?i)^(?!(?:[\w$?.]*\.)?(?:confirm\w*|\w*confirm(?:ation)?\w*|again|\w*again|repeat\w*|\w*repeat(?:ed)?|re_?type\w*|\w*retyped|re_?enter\w*|\w*reentered)$)
@@ -33537,7 +33540,7 @@ rules:
       regex: (?i)^(?!(?:[\w$?.]*\.)?(?:confirm\w*|\w*confirm(?:ation)?\w*|again|\w*again|repeat\w*|\w*repeat(?:ed)?|re_?type\w*|\w*retyped|re_?enter\w*|\w*reentered)$)
   - metavariable-regex:
       metavariable: $O
-      regex: ^(?!-?\d[\w.]*$|[\w$?.]*\.current$|[\w$?.]*?(?:(?:^|[._$?])(?i:last|prev|previous|ref)|(?<=[a-z0-9])(?:Last|Prev|Previous|Ref))(?=[A-Z0-9_$.?]|$))
+      regex: ^(?!-?\d[\w.]*$|(?![\w$?.]*(?i:provided|given|input|incoming|received|supplied|request|req\b|header|query|body|param|cookie))[\w$?.]*\.current$|[\w$?.]*?(?:(?:^|[._$?])(?i:last|prev|previous|ref)|(?<=[a-z0-9])(?:Last|Prev|Previous|Ref))(?=[A-Z0-9_$.?]|$))
   - metavariable-regex:
       metavariable: $S
       regex: (?i)^(\w*\.)?(password|passwd|pass|secret|client_?secret|token|access_?token|auth_?token|api_?key|apikey|api_?secret|hmac|signature|service_?role_?key|service_?key)$
@@ -40180,6 +40183,16 @@ rules:
   - pattern-regex: (?i)(?:administrator_login_password|password)(?:[0-9a-z\-_\t .]{0,20})(?:[\s|']|[\s|"]){0,3}(?:=|>|:{1,3}=|\|\|:|<=|=>|:|\?=)(?:'|\"|\s|=|\x60){0,5}("[a-z0-9=_\-]{8,20}")(?:['|\"|\n|\r|\s|\x60|;]|$)
   - pattern-not-regex: (?m)^[^\n]*?\b\w*[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]\w*?(?:_secret_name|_SECRET_NAME|_name|_NAME|_var|_VAR|_env|_ENV)["']?[ \t]*(?:=|:)[ \t]*(?:"[^"\n]*"|'[^'\n]*')[^\n]*\n?|(?m)^[^\n]*?\b\w*[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]\w*["']?[ \t]*(?:=|:)[ \t]*(["'])[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\1[^\n]*\n?
   - pattern-not-regex: (?m)^.*\bgitleaks:allow\b.*$
+  paths:
+    exclude:
+    - '*.ts'
+    - '*.tsx'
+    - '*.mts'
+    - '*.cts'
+    - '*.js'
+    - '*.jsx'
+    - '*.mjs'
+    - '*.cjs'
 - id: mh.opengrep.generic.secrets.gitleaks.heroku-api-key.heroku-api-key
   message: A gitleaks heroku-api-key was detected which attempts to identify hard-coded credentials. It is not recommended to store credentials in source-code, as this risks secrets being leaked and used by either an internal or external malicious adversary. It is recommended to use environment variables to securely provide credentials or retrieve credentials from a secure vault or HSM (Hardware Security Module).
   languages:

@@ -13,6 +13,9 @@
 # holds (`token !== activeIndexToken`, a generation counter; `hash ===
 # storedHash`) unless its name says it came from a request, header, query,
 # body, param, cookie or input; nor a password's confirmation field.
+# Change (simplr-ehr): $X may not be a React ref's `.current` (`if
+# (latest.current !== token) return;`): a request-generation counter the
+# component wrote itself, compared to drop a stale response.
 rules:
 - id: javascript.njsscan.crypto.node-timing-attack
   patterns:
@@ -503,6 +506,9 @@ rules:
   - metavariable-regex:
       metavariable: $X
       regex: '(?i)^(?!(?![\w$?.\[\]''"-]*(?:provided|given|input|incoming|received|supplied|request|req\b|header|query|body|param|cookie))[\w$?.]*(?:password|passwd|pass|secret|token|api_?key|apikey|api_?secret|hmac|signature|hash|service_?role_?key|service_?key)$)'
+  - metavariable-regex:
+      metavariable: $X
+      regex: '(?i)^(?!(?![\w$?.]*(?:provided|given|input|incoming|received|supplied|request|req\b|header|query|body|param|cookie))[\w$?.]*\.current$|-?\d+(?:\.\d+)?$)'
   - metavariable-regex:
       metavariable: $X
       regex: '(?i)^(?!(?:[\w$?.]*\.)?(?:confirm\w*|\w*confirm(?:ation)?\w*|again|\w*again|repeat\w*|\w*repeat(?:ed)?|re_?type\w*|\w*retyped|re_?enter\w*|\w*reentered)$)'
