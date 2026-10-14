@@ -69,6 +69,28 @@ export function prompted(password: string, again: string, passwordRepeat: string
   return passwordRepeat === password;
 }
 
+declare const lastSavedSignature: { current: string };
+declare const presenceSignatureRef: { current: string };
+declare const prevToken: string;
+declare const referenceValue: string;
+declare const req: { headers: Record<string, string> };
+export function fingerprints(signature: string, token: string, pass: number, password: number) {
+  // ok: javascript.secret-compare-not-constant-time
+  if (signature === lastSavedSignature.current) return;
+  // ok: javascript.secret-compare-not-constant-time
+  if (signature === presenceSignatureRef.current) return;
+  // ok: javascript.secret-compare-not-constant-time
+  if (token !== prevToken) return;
+  // ok: javascript.secret-compare-not-constant-time
+  if (pass === 0) return;
+  // ok: javascript.secret-compare-not-constant-time
+  if (password === 0) return;
+  // ruleid: javascript.secret-compare-not-constant-time
+  if (signature === req.headers["x-signature"]) return;
+  // ruleid: javascript.secret-compare-not-constant-time
+  if (token === referenceValue) return;
+}
+
 declare const latest: { current: number };
 declare const routeLoadToken: { current: number };
 export async function stale(token: number, read: () => Promise<void>) {

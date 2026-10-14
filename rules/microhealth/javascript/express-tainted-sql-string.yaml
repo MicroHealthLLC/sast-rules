@@ -1,0 +1,102 @@
+# License: LGPL-2.1-only with the Commons Clause (c) Semgrep, Inc.; modified by MicroHealth
+# Derived by MicroHealth from upstream/opengrep/javascript/express/security/injection/tainted-sql-string.yaml
+# (mh.opengrep.javascript.express.security.injection.tainted-sql-string.tainted-sql-string, disabled in overrides.yaml in favour of this copy).
+# Change: its sink is any string whose literal part contains a SQL keyword as
+# a word, so `Failed to create folder: ${errorText}` ("create") and
+# `attachment row insert failed for ${att.filename}` ("insert") were SQL
+# injection (8 of 8 hits in Fluenta, 2026-10-14, every one an error message
+# or a log line). A string built inside `throw new X(...)`, `new Error(...)`,
+# `console.*(...)`, a logger's error/warn/info/debug, or a
+# logError/logWarn/logInfo/logDebug helper is no longer a sink: it is shown
+# to a person and never run. The keyword test, the sources and every other
+# sink (a query string, util.format, concatenation) are unchanged, so
+# `db.query(`SELECT * FROM users WHERE id = ${req.query.id}`)` is still
+# reported.
+rules:
+- id: javascript.express-tainted-sql-string
+  message: >-
+    Detected user input used to manually construct a SQL string. This is
+    usually bad practice because manual construction could accidentally result
+    in a SQL injection. An attacker could use a SQL injection to steal or
+    modify contents of the database. Instead, use a parameterized query which
+    is available by default in most database engines. Alternatively, consider
+    using an object-relational mapper (ORM) such as Sequelize which will
+    protect your queries.
+  metadata:
+    owasp:
+    - A01:2017 - Injection
+    - A03:2021 - Injection
+    cwe:
+    - "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+    references:
+    - https://owasp.org/www-community/attacks/SQL_Injection
+    category: security
+    technology:
+    - express
+    license: Commons Clause License Condition v1.0[LGPL-2.1-only]
+    cwe2022-top25: true
+    cwe2021-top25: true
+    subcategory:
+    - vuln
+    likelihood: HIGH
+    impact: MEDIUM
+    confidence: MEDIUM
+    mh_replaces: mh.opengrep.javascript.express.security.injection.tainted-sql-string.tainted-sql-string
+  languages:
+  - javascript
+  - typescript
+  severity: ERROR
+  mode: taint
+  pattern-sources:
+  - patterns:
+    - pattern-either:
+      - pattern-inside: function ... (...,$REQ, ...) {...}
+    - pattern-either:
+      - pattern: $REQ.query
+      - pattern: $REQ.body
+      - pattern: $REQ.params
+      - pattern: $REQ.cookies
+      - pattern: $REQ.headers
+  - patterns:
+    - pattern-either:
+      - pattern-inside: >
+          (...,{ $REQ }: Request,...) =>
+          {...}
+      - pattern-inside: |
+          (...,{ $REQ }: $EXPRESS.Request,...) => {...}
+    - focus-metavariable: $REQ
+    - pattern-either:
+      - pattern: params
+      - pattern: query
+      - pattern: cookies
+      - pattern: headers
+      - pattern: body
+  pattern-sinks:
+  - patterns:
+    - pattern-either:
+      - patterns:
+        - pattern-either:
+          - pattern-inside: |
+              "$SQLSTR" + $EXPR
+          - pattern-inside: |
+              "$SQLSTR".concat($EXPR)
+          - pattern: util.format($SQLSTR, $EXPR)
+          - pattern: |
+              `$SQLSTR${$EXPR}...`
+        - metavariable-regex:
+            metavariable: $SQLSTR
+            regex: .*\b(?i)(select|delete|insert|create|update\s+.+\sset|alter|drop)\b.*
+    # MicroHealth: a string handed to an error or a log line is text for a
+    # person, never a statement a database runs.
+    - pattern-not-inside: throw new $ERR(...)
+    - pattern-not-inside: new Error(...)
+    - pattern-not-inside: console.$LEVEL(...)
+    - pattern-not-inside: $LOGGER.error(...)
+    - pattern-not-inside: $LOGGER.warn(...)
+    - pattern-not-inside: $LOGGER.info(...)
+    - pattern-not-inside: $LOGGER.debug(...)
+    - pattern-not-inside: logError(...)
+    - pattern-not-inside: logWarn(...)
+    - pattern-not-inside: logInfo(...)
+    - pattern-not-inside: logDebug(...)
+    - focus-metavariable: $EXPR

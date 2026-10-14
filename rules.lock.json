@@ -6778,7 +6778,7 @@
    "upstream_id": "generic.secrets.generic-api-key",
    "path": "rules/microhealth/generic/generic-api-key.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "73a7c3ea2a93ed8d1d1807e20062d813cb5543b3726f0918ccac1e7cddfb79d3",
+   "sha256": "070a1dd7df743ffd4f3f26c87ea916e468a7f1869da8e918c5db1ec4e03f3d7e",
    "bundles": [
     "internal"
    ],
@@ -6792,7 +6792,7 @@
    "upstream_id": "generic.secrets.private-key",
    "path": "rules/microhealth/generic/private-key.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "e5c54ddf047afd0e042af94856b00d2859fd1cc9a9b4eb473a81920fd232f65f",
+   "sha256": "e0e465b4f984f83904d3efb5a23d484fe8e91b5f0c967fb4702d67bb62d1f4a3",
    "bundles": [
     "internal"
    ],
@@ -6922,6 +6922,17 @@
    ],
    "status": "active"
   },
+  "mh.microhealth.javascript.express-tainted-sql-string": {
+   "source": "microhealth",
+   "upstream_id": "javascript.express-tainted-sql-string",
+   "path": "rules/microhealth/javascript/express-tainted-sql-string.yaml",
+   "license": "LGPL-2.1-only+Commons-Clause",
+   "sha256": "9ae8be0eca3eff608f86d45414ecb4df8cdd3683ccc87b4424c3c20c95808e48",
+   "bundles": [
+    "internal"
+   ],
+   "status": "active"
+  },
   "mh.microhealth.javascript.html-string-to-dom-sink": {
    "source": "microhealth",
    "upstream_id": "javascript.html-string-to-dom-sink",
@@ -6975,7 +6986,7 @@
    "upstream_id": "javascript.insecure-websocket-url",
    "path": "rules/microhealth/javascript/insecure-websocket-url.yaml",
    "license": "MIT",
-   "sha256": "58c86ab956583d0b0c986ecee4e589ca1d3f872d3affd1e0a93e23631b03330d",
+   "sha256": "f547224ca83c637af2971be1ec97c0b3bbb9d04941e7c31238d29274087cf54a",
    "bundles": [
     "internal",
     "product"
@@ -7455,7 +7466,7 @@
    "upstream_id": "javascript.secret-compare-not-constant-time",
    "path": "rules/microhealth/javascript/secret-compare-not-constant-time.yaml",
    "license": "MIT",
-   "sha256": "635e60aa25c250f82bda3215992ee5a31e5815194a1a369e6c95512f81f4776c",
+   "sha256": "2900ede4fa87cc5e0c2c6dac92f0418f2580748d8bc7407fceacb8b0a729c720",
    "bundles": [
     "internal",
     "product"
@@ -7467,7 +7478,7 @@
    "upstream_id": "javascript.ssrf-request-to-fetch",
    "path": "rules/microhealth/javascript/ssrf-request-to-fetch.yaml",
    "license": "MIT",
-   "sha256": "6b2b53531397e3b84bdeb75ca3d85d63853e4a50877b12bf8ab7d20f8b07fd56",
+   "sha256": "f1c60c4e33cb7494cea76ff37a5be8d1ec9688c35686094c025929c621c9220d",
    "bundles": [
     "internal",
     "product"
@@ -9551,11 +9562,12 @@
    "upstream_id": "possible-nginx-h2c-smuggling",
    "path": "upstream/opengrep/generic/nginx/security/possible-h2c-smuggling.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "76af468b7cf158f6b036b32c18dce18963066b0eb4575a5d3312d7fd304078f1",
+   "sha256": "0c4868ec70dd68866fea32396ad9cb2d8eb73233e4404a004de17dc2a1292a1e",
    "bundles": [
     "internal"
    ],
-   "status": "active"
+   "status": "active",
+   "refined": "h2c smuggling needs the client's `Upgrade: h2c` to reach the upstream. A location that pins the header to a constant (`proxy_set_header Upgrade '';`, which drops it, or `proxy_set_header Upgrade websocket;`, the rule's own recommended fix) never forwards the client's value, yet was reported because it sets Upgrade and Connection with HTTP/1.1 (2 of 2 hits in Fluenta: deploy/nginx and deploy/railway/nginx default.conf). Such a location is no longer reported; `proxy_set_header Upgrade $http_upgrade;` (or any other variable) still is."
   },
   "mh.opengrep.generic.nginx.security.request-host-used.request-host-used": {
    "source": "opengrep",
@@ -10648,12 +10660,12 @@
    "upstream_id": "hashicorp-tf-password",
    "path": "upstream/opengrep/generic/secrets/gitleaks/hashicorp-tf-password.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "b3848450247e17a5b99ad7111e15bbbb32e032ed3971703c1be69d5d07f0b1a0",
+   "sha256": "39cabb1249d67760d8dc97b61b3ee21121105e4b086031eabeab2fe6698d6d2f",
    "bundles": [
     "internal"
    ],
    "status": "active",
-   "refined": "gitleaks scopes this rule to Terraform (.tf, .hcl); ported as a generic regex it runs on every file, and its `=` and `:` also match a comparison and a ternary. So TypeScript's `passwordResult.code === \"weak_password\" ? \"weak_password\" : \"unavailable\"` was reported as a Terraform password (1 hit in simplr-ehr). JavaScript and TypeScript are excluded; a password assigned there is still reported by generic-api-key (its keywords include password), and every other file type, Terraform included, is unchanged.",
+   "refined": "gitleaks scopes this rule to Terraform (.tf, .hcl); ported as a generic regex it runs on every file, and its `=` and `:` also match a comparison and a ternary. So TypeScript's `passwordResult.code === \"weak_password\" ? \"weak_password\" : \"unavailable\"` was reported as a Terraform password (1 hit in simplr-ehr). JavaScript and TypeScript are excluded; a password assigned there is still reported by generic-api-key (its keywords include password), and every other file type, Terraform included, is unchanged. Reports the NAME of a secret, not its value: Terraform's azurerm `registry { password_secret_name = \"acr-password\" }` names the Container App secret that holds the password (6 hits in Fluenta), and `ECR_PASSWORD_VAR = \"RAILWAY_ECR_PASSWORD\"` names the environment variable that does (1 hit). A password-named key ending in _secret_name/_name/_var/_env, or a password-named key whose value is an ALL-CAPS identifier with an underscore (an environment variable name), is no longer reported. Every other quoted password value still is (e.g. `administrator_login_password = \"Sup3rS3cret99\"`). The upstream regex never matched a value containing `!` or `@`, so `\"Fluenta@Admin2026!\"` was not reported before this change either.",
    "allow": [
     "`gitleaks:allow` on the line is gitleaks' own inline allow, and these rules are its ported patterns (gitleaks/), the same idea (security/), or MicroHealth replacements of either (mh.microhealth.generic.*). Repositories mark reviewed test fixtures with it for the gitleaks job in their CI; without this, the same fixture is allowed by one scanner and a CRITICAL finding in the other. The marker is visible in review and in the diff that adds it, as `nosemgrep` is."
    ]
@@ -16074,10 +16086,9 @@
    "path": "upstream/opengrep/javascript/express/security/injection/tainted-sql-string.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
    "sha256": "89fc36a55ef572e614935686d3835ca04938937f7fa8f4ec1c2fa7981c085850",
-   "bundles": [
-    "internal"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Its sink is any string whose literal part contains a SQL keyword as a word, so error messages and log lines (`Failed to create folder: ${errorText}`, `attachment row insert failed for ${att.filename}`) were SQL injection: 8 of 8 hits in Fluenta. A taint rule cannot be refined, so it is replaced by mh.microhealth.javascript.express-tainted-sql-string: the same sources, keyword test and sinks, except a string built inside a throw, new Error, console.* or a logger/log* call, which is shown to a person and never run as SQL."
   },
   "mh.opengrep.javascript.express.security.require-request.require-request": {
    "source": "opengrep",
@@ -22677,11 +22688,12 @@
    "upstream_id": "sqlalchemy-execute-raw-query",
    "path": "upstream/opengrep/python/sqlalchemy/security/sqlalchemy-execute-raw-query.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "02aff2af63226d860eb80cab50c475b88d08926bf4d1123e89d4ee5c9886d392",
+   "sha256": "6c310d029b063df689278c430de46653551d4a94fad635ea58ee7effd0aa5625",
    "bundles": [
     "internal"
    ],
-   "status": "active"
+   "status": "active",
+   "refined": "Its `$SQL.format(...)` and `$SQL + ...` patterns also match psycopg's safe composition API, `cur.execute(sql.SQL(\"DROP SCHEMA IF EXISTS {} CASCADE\").format(sql.Identifier(s)))`, where `format` quotes each sql.Identifier/sql.Literal argument and the template is a constant (22 of 24 hits in Fluenta's database tooling, directly or through an assigned `stmt = pgsql.SQL(...).format(...)`). A LITERAL template passed through any module alias's `.SQL(\"...\")` and composed with `.format` or `+` is no longer reported, executed directly or through the variable it was assigned to. A template built from a variable (`sql.SQL('CREATE ROLE {} ' + opts)`), %-formatting, str.format and f-strings are still reported. Known ceiling: a raw `sql.SQL(variable)` passed as a format ARGUMENT, and a raw execute placed between such an assignment and the execute of that variable, are not told apart from the safe form."
   },
   "mh.opengrep.python.sqlalchemy.security.sqlalchemy-sql-injection.sqlalchemy-sql-injection": {
    "source": "opengrep",
