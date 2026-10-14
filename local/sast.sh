@@ -22,7 +22,7 @@ ref="$(grep -rhoE 'MicroHealthLLC/sast-rules/\.github/workflows/[a-z-]+\.yml@[A-
 # repository being pushed, and every git command below would act on IT rather
 # than on the cache: a pre-push once moved the checkout's HEAD onto the rules
 # commit and left an empty cache marked complete. The cache is its own repo.
-unset $(git rev-parse --local-env-vars)
+while read -r var; do unset "$var"; done < <(git rev-parse --local-env-vars)
 if [[ "$ref" =~ ^[0-9a-f]{40}$ ]]; then
   pin="$ref"
 else
