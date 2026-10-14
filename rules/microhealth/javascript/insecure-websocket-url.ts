@@ -14,3 +14,10 @@ const local = "ws://localhost:4000";
 const loop = "ws://127.0.0.1:9000/x";
 // ok: javascript.insecure-websocket-url
 const prose = "the dev server needs ws:// for HMR";
+declare const serverUrl: string;
+// ok: javascript.insecure-websocket-url
+const isPlain = serverUrl.startsWith('ws://') || serverUrl.startsWith("wss://");
+// ok: javascript.insecure-websocket-url
+const swapped = serverUrl.replace(`ws://`, "wss://");
+// ruleid: javascript.insecure-websocket-url
+const internal = "ws://ws-server.railway.internal:8080/realtime";

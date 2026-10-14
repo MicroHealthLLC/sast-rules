@@ -13787,13 +13787,15 @@ rules:
     mh_source: microhealth
     mh_upstream_id: javascript.insecure-websocket-url
     mh_license: MIT
-  patterns:
-  - pattern-either:
-    - pattern: '"$URL"'
-    - pattern: '`$URL`'
-  - metavariable-regex:
-      metavariable: $URL
-      regex: (?i)^ws://(?!(?:localhost|127(?:\.\d{1,3}){3}|\[::1\])(?:[:/?#]|$))
+  pattern-either:
+  - pattern: '`ws://${$HOST}...`'
+  - patterns:
+    - pattern-either:
+      - pattern: '"$URL"'
+      - pattern: '`$URL`'
+    - metavariable-regex:
+        metavariable: $URL
+        regex: (?i)^ws://(?!(?:localhost|127(?:\.\d{1,3}){3}|\[::1\])(?:[:/?#]|$))[^/?#\s]
 - id: mh.microhealth.javascript.js-yaml-unsafe-schema
   languages:
   - javascript
@@ -14346,6 +14348,9 @@ rules:
       metavariable: $O
       regex: (?i)^(?!(?:[\w$?.]*\.)?(?:confirm\w*|\w*confirm(?:ation)?\w*|again|\w*again|repeat\w*|\w*repeat(?:ed)?|re_?type\w*|\w*retyped|re_?enter\w*|\w*reentered)$)
   - metavariable-regex:
+      metavariable: $O
+      regex: ^(?!-?\d[\w.]*$|[\w$?.]*\.current$|[\w$?.]*?(?:(?:^|[._$?])(?i:last|prev|previous|ref)|(?<=[a-z0-9])(?:Last|Prev|Previous|Ref))(?=[A-Z0-9_$.?]|$))
+  - metavariable-regex:
       metavariable: $S
       regex: (?i)^(\w*\.)?(password|passwd|pass|secret|client_?secret|token|access_?token|auth_?token|api_?key|apikey|api_?secret|hmac|signature|service_?role_?key|service_?key)$
   - pattern-not: $S == "..."
@@ -14440,6 +14445,7 @@ rules:
       - pattern: $REQ.text()
       - pattern: $REQ.url
       - pattern: $REQ.headers.get(...)
+    - pattern-not-inside: new Request($REQ.url, ...)
   - patterns:
     - pattern-either:
       - pattern-inside: 'function $F($REQ, $RES, ...) { ... }

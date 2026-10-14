@@ -40,10 +40,24 @@ export async function handler(req: Request): Promise<Response> {
     await fetch(url);
   }
   await signedS3(Deno.env.get("S3") ?? "", {});
+  // ok: javascript.ssrf-request-to-fetch
+  const rewrapped = new Request(req.url, { method: req.method, headers: req.headers, body: null });
+  void rewrapped;
   return new Response("ok");
 }
 
 app.get("/proxy", (req: any, res: any) => {
   // ruleid: javascript.ssrf-request-to-fetch
   axios.get(req.query.target).then((r: any) => res.send(r.data));
+});
+
+Deno.serve(async (req) => {
+  const body = await req.json();
+  // ok: javascript.ssrf-request-to-fetch
+  const copy = new Request(req.url, { method: req.method, headers: req.headers, body: JSON.stringify(body) });
+  // ruleid: javascript.ssrf-request-to-fetch
+  await fetch(body.url);
+  // ruleid: javascript.ssrf-request-to-fetch
+  await fetch(new URL(await req.text()));
+  return new Response(copy.url);
 });

@@ -8,6 +8,11 @@
 # The body is also matched lazily (`*?`, was `*`), so each armoured block is
 # its own finding instead of one match running from the first BEGIN to the
 # last END in the file, which no exclusion could then tell apart.
+# Narrowed after Fluenta (2026-10-14): an armour whose whole body is an
+# ellipsis (`...` or `…`), e.g. an input placeholder
+# `'-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----'`, shows the
+# shape of a key and holds no key material; it no longer matches (2 hits in
+# Fluenta). Any body with key characters is still reported.
 rules:
 - id: generic.secrets.private-key
   message: A gitleaks private-key was detected which attempts to identify hard-coded credentials. It is not recommended to store credentials in source-code, as this risks secrets being leaked and used by either an internal or external malicious adversary. It is recommended to use environment variables to securely provide credentials or retrieve credentials from a secure vault or HSM (Hardware Security Module).
@@ -36,3 +41,4 @@ rules:
   patterns:
   - pattern-regex: (?i)-----BEGIN[ A-Z0-9_-]{0,100}PRIVATE KEY( BLOCK)?-----[\s\S-]*?KEY( BLOCK)?----
   - pattern-not-regex: (?i)-----BEGIN[ A-Z0-9_-]{0,100}PRIVATE KEY( BLOCK)?-----(?:\\[rn]|\s)*\$\{[^\n]*?\}(?:\\[rn]|\s)*-----END[ A-Z0-9_-]{0,100}PRIVATE KEY( BLOCK)?-----
+  - pattern-not-regex: (?i)-----BEGIN[ A-Z0-9_-]{0,100}PRIVATE KEY( BLOCK)?-----(?:\\[rn]|\s)*(?:\.{3,}|…)(?:\\[rn]|\s)*-----END[ A-Z0-9_-]{0,100}PRIVATE KEY( BLOCK)?-----

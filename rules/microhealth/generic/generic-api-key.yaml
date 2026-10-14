@@ -15,6 +15,18 @@
 #   variable name, not a value (letters only, so mixed secrets still match);
 # - a documentation placeholder holding a sequential run (`0123456789`,
 #   `123456789`, `abcdefghij`).
+# Narrowed after Fluenta (2026-10-14), three more shapes that are not secrets:
+# - a UUID assigned to a name that says it is an identifier (`*_id`, `*Id`,
+#   `*ID`, `*uuid`, `*guid`): `WHERE api_credential_id = '5aba6a0b-...'` is a
+#   row id (47 hits in Fluenta's SQL migrations). A UUID under any other name
+#   (`token = '739f2cb6-...'`, a share-link capability token) is still reported;
+# - a documentation value truncated with a literal `...`
+#   (`supabase_service_role_key = "eyJhbGciOiJIUzI1NiIs..."` in a
+#   terraform.tfvars.example, 8 hits): an elided example is not the
+#   credential;
+# - a value holding a run of four or more capital X, Y or Z (`ADBE-CC-YYYYY`,
+#   `GH-ENT-ZZZZZ`, 2 hits): a format placeholder (lower-case runs of x were already
+#   exempt).
 # client_secret, api_key, token ... are unchanged.
 rules:
 - id: generic.secrets.generic-api-key
@@ -76,3 +88,7 @@ rules:
   - metavariable-regex:
       metavariable: $CONTENT
       regex: ^(?!(?:Ov23li|Iv23li)[0-9A-Za-z]{14}$|Iv1\.[0-9a-f]{16}$|dGhlIHNhbXBsZSBub25jZQ==$|[a-z]+(?:[A-Z][a-z]+)+$|.*(?:0123456789|123456789|abcdefghij))
+  - pattern-not-regex: \b[\w.]*(?:_id|Id|ID|[_.]?uuid|[_.]?UUID|[_.]?guid|[_.]?GUID)['"]?\s*(?:=|:|:=|=>)\s*['"\x60]?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b
+  - metavariable-regex:
+      metavariable: $CONTENT
+      regex: ^(?!.*\.\.\.$|.*(?:XXXX|YYYY|ZZZZ))
