@@ -33238,7 +33238,7 @@ rules:
   - javascript
   - typescript
   severity: WARNING
-  message: 'dangerouslySetInnerHTML receives markup that was not visibly sanitised. React''s escaping is off for this element, so any script, event handler or javascript: URL in the value runs in the page (XSS). Pass the value through DOMPurify (DOMPurify.sanitize or a project wrapper such as sanitizeSvg / sanitizeHtml) where it is used, or render it as text.'
+  message: 'dangerouslySetInnerHTML receives markup that was not visibly sanitised. React''s escaping is off for this element, so any script, event handler or javascript: URL in the value runs in the page (XSS). Pass the value through DOMPurify (DOMPurify.sanitize or a project wrapper such as sanitizeSvg / sanitizeHtml / markdownToSafeHtml) where it is used, or render it as text.'
   metadata:
     category: security
     subcategory:
@@ -33279,6 +33279,9 @@ rules:
   - pattern-not: '<$EL dangerouslySetInnerHTML={{__html: sanitizeMarkup(...)}} />
 
       '
+  - pattern-not: '<$EL dangerouslySetInnerHTML={{__html: markdownToSafeHtml(...)}} />
+
+      '
   - pattern-not-inside: '$V = DOMPurify.sanitize(...);
 
       ...
@@ -33295,6 +33298,11 @@ rules:
 
       '
   - pattern-not-inside: '$V = sanitizeMarkup(...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = markdownToSafeHtml(...);
 
       ...
 
@@ -33319,6 +33327,11 @@ rules:
       ...
 
       '
+  - pattern-not-inside: '$V = $C ? markdownToSafeHtml(...) : $ALT;
+
+      ...
+
+      '
   - pattern-not-inside: '$V = useMemo(() => DOMPurify.sanitize(...), ...);
 
       ...
@@ -33335,6 +33348,11 @@ rules:
 
       '
   - pattern-not-inside: '$V = useMemo(() => sanitizeMarkup(...), ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => markdownToSafeHtml(...), ...);
 
       ...
 
@@ -33359,6 +33377,11 @@ rules:
       ...
 
       '
+  - pattern-not-inside: '$V = useMemo(() => $C ? markdownToSafeHtml(...) : $ALT, ...);
+
+      ...
+
+      '
   - pattern-not-inside: '$V = useMemo(() => { ... return DOMPurify.sanitize(...); }, ...);
 
       ...
@@ -33375,6 +33398,11 @@ rules:
 
       '
   - pattern-not-inside: '$V = useMemo(() => { ... return sanitizeMarkup(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = useMemo(() => { ... return markdownToSafeHtml(...); }, ...);
 
       ...
 
@@ -33399,6 +33427,11 @@ rules:
       ...
 
       '
+  - pattern-not-inside: '$V = React.useMemo(() => markdownToSafeHtml(...), ...);
+
+      ...
+
+      '
   - pattern-not-inside: '$V = React.useMemo(() => $C ? DOMPurify.sanitize(...) : $ALT, ...);
 
       ...
@@ -33419,6 +33452,11 @@ rules:
       ...
 
       '
+  - pattern-not-inside: '$V = React.useMemo(() => $C ? markdownToSafeHtml(...) : $ALT, ...);
+
+      ...
+
+      '
   - pattern-not-inside: '$V = React.useMemo(() => { ... return DOMPurify.sanitize(...); }, ...);
 
       ...
@@ -33435,6 +33473,11 @@ rules:
 
       '
   - pattern-not-inside: '$V = React.useMemo(() => { ... return sanitizeMarkup(...); }, ...);
+
+      ...
+
+      '
+  - pattern-not-inside: '$V = React.useMemo(() => { ... return markdownToSafeHtml(...); }, ...);
 
       ...
 

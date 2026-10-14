@@ -7442,7 +7442,7 @@
    "upstream_id": "javascript.react-unsanitized-inner-html",
    "path": "rules/microhealth/javascript/react-unsanitized-inner-html.yaml",
    "license": "MIT",
-   "sha256": "be72da12911b8fdd8de59a95125ac4fa61a7cbaa307cbd940bc992ad4a7ac45b",
+   "sha256": "e573d458add4a13f1f881dcbb9c1aee365e46d944041b294dab2e1cb435a5c3a",
    "bundles": [
     "internal",
     "product"
