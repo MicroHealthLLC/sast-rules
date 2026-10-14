@@ -21497,11 +21497,12 @@
    "upstream_id": "formatted-sql-query",
    "path": "upstream/opengrep/python/lang/security/audit/formatted-sql-query.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "713f07b6083bf6e25c63da4dc9c2c78800621a9c51583968e22780ece60e712d",
+   "sha256": "2cf2b819db6b7f62ddba4c35e9955bb34a58335e8549e78b8d3a09317a015a77",
    "bundles": [
     "internal"
    ],
-   "status": "active"
+   "status": "active",
+   "refined": "Reports an f-string SQL statement whose only interpolation is the variable of a loop over a list or tuple of STRING LITERALS written in the same scope, e.g. `for s in [\"cron\", \"vault\"]: cur.execute(f\"DROP SCHEMA IF EXISTS {s} CASCADE\")`. Every value is in the source, so no input reaches the statement; identifiers (roles, schemas, extensions) cannot be bound as parameters. 78 of Fluenta's 200 open alerts were this shape, in its database tooling. Narrowed to exactly that: the interpolations must be bare names that ARE the loop variables (one, or two unpacked from a tuple), and the iterable must be a literal of string literals or 2-tuples of string literals (inline, or assigned to a name the loop iterates). A loop over anything else, a list holding any non-literal element, a second interpolated name, or an expression in the braces is still reported. Known ceiling: the loop variable or the list name being REASSIGNED between the loop header and the execute is not seen."
   },
   "mh.opengrep.python.lang.security.audit.hardcoded-password-default-argument.hardcoded-password-default-argument": {
    "source": "opengrep",
@@ -21904,11 +21905,12 @@
    "upstream_id": "psycopg-sqli",
    "path": "upstream/opengrep/python/lang/security/audit/sqli/psycopg-sqli.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "a42742af157d3fb9b6ca8add42b0519b2fc7cbcff5537ba3702eaee1a5c1db11",
+   "sha256": "6cb757c4760866d7471d8ad40adb0a6a480887688fcb816bd121c7dfee04ea32",
    "bundles": [
     "internal"
    ],
-   "status": "active"
+   "status": "active",
+   "refined": "Reports an f-string SQL statement whose only interpolation is the variable of a loop over a list or tuple of STRING LITERALS written in the same scope, e.g. `for s in [\"cron\", \"vault\"]: cur.execute(f\"DROP SCHEMA IF EXISTS {s} CASCADE\")`. Every value is in the source, so no input reaches the statement; identifiers (roles, schemas, extensions) cannot be bound as parameters. 78 of Fluenta's 200 open alerts were this shape, in its database tooling. Narrowed to exactly that: the interpolations must be bare names that ARE the loop variables (one, or two unpacked from a tuple), and the iterable must be a literal of string literals or 2-tuples of string literals (inline, or assigned to a name the loop iterates). A loop over anything else, a list holding any non-literal element, a second interpolated name, or an expression in the braces is still reported. Known ceiling: the loop variable or the list name being REASSIGNED between the loop header and the execute is not seen."
   },
   "mh.opengrep.python.lang.security.audit.ssl-wrap-socket-is-deprecated.ssl-wrap-socket-is-deprecated": {
    "source": "opengrep",
@@ -22688,12 +22690,12 @@
    "upstream_id": "sqlalchemy-execute-raw-query",
    "path": "upstream/opengrep/python/sqlalchemy/security/sqlalchemy-execute-raw-query.yaml",
    "license": "LGPL-2.1-only+Commons-Clause",
-   "sha256": "6c310d029b063df689278c430de46653551d4a94fad635ea58ee7effd0aa5625",
+   "sha256": "4b96c27575ac17b0707b0bfe842740404a864d07f4720db389b6ad121cb52366",
    "bundles": [
     "internal"
    ],
    "status": "active",
-   "refined": "Its `$SQL.format(...)` and `$SQL + ...` patterns also match psycopg's safe composition API, `cur.execute(sql.SQL(\"DROP SCHEMA IF EXISTS {} CASCADE\").format(sql.Identifier(s)))`, where `format` quotes each sql.Identifier/sql.Literal argument and the template is a constant (22 of 24 hits in Fluenta's database tooling, directly or through an assigned `stmt = pgsql.SQL(...).format(...)`). A LITERAL template passed through any module alias's `.SQL(\"...\")` and composed with `.format` or `+` is no longer reported, executed directly or through the variable it was assigned to. A template built from a variable (`sql.SQL('CREATE ROLE {} ' + opts)`), %-formatting, str.format and f-strings are still reported. Known ceiling: a raw `sql.SQL(variable)` passed as a format ARGUMENT, and a raw execute placed between such an assignment and the execute of that variable, are not told apart from the safe form."
+   "refined": "Its `$SQL.format(...)` and `$SQL + ...` patterns also match psycopg's safe composition API, `cur.execute(sql.SQL(\"DROP SCHEMA IF EXISTS {} CASCADE\").format(sql.Identifier(s)))`, where `format` quotes each sql.Identifier/sql.Literal argument and the template is a constant (22 of 24 hits in Fluenta's database tooling, directly or through an assigned `stmt = pgsql.SQL(...).format(...)`). A LITERAL template passed through any module alias's `.SQL(\"...\")` and composed with `.format` or `+` is no longer reported, executed directly or through the variable it was assigned to. A template built from a variable (`sql.SQL('CREATE ROLE {} ' + opts)`), %-formatting, str.format and f-strings are still reported, except an f-string over a literal loop (see formatted-sql-query). Known ceiling: a raw `sql.SQL(variable)` passed as a format ARGUMENT, and a raw execute placed between such an assignment and the execute of that variable, are not told apart from the safe form."
   },
   "mh.opengrep.python.sqlalchemy.security.sqlalchemy-sql-injection.sqlalchemy-sql-injection": {
    "source": "opengrep",

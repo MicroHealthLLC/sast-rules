@@ -16,10 +16,10 @@ def schema(cur, s, x, opts):
     cur.execute(stmt)
     # ruleid: mh.opengrep.python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
     cur.execute(sql.SQL("CREATE ROLE {} " + opts).format(sql.Identifier(s)))
-    # ruleid: mh.opengrep.python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
+    # ruleid: mh.opengrep.python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query ruleid: mh.opengrep.python.lang.security.audit.formatted-sql-query.formatted-sql-query
     cur.execute("SELECT * FROM t WHERE a = '%s'" % x)
-    # ruleid: mh.opengrep.python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
+    # ruleid: mh.opengrep.python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query ruleid: mh.opengrep.python.lang.security.audit.formatted-sql-query.formatted-sql-query
     cur.execute(f"SELECT * FROM t WHERE a = '{x}'")
     other = "SELECT * FROM t WHERE a = '{}'".format(x)
-    # ruleid: mh.opengrep.python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
+    # ruleid: mh.opengrep.python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query ruleid: mh.opengrep.python.lang.security.audit.formatted-sql-query.formatted-sql-query
     cur.execute(other)

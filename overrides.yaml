@@ -309,6 +309,92 @@ refine:
       - pattern-not: Action = "ecr:GetAuthorizationToken"
       - pattern-not: Action = ["ecr:GetAuthorizationToken"]
       - pattern-not: actions = ["ecr:GetAuthorizationToken"]
+  mh.opengrep.python.lang.security.audit.formatted-sql-query.formatted-sql-query:
+    reason: &sql-literal-loop-reason >-
+      Reports an f-string SQL statement whose only interpolation is the
+      variable of a loop over a list or tuple of STRING LITERALS written in
+      the same scope, e.g. `for s in ["cron", "vault"]: cur.execute(f"DROP
+      SCHEMA IF EXISTS {s} CASCADE")`. Every value is in the source, so no
+      input reaches the statement; identifiers (roles, schemas, extensions)
+      cannot be bound as parameters. 78 of Fluenta's 200 open alerts were this
+      shape, in its database tooling. Narrowed to exactly that: the
+      interpolations must be bare names that ARE the loop variables (one, or
+      two unpacked from a tuple), and the iterable must be a literal of string
+      literals or 2-tuples of string literals (inline, or assigned to a name
+      the loop iterates). A loop over anything else, a list holding any
+      non-literal element, a second interpolated name, or an expression in
+      the braces is still reported. Known ceiling: the loop variable or the
+      list name being REASSIGNED between the loop header and the execute is
+      not seen.
+    add:
+      - &sql-literal-loop-1
+        pattern-not:
+          patterns:
+            - pattern-either:
+                - pattern-inside: |
+                    for $A in $LIST:
+                      ...
+                - pattern-inside: |
+                    $L = $LIST
+                    ...
+                    for $A in $L:
+                      ...
+            - pattern: $X.$M(f"...{$A}...")
+            - pattern: $X.$M($ARG)
+            - metavariable-regex:
+                metavariable: $ARG
+                regex: '^f["''][^{}]*\{\w+\}[^{}]*["'']$'
+            - metavariable-regex:
+                metavariable: $LIST
+                regex: '^[\[(]\s*(?:(?:"[^"\\\n]*"|''[^''\\\n]*'')|\(\s*(?:"[^"\\\n]*"|''[^''\\\n]*'')(?:\s*,\s*(?:"[^"\\\n]*"|''[^''\\\n]*''))*\s*,?\s*\))(?:\s*,\s*(?:(?:"[^"\\\n]*"|''[^''\\\n]*'')|\(\s*(?:"[^"\\\n]*"|''[^''\\\n]*'')(?:\s*,\s*(?:"[^"\\\n]*"|''[^''\\\n]*''))*\s*,?\s*\)))*\s*,?\s*[\])]$'
+      - &sql-literal-loop-2
+        pattern-not:
+          patterns:
+            - pattern-either:
+                - pattern-inside: |
+                    for $A, $B in $LIST:
+                      ...
+                - pattern-inside: |
+                    $L = $LIST
+                    ...
+                    for $A, $B in $L:
+                      ...
+            - pattern-either:
+                - pattern: $X.$M(f"...{$A}...")
+                - pattern: $X.$M(f"...{$B}...")
+            - pattern: $X.$M($ARG)
+            - metavariable-regex:
+                metavariable: $ARG
+                regex: '^f["''][^{}]*\{\w+\}[^{}]*["'']$'
+            - metavariable-regex:
+                metavariable: $LIST
+                regex: '^[\[(]\s*(?:(?:"[^"\\\n]*"|''[^''\\\n]*'')|\(\s*(?:"[^"\\\n]*"|''[^''\\\n]*'')(?:\s*,\s*(?:"[^"\\\n]*"|''[^''\\\n]*''))*\s*,?\s*\))(?:\s*,\s*(?:(?:"[^"\\\n]*"|''[^''\\\n]*'')|\(\s*(?:"[^"\\\n]*"|''[^''\\\n]*'')(?:\s*,\s*(?:"[^"\\\n]*"|''[^''\\\n]*''))*\s*,?\s*\)))*\s*,?\s*[\])]$'
+      - &sql-literal-loop-3
+        pattern-not:
+          patterns:
+            - pattern-either:
+                - pattern-inside: |
+                    for $A, $B in $LIST:
+                      ...
+                - pattern-inside: |
+                    $L = $LIST
+                    ...
+                    for $A, $B in $L:
+                      ...
+            - pattern: $X.$M(f"...{$A}...{$B}...")
+            - pattern: $X.$M($ARG)
+            - metavariable-regex:
+                metavariable: $ARG
+                regex: '^f["''][^{}]*\{\w+\}[^{}]*\{\w+\}[^{}]*["'']$'
+            - metavariable-regex:
+                metavariable: $LIST
+                regex: '^[\[(]\s*(?:(?:"[^"\\\n]*"|''[^''\\\n]*'')|\(\s*(?:"[^"\\\n]*"|''[^''\\\n]*'')(?:\s*,\s*(?:"[^"\\\n]*"|''[^''\\\n]*''))*\s*,?\s*\))(?:\s*,\s*(?:(?:"[^"\\\n]*"|''[^''\\\n]*'')|\(\s*(?:"[^"\\\n]*"|''[^''\\\n]*'')(?:\s*,\s*(?:"[^"\\\n]*"|''[^''\\\n]*''))*\s*,?\s*\)))*\s*,?\s*[\])]$'
+  mh.opengrep.python.lang.security.audit.sqli.psycopg-sqli.psycopg-sqli:
+    reason: *sql-literal-loop-reason
+    add:
+      - *sql-literal-loop-1
+      - *sql-literal-loop-2
+      - *sql-literal-loop-3
   mh.opengrep.python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query:
     reason: >-
       Its `$SQL.format(...)` and `$SQL + ...` patterns also match psycopg's
@@ -321,7 +407,7 @@ refine:
       `+` is no longer reported, executed directly or through the variable it
       was assigned to. A template built from a variable (`sql.SQL('CREATE
       ROLE {} ' + opts)`), %-formatting, str.format and f-strings are still
-      reported. Known ceiling: a raw `sql.SQL(variable)` passed as a format
+      reported, except an f-string over a literal loop (see formatted-sql-query). Known ceiling: a raw `sql.SQL(variable)` passed as a format
       ARGUMENT, and a raw execute placed between such an assignment and the
       execute of that variable, are not told apart from the safe form.
     add:
@@ -335,6 +421,10 @@ refine:
           $QUERY = $M.SQL("...") + ...
           ...
           $CONNECTION.execute($QUERY, ...)
+      # The literal-loop narrowing shared with formatted-sql-query (see its reason).
+      - *sql-literal-loop-1
+      - *sql-literal-loop-2
+      - *sql-literal-loop-3
   mh.opengrep.generic.secrets.gitleaks.hashicorp-tf-password.hashicorp-tf-password:
     reason: >-
       gitleaks scopes this rule to Terraform (.tf, .hcl); ported as a generic
