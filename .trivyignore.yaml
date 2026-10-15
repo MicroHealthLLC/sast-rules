@@ -66,3 +66,11 @@ misconfigurations:
     paths: [tests/refine/run-as-non-root.yaml]
   - id: KSV-0110
     paths: [tests/refine/run-as-non-root.yaml]
+  # tests/refine/ fixture: Azure SQL servers that only carry the password lines
+  # the hashicorp-tf-password refinement is checked against; never deployed.
+  - id: AZU-0022
+    paths: [tests/refine/hashicorp-tf-password.tf]
+  - id: AZU-0026
+    paths: [tests/refine/hashicorp-tf-password.tf]
+  - id: AZU-0027
+    paths: [tests/refine/hashicorp-tf-password.tf]
