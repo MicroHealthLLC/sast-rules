@@ -58,7 +58,8 @@ jobs:
           # "Allow GitHub Actions to create and approve pull requests" off (it
           # would also let Actions approve one), so the token cannot open the
           # pull request: the branch is pushed and the run says where to open
-          # it by hand. It can still refresh one that is already open.
+          # it by hand. It can still refresh one that is already open; CI on
+          # that refresh waits for a maintainer to approve the run.
           HAVE_PAT: ${{ secrets.GH_PAT != '' }}
         run: |
           if [ -z "$(git status --porcelain)" ]; then echo "Nothing new." >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
