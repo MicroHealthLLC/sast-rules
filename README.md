@@ -219,7 +219,13 @@ with its reason, and a rule it narrows carries `refined`, with its reason.
    listed; a new Opengrep release; newer FIPS image digests
    (`fips-images.json`). No update edits `.github/workflows/`: GitHub
    refuses a workflow change pushed with an Actions token, and the job checks
-   for one before it pushes.
+   for one before it pushes. It opens the pull request with the org secret
+   `GH_PAT`; the Actions token may not, because this repository keeps
+   "Allow GitHub Actions to create and approve pull requests" off. Until
+   `GH_PAT` is shared with this repository, the job pushes the
+   `upstream/<kind>` branch, refreshes a pull request that is already open,
+   and otherwise warns with the link to open one by hand. CI on a pull
+   request the job refreshes waits for a maintainer to approve the run.
 2. A MicroHealth maintainer reviews and merges it into `integration`, then
    merges `integration` into `main` by pull request. Every change takes that
    path; nothing is pushed to `main` directly ([`AI_RULES.md`](AI_RULES.md) §1).

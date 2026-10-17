@@ -1,5 +1,5 @@
 {
   "comment": "MicroHealth's FIPS base images, pinned tag@digest. Every container the workflows and scripts build starts FROM one of these, read through scripts/fips-image.sh, which refuses anything but a microhealthllc/fips-* image in MicroHealth's ECR pinned by sha256. The pins live here and not in the workflows so that upstream.yml's daily bump (scripts/fips_bump.py) never edits .github/workflows/, which GitHub does not let an Actions token push.",
-  "python": "295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-python:dev-latest@sha256:16e9201730034850016b8ae0ae1127a33d8733dcb8faaad767762a3581b95c02",
-  "go": "295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-go:dev-latest@sha256:ab592afbcc7cce458a52e2ab1960be7b354c3eba0200217cb152d0f6daa372a5"
+  "python": "295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-python:dev-latest@sha256:d4d2217686427f46f34d80f468c8f08c4a62818708329f38814be92cf40df380",
+  "go": "295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc/fips-go:dev-latest@sha256:d632072a510af79a6ea2bc55a464159254bd9632ad86ed0e7016cf9c3ddbc57d"
 }
