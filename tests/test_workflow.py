@@ -13,7 +13,10 @@ the scan guarantees is decided here, so it is tested here:
   permissions are explicit, and nothing runs on pull_request_target;
 * every image is built FROM a FIPS base pinned by digest in fips-images.json,
   never written into a workflow (upstream.yml's daily bump pushes with an
-  Actions token, which GitHub refuses for .github/workflows/).
+  Actions token, which GitHub refuses for .github/workflows/);
+* without GH_PAT, upstream.yml pushes its update branch and says where to
+  open the pull request, instead of failing on one the Actions token may not
+  create.
 """
 
 from __future__ import annotations
@@ -129,6 +132,60 @@ class SharedWorkflowTests(unittest.TestCase):
         bump = (ROOT / "scripts" / "fips_bump.py").read_text()
         self.assertIn('ROOT / "fips-images.json"', bump)
         self.assertNotIn("rglob", bump)
+
+    def run_upstream_pr_step(self, have_pat: str, pr_state: str) -> tuple[subprocess.CompletedProcess, str, str]:
+        """Run upstream.yml's pull-request step in a scratch clone with a fake gh."""
+        step = steps("upstream.yml")["Open or refresh the pull request"]
+        script = step["run"].replace("${{ matrix.kind }}", "engine")
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp)
+        git = lambda *a, cwd=tmp / "work": subprocess.run(["git", *a], cwd=cwd, check=True, capture_output=True)
+        git("init", "-q", "--bare", str(tmp / "origin.git"), cwd=tmp)
+        git("init", "-q", "-b", "integration", str(tmp / "work"), cwd=tmp)
+        git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "base")
+        git("remote", "add", "origin", str(tmp / "origin.git"))
+        (tmp / "work" / "engine.json").write_text("{}\n")
+        (tmp / "bin").mkdir()
+        gh = tmp / "bin" / "gh"
+        gh.write_text(f"""#!/bin/sh
+echo "$*" >> {tmp}/gh.log
+case "$1 $2" in
+  "pr view") [ -n "{pr_state}" ] && echo "{pr_state}" ;;
+  "pr create") echo "GraphQL: GitHub Actions is not permitted to create or approve pull requests" >&2; exit 1 ;;
+esac
+""")
+        gh.chmod(0o755)
+        (tmp / "body.md").write_text("Opengrep 1.31.0\n")
+        (tmp / "summary.md").touch()
+        env = {"PATH": f"{tmp}/bin:/usr/bin:/bin", "HOME": str(tmp), "HAVE_PAT": have_pat,
+               "RUNNER_TEMP": str(tmp), "GITHUB_STEP_SUMMARY": str(tmp / "summary.md"),
+               "GITHUB_SERVER_URL": "https://github.com", "GITHUB_REPOSITORY": "MicroHealthLLC/sast-rules"}
+        res = subprocess.run(["bash", "-e", "-c", script], cwd=tmp / "work", env=env, capture_output=True, text=True)
+        log = (tmp / "gh.log").read_text() if (tmp / "gh.log").exists() else ""
+        return res, log, (tmp / "summary.md").read_text()
+
+    def test_upstream_without_gh_pat_pushes_and_points_at_the_pull_request(self) -> None:
+        res, log, summary = self.run_upstream_pr_step("false", "")
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertNotIn("pr create", log)
+        url = "https://github.com/MicroHealthLLC/sast-rules/compare/integration...upstream/engine?expand=1"
+        self.assertIn(f"::warning title=Pull request not opened::", res.stdout)
+        self.assertIn(url, res.stdout)
+        self.assertIn(url, summary)
+        self.assertIn("Opengrep 1.31.0", summary)
+
+    def test_upstream_with_gh_pat_opens_the_pull_request_against_integration(self) -> None:
+        res, log, _ = self.run_upstream_pr_step("true", "")
+        self.assertIn("pr create --base integration --head upstream/engine", log)
+        self.assertNotEqual(res.returncode, 0)  # the fake gh refuses, as GitHub does: a PAT that fails still fails
+
+    def test_upstream_refreshes_an_open_pull_request_without_gh_pat(self) -> None:
+        res, log, _ = self.run_upstream_pr_step("false", "OPEN")
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("pr edit upstream/engine --body-file", log)
+        self.assertNotIn("pr create", log)
+        self.assertNotIn("::warning", res.stdout)
+
 
     def test_fips_images_are_pinned_and_checked(self) -> None:
         images = json.loads((ROOT / "fips-images.json").read_text())

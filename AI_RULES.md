@@ -108,7 +108,10 @@ PR until it is green. Never report "done" on an unverified push.
 - Subjects say what changed in plain words ("Narrow nine rules that reported
   false positives on Fluenta"); the body lists each rule and why.
 - `upstream.yml` (daily) opens update PRs; they target `integration` like
-  everything else. It pushes with an Actions token, which GitHub never lets
+  everything else. It opens them with `GH_PAT`; without it the run pushes
+  `upstream/<kind>` and warns, and a maintainer opens the PR by hand. Never
+  turn on "Allow GitHub Actions to create and approve pull requests" to get
+  around that: it would also let Actions approve PRs. It pushes with an Actions token, which GitHub never lets
   change `.github/workflows/`: anything a bot moves (FIPS image pins:
   `fips-images.json`) lives outside the workflow files, never inside them. `release.yml` tags `vYYYY.M.N` on `main`.
 

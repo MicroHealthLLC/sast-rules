@@ -53,6 +53,13 @@ jobs:
       - name: Open or refresh the pull request
         env:
           GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+          # GH_PAT is an org secret shared with each repository. Without it
+          # the job has only the Actions token, and this repository keeps
+          # "Allow GitHub Actions to create and approve pull requests" off (it
+          # would also let Actions approve one), so the token cannot open the
+          # pull request: the branch is pushed and the run says where to open
+          # it by hand. It can still refresh one that is already open.
+          HAVE_PAT: ${{ secrets.GH_PAT != '' }}
         run: |
           if [ -z "$(git status --porcelain)" ]; then echo "Nothing new." >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
           branch="upstream/${{ matrix.kind }}"
@@ -70,6 +77,10 @@ jobs:
           cat "$RUNNER_TEMP/body.md" >> "$GITHUB_STEP_SUMMARY"
           if [ "$(gh pr view "$branch" --json state -q .state 2>/dev/null)" = OPEN ]; then
             gh pr edit "$branch" --body-file "$RUNNER_TEMP/body.md"
-          else
+          elif [ "$HAVE_PAT" = true ]; then
             gh pr create --base integration --head "$branch" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          else
+            url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/integration...${branch}?expand=1"
+            echo "::warning title=Pull request not opened::GH_PAT is not shared with this repository and the Actions token may not open a pull request. ${branch} is pushed; open it against integration: ${url}"
+            printf '\n**Pull request not opened:** GH_PAT is not shared with this repository. `%s` is pushed; [open it against integration](%s).\n' "$branch" "$url" >> "$GITHUB_STEP_SUMMARY"
           fi
