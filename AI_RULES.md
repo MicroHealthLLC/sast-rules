@@ -26,19 +26,25 @@ change that touches a workflow, `engine.json`, `fips-images.json`,
 Report: files changed, the §4 commands run and their actual result, anything
 skipped and why, and every push or PR made (branch and commit).
 
-## §1 Branching — integration first, then a PR to main. ALWAYS.
+## §1 Branching — integration first, then main. ALWAYS.
 
 - `integration` is the default branch and the working branch. Every change is
   committed to `integration` and pushed to `origin integration` first.
-- `main` is the release branch. It changes ONLY by a pull request
-  `integration` → `main`. Never push to `main`, never open a PR from any other
-  branch to `main`.
+- `main` is the release branch. It changes ONLY by merging a validated
+  `integration` commit: `ci.yml`'s `promote-main` job does it automatically
+  (no PR) when the build check, the rule tests AND the end-to-end scan all
+  passed on a push to `integration` (`scripts/promote_main.sh`, pushed with
+  this repository's write deploy key `PROMOTE_DEPLOY_KEY`; owner's decision
+  2026-10-18), or a human merges a PR
+  `integration` → `main`. Never push anything else to `main`, never promote
+  from a red or partial run, never open a PR from any other branch to `main`.
 - A side branch (`rule-fp/<repo>-<date>`, a bot's update branch) is merged
   into `integration` (PR base `integration`), never into `main`. If one was
   opened against `main`, retarget it to `integration`.
 - Keep the two in sync. Before starting work, fast-forward `integration` to
-  `origin/integration`; after a PR to `main` merges, fast-forward
-  `integration` to `main` (the merge commit) and push it, so `main` never has
+  `origin/integration`; after a merge to `main`, fast-forward
+  `integration` to `main` (the merge commit) and push it (`promote-main` does
+  this itself; a push it makes is not re-run, main's CI validates it), so `main` never has
   commits `integration` lacks. Check with
   `git log --oneline origin/integration..origin/main` (must be empty).
 - Resolve conflicts on the side branch by merging `origin/integration` into
@@ -62,7 +68,12 @@ skipped and why, and every push or PR made (branch and commit).
 - No secrets in any file. AWS access is OIDC only (`secrets.AWS_ROLE`).
   GitHub automation uses the org secret `GH_PAT`, shared with this repository
   from the organization (as for every other MicroHealth repository); never
-  copy a token into a repository secret, a file or a log.
+  copy a token into a repository secret, a file or a log. The one repository
+  secret besides `AWS_ROLE` is `PROMOTE_DEPLOY_KEY`: the private half of this
+  repository's single write deploy key ("promote-main"), used only by
+  `ci.yml`'s `promote-main` job. The `main` and `integration` rulesets let only
+  repository admins and deploy keys past their required review; never add
+  another deploy key, and never let a fork-triggered job see the key.
 
 ## §3 Changing rules — false positives
 
