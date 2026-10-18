@@ -96,8 +96,10 @@ jobs:
       zap_target: ""
     secrets: inherit
 
-  # Integration only, and only when every job above passed. Pushes with
-  # GH_PAT (main is protected; an Actions-token push would start no release).
+  # Integration only, and only when every job above passed. Pushes with this
+  # repository's write deploy key (PROMOTE_DEPLOY_KEY): the only actor besides
+  # admins that the main and integration rulesets let past their required
+  # review, and a push that starts the release. Fork runs never receive it.
   promote-main:
     name: Promote integration to main
     needs: [changes, build, self-scan]
@@ -116,19 +118,19 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Require GH_PAT
+      - name: Require the promotion deploy key
         env:
-          HAVE_PAT: ${{ secrets.GH_PAT != '' }}
+          HAVE_KEY: ${{ secrets.PROMOTE_DEPLOY_KEY != '' }}
         run: |
-          if [ "$HAVE_PAT" != true ]; then
-            echo "::error::GH_PAT is not shared with this repository; main is protected, so the validated commit cannot be promoted"
+          if [ "$HAVE_KEY" != true ]; then
+            echo "::error::PROMOTE_DEPLOY_KEY is not set; main is protected, so the validated commit cannot be promoted"
             exit 1
           fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
-          token: ${{ secrets.GH_PAT }}
+          ssh-key: ${{ secrets.PROMOTE_DEPLOY_KEY }}
       - name: Merge into main and push
         env:
           PROMOTE_NOTE: "Build check, rule tests and the end-to-end scan passed in ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

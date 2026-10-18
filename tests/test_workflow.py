@@ -219,6 +219,10 @@ esac
                        "needs.build.result == 'success'", "needs.self-scan.result == 'success'"):
             self.assertIn(clause, job["if"])
         self.assertNotIn("always()", job["if"])
+        # Pushed with this repository's deploy key, never a personal token.
+        checkout = next(s for s in job["steps"] if s.get("uses", "").startswith("actions/checkout@"))
+        self.assertEqual(checkout["with"]["ssh-key"], "${{ secrets.PROMOTE_DEPLOY_KEY }}")
+        self.assertNotIn("GH_PAT", json.dumps(job))
         run = job["steps"][-1]["run"]
         self.assertIn("set -euo pipefail", run)
         self.assertIn('scripts/promote_main.sh "$GITHUB_SHA"', run)

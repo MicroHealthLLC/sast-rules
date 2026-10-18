@@ -34,7 +34,8 @@ skipped and why, and every push or PR made (branch and commit).
   `integration` commit: `ci.yml`'s `promote-main` job does it automatically
   (no PR) when the build check, the rule tests AND the end-to-end scan all
   passed on a push to `integration` (`scripts/promote_main.sh`, pushed with
-  `GH_PAT`; owner's decision 2026-10-18), or a human merges a PR
+  this repository's write deploy key `PROMOTE_DEPLOY_KEY`; owner's decision
+  2026-10-18), or a human merges a PR
   `integration` → `main`. Never push anything else to `main`, never promote
   from a red or partial run, never open a PR from any other branch to `main`.
 - A side branch (`rule-fp/<repo>-<date>`, a bot's update branch) is merged
@@ -67,7 +68,12 @@ skipped and why, and every push or PR made (branch and commit).
 - No secrets in any file. AWS access is OIDC only (`secrets.AWS_ROLE`).
   GitHub automation uses the org secret `GH_PAT`, shared with this repository
   from the organization (as for every other MicroHealth repository); never
-  copy a token into a repository secret, a file or a log.
+  copy a token into a repository secret, a file or a log. The one repository
+  secret besides `AWS_ROLE` is `PROMOTE_DEPLOY_KEY`: the private half of this
+  repository's single write deploy key ("promote-main"), used only by
+  `ci.yml`'s `promote-main` job. The `main` and `integration` rulesets let only
+  repository admins and deploy keys past their required review; never add
+  another deploy key, and never let a fork-triggered job see the key.
 
 ## §3 Changing rules — false positives
 

@@ -230,7 +230,7 @@ with its reason, and a rule it narrows carries `refined`, with its reason.
    runs on that push (build check, rule tests, the end-to-end scan); when all
    of it passes, its `promote-main` job merges the commit into `main` and
    fast-forwards `integration` to that merge (`scripts/promote_main.sh`,
-   pushed with `GH_PAT`). Nothing reaches `main` from a red run, and nothing
+   pushed with this repository's write deploy key, `PROMOTE_DEPLOY_KEY`). Nothing reaches `main` from a red run, and nothing
    but a validated `integration` commit reaches it at all
    ([`AI_RULES.md`](AI_RULES.md) §1).
 3. `release.yml` tags `vYYYY.M.N` and publishes the bundles, `SHA256SUMS`
@@ -251,7 +251,12 @@ down:
   to collaborators.
 - `main` and the release tags are protected: no force pushes, no deletion, and
   changes to `main` come only from `integration`: a reviewed merge into
-  `integration`, then CI's promotion once every check on it passed.
+  `integration`, then CI's promotion once every check on it passed. The
+  `main` and `integration` rulesets let only repository admins and deploy keys
+  past their required review; the repository has one deploy key
+  ("promote-main"), whose private half only the promotion job receives.
+  Rotate it by adding a new write deploy key, storing it with
+  `gh secret set PROMOTE_DEPLOY_KEY`, and deleting the old one.
 - Workflows from forks need a maintainer's approval before they run, and
   never receive secrets. No workflow uses `pull_request_target`.
 - The default `GITHUB_TOKEN` is read-only; each job asks for what it needs.
