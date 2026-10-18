@@ -207,6 +207,25 @@ esac
                 self.assertNotEqual(res.returncode, 0, kind)
                 self.assertEqual(res.stdout, "", kind)
 
+    def test_main_is_promoted_only_from_a_green_integration_run(self) -> None:
+        # Owner's decision 2026-10-18: a push to integration on which the build
+        # check, the rule tests and the end-to-end scan all pass is merged into
+        # main; nothing else is.
+        ci = load("ci.yml")
+        self.assertIn("integration", ci["on"]["push"]["branches"])
+        job = ci["jobs"]["promote-main"]
+        self.assertEqual(set(job["needs"]), {"changes", "build", "self-scan"})
+        for clause in ("github.ref == 'refs/heads/integration'", "github.event_name != 'pull_request'",
+                       "needs.build.result == 'success'", "needs.self-scan.result == 'success'"):
+            self.assertIn(clause, job["if"])
+        self.assertNotIn("always()", job["if"])
+        run = job["steps"][-1]["run"]
+        self.assertIn("set -euo pipefail", run)
+        self.assertIn('scripts/promote_main.sh "$GITHUB_SHA"', run)
+        script = (ROOT / "scripts" / "promote_main.sh").read_text()
+        self.assertNotIn("--force", script)
+        self.assertNotRegex(script, r"push\s[^\n]*\+")
+
     def test_network_reaches_only_github_gitlab_and_aws(self) -> None:
         # Reports go to GitHub (code scanning, artifacts) and AWS (S3, ECR) and
         # nowhere else; downloads come from GitHub, and upstream rules are

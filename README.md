@@ -226,9 +226,13 @@ with its reason, and a rule it narrows carries `refined`, with its reason.
    `upstream/<kind>` branch, refreshes a pull request that is already open,
    and otherwise warns with the link to open one by hand. CI on a pull
    request the job refreshes waits for a maintainer to approve the run.
-2. A MicroHealth maintainer reviews and merges it into `integration`, then
-   merges `integration` into `main` by pull request. Every change takes that
-   path; nothing is pushed to `main` directly ([`AI_RULES.md`](AI_RULES.md) §1).
+2. A MicroHealth maintainer reviews and merges it into `integration`. CI
+   runs on that push (build check, rule tests, the end-to-end scan); when all
+   of it passes, its `promote-main` job merges the commit into `main` and
+   fast-forwards `integration` to that merge (`scripts/promote_main.sh`,
+   pushed with `GH_PAT`). Nothing reaches `main` from a red run, and nothing
+   but a validated `integration` commit reaches it at all
+   ([`AI_RULES.md`](AI_RULES.md) §1).
 3. `release.yml` tags `vYYYY.M.N` and publishes the bundles, `SHA256SUMS`
    and `NOTICE.md`. Every push to `main` that changes what a scan runs is a
    release, so `main` is always the newest one.
@@ -246,7 +250,8 @@ down:
 - Issues, discussions, the wiki and projects are off; interactions are limited
   to collaborators.
 - `main` and the release tags are protected: no force pushes, no deletion, and
-  changes to `main` go through a reviewed pull request from `integration`.
+  changes to `main` come only from `integration`: a reviewed merge into
+  `integration`, then CI's promotion once every check on it passed.
 - Workflows from forks need a maintainer's approval before they run, and
   never receive secrets. No workflow uses `pull_request_target`.
 - The default `GITHUB_TOKEN` is read-only; each job asks for what it needs.
