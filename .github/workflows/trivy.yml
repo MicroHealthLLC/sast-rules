@@ -235,11 +235,35 @@ jobs:
           SCRATCH: ${{ steps.disk.outputs.scratch }}
         run: |
           out="$RUNNER_TEMP/out"; mkdir -p "$out"
-          common=(--cache-dir /cache --skip-version-check --no-progress --timeout 40m)
           envf=(); [ -s "$RUNNER_TEMP/img/env" ] && envf=(--env-file "$RUNNER_TEMP/img/env")
           run() { docker run --rm -e HOME=/tmp -e TMPDIR=/scratch "${envf[@]}" -v "$PWD/src:/src" \
                     -v "$SCRATCH/tmp:/scratch" \
                     -v "$out:/out" -v "$SCRATCH/cache:/cache" -w /src sast-trivy:fips trivy "$@"; }
+          # The vulnerability databases, fetched once before any scan. Trivy's
+          # default mirror.gcr.io is shared by every runner on GitHub and
+          # answers TOOMANYREQUESTS / UNAUTHORIZED when its quota is spent. Each
+          # database is tried from every official copy in turn (Trivy's own
+          # --db-repository fallback skips an error it does not class as
+          # temporary), and the round is retried with a backoff. The scans
+          # then only read the cache.
+          fetch() { # fetch <flag> <repository flag> <tag> — mirror.gcr.io, ghcr.io, public.ecr.aws
+            local name="$3"
+            for repo in "mirror.gcr.io/aquasec/${name}" "ghcr.io/aquasecurity/${name}" "public.ecr.aws/aquasecurity/${name}"; do
+              run image --cache-dir /cache --skip-version-check --no-progress "$2" "$repo" "$1" && return 0
+              echo "::warning::Trivy could not download ${repo}"
+            done
+            return 1
+          }
+          for try in 1 2 3 4; do
+            fetch --download-db-only --db-repository trivy-db:2 \
+              && fetch --download-java-db-only --java-db-repository trivy-java-db:1 \
+              && break
+            [ "$try" = 4 ] && { echo "::error::Trivy could not download its vulnerability databases from any mirror"; exit 1; }
+            echo "::warning::Trivy database download failed (round ${try}); retrying in $((try * 30))s"
+            sleep $((try * 30))
+          done
+          common=(--cache-dir /cache --skip-version-check --no-progress --timeout 40m
+                  --skip-db-update --skip-java-db-update)
           if [ "$KIND" = repo ]; then
             # .trivyignore.yaml can scope an ignore to paths; .trivyignore only to ids.
             ignore=()
