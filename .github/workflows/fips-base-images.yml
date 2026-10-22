@@ -1,0 +1,125 @@
+name: FIPS base images
+# No release of this repository may run on a stale MicroHealth FIPS image
+# (owner's order, 2026-10-22). fips-container rebuilds its images nightly and
+# on every release, so the tags in fips-images.json move and their digests go
+# stale. This job resolves every pinned tag to its current digest
+# (scripts/fips_bump.py, `aws ecr batch-get-image` over OIDC), opens or
+# refreshes ONE pull request into integration that moves every pin together,
+# and MERGES it at once with GH_PAT (`gh pr merge --merge --admin
+# --delete-branch`): no human step. The merge is a push to integration made
+# with GH_PAT, so ci.yml runs on it and, when the build check, the rule tests
+# and the end-to-end scan pass, promote-main merges it into main, which is the
+# release every MicroHealth repository runs. A merge that fails turns this run
+# red; the pull request is never left open silently. Until the bump lands,
+# ci.yml and release.yml refuse every run on integration and main (`--check`).
+#
+# MicroHealthLLC/fips-container dispatches this workflow on integration after
+# every release it ships (`gh workflow run fips-base-images.yml --ref
+# integration`, scripts/ci/downstream-repos.txt there); the weekly schedule is
+# the safety net.
+#
+# Requires: secrets.AWS_ROLE (OIDC, ECR pull) and the org secret GH_PAT (an
+# admin's token: --admin passes the integration ruleset, and a push made with
+# GITHUB_TOKEN would start no CI). Without GH_PAT the run fails red.
+on:
+  schedule:
+    # Wednesdays 11:30 UTC, after fips-container's nightly (06:00) and daily
+    # (09:00) runs have pushed that day's images.
+    - cron: "30 11 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fips-base-images
+  cancel-in-progress: false
+
+env:
+  BRANCH: deps/fips-base-images
+
+jobs:
+  bump:
+    name: Bump FIPS image digests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # writes go through GH_PAT
+      id-token: write # OIDC for the ECR digest lookup and the tools image pull
+    steps:
+      - name: Require GH_PAT
+        env:
+          HAVE_PAT: ${{ secrets.GH_PAT != '' }}
+        run: |
+          if [ "$HAVE_PAT" != true ]; then
+            echo "::error::GH_PAT is not shared with this repository; the FIPS bump cannot be opened and merged, so integration and main stay stale and their CI stays red"
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          ref: integration
+          fetch-depth: 0
+          # GH_PAT, not GITHUB_TOKEN: a push or merge made with GITHUB_TOKEN
+          # starts no workflow, and the merge must run ci.yml (and promote).
+          token: ${{ secrets.GH_PAT }}
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: SastRulesFipsBump
+          aws-region: ${{ vars.AWS_REGION_EAST_1 }}
+      - uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # aws-actions/amazon-ecr-login v2
+        with:
+          registries: "295669632222"
+      - name: Resolve every pinned tag to its current digest
+        run: scripts/ci-run.sh python3 scripts/fips_bump.py --summary "$RUNNER_TEMP/bump.md"
+      - name: Open or refresh the grouped pull request, then merge it
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Every FIPS image pin is current." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if git status --porcelain | grep -q ' \.github/workflows/'; then
+            echo "::error::The FIPS bump changes workflow files; pins live in fips-images.json only."
+            git status --porcelain; exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git commit -qam "chore(fips): bump FIPS images to the newest digests"
+          git push -f origin "$BRANCH"
+          {
+            echo "## Bump FIPS images"
+            echo
+            echo "Moves every MicroHealth FIPS image pin to the newest digest of its tag (fips-container rebuilds). All pins move together."
+            echo
+            cat "$RUNNER_TEMP/bump.md"
+          } > "$RUNNER_TEMP/body.md"
+          cat "$RUNNER_TEMP/body.md" >> "$GITHUB_STEP_SUMMARY"
+          if gh pr view "$BRANCH" --repo "$GITHUB_REPOSITORY" --json state --jq .state 2>/dev/null | grep -qx OPEN; then
+            gh pr edit "$BRANCH" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base integration --head "$BRANCH" \
+              --title "chore(fips): bump FIPS images" --body-file "$RUNNER_TEMP/body.md"
+          fi
+          # Merge at once. A PR just created can report its mergeability as
+          # UNKNOWN for a few seconds, so retry briefly; anything else that
+          # stops the merge fails this run.
+          pr="$(gh pr view "$BRANCH" --repo "$GITHUB_REPOSITORY" --json number,state --jq 'select(.state == "OPEN") | .number')"
+          [ -n "$pr" ] || { echo "::error::no open pull request for $BRANCH"; exit 1; }
+          for attempt in 1 2 3 4 5 6; do
+            if gh pr merge "$pr" --repo "$GITHUB_REPOSITORY" --merge --admin --delete-branch; then
+              break
+            fi
+            echo "::warning::merge attempt $attempt failed; retrying in 10s"
+            sleep 10
+          done
+          state="$(gh pr view "$pr" --repo "$GITHUB_REPOSITORY" --json state --jq .state 2>/dev/null || true)"
+          if [ "$state" != MERGED ]; then
+            echo "::error::could not merge the FIPS bump pull request #$pr ($BRANCH, state: ${state:-unknown})"
+            echo "**FAILED: the FIPS bump pull request #$pr could not be merged.**" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "Merged into integration: #$pr. ci.yml validates it and promotes it to main." >> "$GITHUB_STEP_SUMMARY"

@@ -212,8 +212,9 @@ with its reason, and a rule it narrows carries `refined`, with its reason.
 
 1. `upstream.yml` (daily) opens one pull request per kind of update: a new
    GitLab release, with the rules added, changed, retired and relicensed
-   listed; a new Opengrep release; newer FIPS image digests
-   (`fips-images.json`). No update edits `.github/workflows/`: GitHub
+   listed; a new Opengrep release. (FIPS image digests are moved by
+   `fips-base-images.yml`, which merges its own pull request; see
+   [FIPS](#fips).) No update edits `.github/workflows/`: GitHub
    refuses a workflow change pushed with an Actions token, and the job checks
    for one before it pushes. It opens the pull request with the org secret
    `GH_PAT`; the Actions token may not, because this repository keeps
@@ -275,9 +276,28 @@ Every image the workflows and scripts build starts FROM a FIPS base pinned by
 tag and digest in [`fips-images.json`](fips-images.json), read through
 `scripts/fips-image.sh`, which refuses anything but a `microhealthllc/fips-*`
 image in MicroHealth's ECR pinned by `sha256`. The pins are kept out of the
-workflow files on purpose: `upstream.yml` moves them daily
-(`scripts/fips_bump.py`) and pushes with an Actions token, and GitHub never
-lets such a token change `.github/workflows/`.
+workflow files on purpose: no bot edits `.github/workflows/`.
+
+**No release ever carries a stale FIPS image** (owner's order, 2026-10-22):
+
+- `fips-base-images.yml` resolves every `microhealthllc/fips-*` pin in the
+  tracked files to its tag's current digest (`scripts/fips_bump.py`, `aws ecr
+  batch-get-image` over OIDC), opens ONE pull request into `integration` and
+  merges it at once with `GH_PAT` (`gh pr merge --merge --admin
+  --delete-branch`, brief retries; a merge that fails turns the run red). It
+  runs weekly, by hand, when fips-container dispatches it after a release, and
+  whenever CI finds a stale pin. The merge is a push to `integration`, so CI
+  validates it and `promote-main` carries it to `main` with no human step.
+- `ci.yml` (`fips-fresh`) runs `scripts/fips_bump.py --check` before anything
+  else on every push to `integration` and `main` and every pull request into
+  `main`; `release.yml` runs it before tagging. A stale or unresolvable pin
+  turns the run red ("the FIPS bump is pending — wait for fips-base-images.yml
+  to merge (or dispatch it), then promote integration again"), so nothing is
+  promoted or released on it.
+- `main` receives `integration` only: a pull request into `main` from any
+  other branch or repository fails `main-from-integration`, and every
+  non-merge commit pushed to `main` must already be on `integration`
+  (`scripts/require-from-integration.sh`).
 
 **Trivy** is built from source once per version (`engines.yml`) on
 MicroHealth's FIPS Go image with the Go Cryptographic Module (`GOFIPS140`,

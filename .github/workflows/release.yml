@@ -1,6 +1,6 @@
 name: Release
-# Every push to main that changes what a scan runs (a bundle, the engine pin or
-# the shared workflow) becomes a release `vYYYY.MM.N`, with the bundles,
+# Every push to main that changes what a scan runs (a bundle, the engine pin,
+# a FIPS image pin or the shared workflow) becomes a release `vYYYY.MM.N`, with the bundles,
 # SHA256SUMS and NOTICE attached. Consumers call the scan `@main`, so their
 # next run takes it; a consumer that still pins a commit gets a pull request
 # (consumers.yaml) moving its pin.
@@ -10,6 +10,7 @@ on:
     paths:
       - "dist/**"
       - "engine.json"
+      - "fips-images.json"
       - ".github/workflows/opengrep.yml"
       - ".github/workflows/trivy.yml"
       - ".github/workflows/zap.yml"
@@ -26,7 +27,31 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # No release carries a stale MicroHealth FIPS image (owner's order,
+  # 2026-10-22): the pins in fips-images.json must be the newest before a tag.
+  fips-fresh:
+    name: FIPS image pins are the newest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # ECR digest lookup and the tools image pull
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: SastRulesReleaseFipsFresh
+          aws-region: ${{ vars.AWS_REGION_EAST_1 }}
+      - uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # aws-actions/amazon-ecr-login v2
+        with:
+          registries: "295669632222"
+      - name: Every FIPS pin is the newest digest of its tag
+        run: scripts/ci-run.sh python3 scripts/fips_bump.py --check
+
   release:
+    needs: fips-fresh
     runs-on: ubuntu-latest
     permissions:
       contents: write
