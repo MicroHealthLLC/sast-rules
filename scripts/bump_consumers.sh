@@ -30,7 +30,7 @@ while read -r repo base; do
       commit -qam "chore(sast): sast-rules ${tag}" &&
     # gh clones over https but git has no credential for it on a runner:
     # hand git gh's token (GH_TOKEN) for this push only.
-    git -c credential.helper= -c 'credential.https://github.com.helper=!gh auth git-credential' \
+    git -c credential.helper= -c 'credential.helper=!gh auth git-credential' \
       push -qf origin "$branch" &&
     if [ "$(gh pr view "$branch" --json state -q .state 2>/dev/null)" != OPEN ]; then
       gh pr create --base "$base" --head "$branch" --title "chore(sast): sast-rules ${tag}" \
