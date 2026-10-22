@@ -28,7 +28,10 @@ while read -r repo base; do
     git checkout -qB "$branch" &&
     git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
       commit -qam "chore(sast): sast-rules ${tag}" &&
-    git push -qf origin "$branch" &&
+    # gh clones over https but git has no credential for it on a runner:
+    # hand git gh's token (GH_TOKEN) for this push only.
+    git -c credential.helper= -c 'credential.helper=!gh auth git-credential' \
+      push -qf origin "$branch" &&
     if [ "$(gh pr view "$branch" --json state -q .state 2>/dev/null)" != OPEN ]; then
       gh pr create --base "$base" --head "$branch" --title "chore(sast): sast-rules ${tag}" \
         --body "Moves the sast-rules pins to ${tag} (\`${sha}\`). What changed in the rules — added, changed, retired: https://github.com/MicroHealthLLC/sast-rules/releases/tag/${tag}" >/dev/null
