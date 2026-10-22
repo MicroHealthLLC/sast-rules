@@ -90,12 +90,15 @@ class SharedWorkflowTests(unittest.TestCase):
         for name in ("sast", "trivy", "zap"):
             self.assertTrue(jobs[name]["uses"].startswith("./.github/workflows/"), name)
 
-    def test_no_partial_scan_feeds_ingest(self) -> None:
-        dest = (WORKFLOWS.parent.parent / "scripts" / "destination.sh").read_text()
-        self.assertIn("pull_request", dest)
-        self.assertIn("_branch-scans/branch=", dest)
-        for name in ("trivy.yml", "zap.yml", "security-scan.yml"):
-            self.assertIn("steps.dest.outputs.upload == 'true'", (WORKFLOWS / name).read_text(), name)
+    def test_no_report_is_ever_uploaded_to_s3(self) -> None:
+        # Tueri Core scans natively and no longer ingests CI reports, and the
+        # upload broke its CI. Reports are run artifacts and SARIF only: no
+        # bucket input, no bucket variable, no `s3 cp`, no s3:// key, anywhere.
+        root = WORKFLOWS.parents[1]
+        for path in [*WORKFLOWS.glob("*.yml"), *(p for p in (root / "scripts").glob("*") if p.is_file())]:
+            text = path.read_text()
+            for banned in ("s3_bucket", "S3_BUCKET", "s3://", "s3 cp", "s3 sync", "s3api"):
+                self.assertNotIn(banned, text, f"{path.relative_to(root)}: {banned}")
 
     def test_actions_are_pinned_and_permissions_explicit(self) -> None:
         for path in WORKFLOWS.glob("*.yml"):
@@ -231,8 +234,8 @@ esac
         self.assertNotRegex(script, r"push\s[^\n]*\+")
 
     def test_network_reaches_only_github_gitlab_and_aws(self) -> None:
-        # Reports go to GitHub (code scanning, artifacts) and AWS (S3, ECR) and
-        # nowhere else; downloads come from GitHub, and upstream rules are
+        # Reports go to GitHub (code scanning, artifacts) and nowhere else; AWS
+        # is reached only for the ECR image pull; downloads come from GitHub, and upstream rules are
         # cloned read-only from GitHub and GitLab. A new host fails here first.
         allowed = {"github.com", "api.github.com", "raw.githubusercontent.com", "gitlab.com"}
         root = WORKFLOWS.parents[1]

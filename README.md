@@ -52,7 +52,7 @@ switch one off with its input.
 name: Security scan
 on:
   push:
-    branches: [integration]     # the default branch: reports feed Tueri Core
+    branches: [integration]     # the default branch
   pull_request:                 # a pull request: a check, reports stay artifacts
   schedule:
     - cron: "30 2 * * *"
@@ -65,7 +65,6 @@ jobs:
     uses: MicroHealthLLC/sast-rules/.github/workflows/security-scan.yml@main # the newest release, always
     with:
       aws_region: ${{ vars.AWS_REGION_EAST_1 }}
-      s3_bucket: ${{ vars.SECURITY_REPORTS_S3_BUCKET }}
       zap_target: ${{ vars.ZAP_TARGET_URL }}
       # sast: false        # each scanner is on unless switched off
       # trivy: false
@@ -77,8 +76,7 @@ jobs:
 | Input | Default | Meaning |
 |---|---|---|
 | `sast`, `trivy`, `sbom`, `zap` | `true` | Switch a scanner off |
-| `aws_region` | — | Region of the evidence bucket |
-| `s3_bucket` | empty | Evidence bucket; empty keeps every report as an artifact only |
+| `aws_region` | — | Region of the ECR registry the FIPS images are pulled from |
 | `project` | repository name | The Tueri Core project the reports belong to |
 | `ref` | triggering ref | Branch, tag or commit to scan |
 | `fail_on` | `none` | Fail the run on a finding at or above `critical`, `high`, `medium` or `low` |
@@ -93,23 +91,21 @@ jobs:
 | `zap_scan` | `baseline` | `baseline` (passive) or `full` / `api` (active attack: needs the `dast-active` environment's approval and `zap_confirm` equal to the target) |
 | `zap_runs_on` | `ubuntu-latest` | A self-hosted runner, for a target inside a private network |
 
-`AWS_ROLE` (secret): OIDC role that pulls MicroHealth's FIPS images from ECR
-and writes the bucket. The calling job needs the four permissions above.
+`AWS_ROLE` (secret): OIDC role that pulls MicroHealth's FIPS images from ECR.
+The calling job needs the four permissions above.
 
-**Where reports go.** Only a full scan of the default branch feeds Tueri
-Core: `<project>/sast/`, `trivy-fs/`, `trivy-image/<image>/`, `sbom/`,
-`zap-dast/`. Another branch's scans go under `<project>/_branch-scans/`,
-which Tueri Core never ingests; a pull request's or a diff scan's are
-artifacts only. Absence in a partial scan is not evidence that something was
-fixed.
+**Where reports go.** Run artifacts, and SARIF in GitHub code scanning.
+**Nothing is uploaded to S3** — Tueri Core scans repositories natively and no
+longer ingests CI reports, so the workflows have no bucket input and no
+upload step. A caller that still passes `s3_bucket` fails at startup with
+"Invalid input": delete the line.
 
 **One report.** The `Security report` job writes `security-report.json` (and
 a summary table on the run page): every scanner's status (`ran`, `not_run`,
 `failed`, `disabled`), counts by severity, SBOM component counts, the rules
 commit. A scanner that was on and left no report **fails the run**; a count
 is `null` unless the scanner ran, so "did not run" never reads as "found
-nothing". The report is the `security-report` artifact and
-`<project>/_security-scan/…` in the bucket.
+nothing". The report is the `security-report` artifact.
 
 Each scanner is also its own reusable workflow (`opengrep.yml`, `trivy.yml`,
 `zap.yml`) for a repository that needs only one.

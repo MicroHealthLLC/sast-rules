@@ -10,9 +10,8 @@ name: Trivy and SBOM
 #     runs on MicroHealth's FIPS Python image.
 #   * Its vulnerability database is downloaded on every run (that is what
 #     makes the scan current); nothing else is.
-#   * Reports go where scripts/destination.sh says: the default branch's
-#     to <project>/trivy-fs/… and <project>/sbom/…, where Tueri Core ingests
-#     them; another branch's under _branch-scans/; a pull request's nowhere.
+#   * Reports are kept as run artifacts and SARIF. NOTHING IS UPLOADED TO S3:
+#     Tueri Core scans natively now and no longer ingests CI reports.
 #   * Images are read by Trivy straight from the registry (--image-src
 #     remote): one copy of the layers on disk, not a pulled image plus a
 #     saved tarball, which a large image (CUDA, for one) does not fit. The
@@ -29,10 +28,6 @@ on:
       aws_region:
         type: string
         required: true
-      s3_bucket:
-        description: "Evidence bucket; empty skips the upload"
-        type: string
-        default: ""
       ref:
         description: "Branch, tag or commit to scan (default: the triggering ref)"
         type: string
@@ -107,7 +102,6 @@ jobs:
       id-token: write
     env:
       AWS_REGION: ${{ inputs.aws_region }}
-      S3_BUCKET: ${{ inputs.s3_bucket }}
       KIND: ${{ matrix.target.kind }}
       IMAGE_REF: ${{ matrix.target.ref }}
     steps:
@@ -143,20 +137,14 @@ jobs:
           path: .sast-rules
           persist-credentials: false
 
-      - name: Where the reports go
+      - name: Name the reports
         id: dest
-        env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          .sast-rules/scripts/destination.sh src
-          project="${{ inputs.project }}"; project="${project:-${GITHUB_REPOSITORY##*/}}"
           name=""
           if [ "$KIND" = image ]; then
-            # The image's repository name, as Tueri Core keys an image stream.
+            # The image's repository name keys its artifact and SARIF category.
             name="$(printf '%s' "${IMAGE_REF##*/}" | sed 's/[:@].*//' | tr -c 'A-Za-z0-9._-' '-')"
           fi
-          echo "project=$project" >> "$GITHUB_OUTPUT"
-          echo "name=$name" >> "$GITHUB_OUTPUT"
           echo "artifact=trivy-${name:-repository}" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials
@@ -214,7 +202,7 @@ jobs:
           FROM ${BASE}
           # Per-run package refresh: a new value re-runs the layer below.
           ARG APK_REFRESH
-          # git: Trivy reads the checkout; aws-cli uploads the reports. Root:
+          # git: Trivy reads the checkout; aws-cli fetches the ECR token. Root:
           # the scan writes into mounted runner directories; nothing ships.
           USER root
           RUN apk add --no-cache git aws-cli && apk upgrade --no-cache \
@@ -278,39 +266,6 @@ jobs:
           sarif_file: ${{ runner.temp }}/out/trivy.sarif
           category: ${{ steps.dest.outputs.artifact }}
           checkout_path: ${{ github.workspace }}/src
-
-      # A fresh session for the upload: the one taken before the scan lasts an
-      # hour, and a long scan outlived it ("ExpiredToken" on the S3 upload,
-      # after a scan that had finished).
-      - name: Refresh AWS credentials for the upload
-        if: inputs.s3_bucket != '' && steps.dest.outputs.upload == 'true'
-        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE }}
-          role-session-name: GitHubActionsTrivyUpload
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Upload reports to S3
-        if: inputs.s3_bucket != '' && steps.dest.outputs.upload == 'true'
-        env:
-          P: ${{ steps.dest.outputs.project }}/${{ steps.dest.outputs.base }}
-          NAME: ${{ steps.dest.outputs.name }}
-          META: commit=${{ steps.dest.outputs.commit }},branch=${{ steps.dest.outputs.branch }},run=${{ github.run_id }},rules=${{ steps.self.outputs.sha }}
-        run: |
-          day="$(date -u +%F)"; run="run-${GITHUB_RUN_ID}"
-          put() { docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
-                    -e AWS_DEFAULT_REGION="$AWS_REGION" -v "$RUNNER_TEMP/out:/data" -w /data \
-                    --entrypoint aws sast-trivy:fips s3 cp "$1" "s3://${S3_BUCKET}/$2" \
-                    --content-type application/json --metadata "$META"
-                  echo "Uploaded s3://${S3_BUCKET}/$2" | tee -a "$GITHUB_STEP_SUMMARY"; }
-          if [ "$KIND" = repo ]; then
-            put trivy-fs.json "${P}trivy-fs/dt=${day}/${run}/trivy-fs.json"
-            [ -s "$RUNNER_TEMP/out/sbom.cdx.json" ] && put sbom.cdx.json "${P}sbom/source/dt=${day}/${run}/${P%%/*}-source.cdx.json"
-          else
-            put trivy-image.json "${P}trivy-image/${NAME}/dt=${day}/${run}/trivy-${NAME}.json"
-            [ -s "$RUNNER_TEMP/out/sbom.cdx.json" ] && put sbom.cdx.json "${P}sbom/image/${NAME}/dt=${day}/${run}/sbom-${NAME}.cdx.json"
-          fi
-          true
 
       - name: Upload report artifacts
         if: always()

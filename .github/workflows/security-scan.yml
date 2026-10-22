@@ -11,17 +11,16 @@ name: Security scan
 #       uses: MicroHealthLLC/sast-rules/.github/workflows/security-scan.yml@main # the newest release
 #       with:
 #         aws_region: ${{ vars.AWS_REGION_EAST_1 }}
-#         s3_bucket: ${{ vars.SECURITY_REPORTS_S3_BUCKET }}
 #         zap_target: ${{ vars.ZAP_TARGET_URL }}
 #       secrets: inherit
 #
 # The scanners are this repository's own reusable workflows, called at the
 # same commit (`./`), so the commit this file runs at fixes all of them, the
 # rules and the engines. Callers use `@main`: every scan change on main is a
-# release, so every run takes the newest one. Each one's reports go where Tueri Core ingests them
-# (<project>/sast/, trivy-fs/, trivy-image/, sbom/, zap-dast/); the combined
-# report goes to <project>/_security-scan/…, which ingest does not read: it
-# is the run's record, not a findings source.
+# release, so every run takes the newest one. Every report — each scanner's
+# and the combined one — is kept as a run artifact (and SARIF in code
+# scanning). NOTHING IS UPLOADED TO S3: Tueri Core scans natively now and no
+# longer ingests CI reports, so there is no bucket input and no upload step.
 #
 # The combined job FAILS when a scanner that was on did not produce its
 # report — a scan that did not run never reads as a clean one — and, when
@@ -51,10 +50,6 @@ on:
       aws_region:
         type: string
         required: true
-      s3_bucket:
-        description: "Evidence bucket; empty keeps every report as an artifact only"
-        type: string
-        default: ""
       project:
         description: "Tueri Core project (default: the repository name)"
         type: string
@@ -81,7 +76,7 @@ on:
         type: number
         default: 120
       baseline_ref:
-        description: "SAST reports only what is new since this ref (a pull request's base); such a scan is never uploaded for ingest"
+        description: "SAST reports only what is new since this ref (a pull request's base)"
         type: string
         default: ""
       # Trivy
@@ -136,7 +131,6 @@ jobs:
       bundle: ${{ inputs.bundle }}
       project: ${{ inputs.project }}
       aws_region: ${{ inputs.aws_region }}
-      s3_bucket: ${{ inputs.s3_bucket }}
       exclude: ${{ inputs.exclude }}
       ref: ${{ inputs.ref }}
       baseline_ref: ${{ inputs.baseline_ref }}
@@ -151,7 +145,6 @@ jobs:
     with:
       project: ${{ inputs.project }}
       aws_region: ${{ inputs.aws_region }}
-      s3_bucket: ${{ inputs.s3_bucket }}
       ref: ${{ inputs.ref }}
       sbom: ${{ inputs.sbom }}
       images: ${{ inputs.images }}
@@ -171,7 +164,6 @@ jobs:
       confirm: ${{ inputs.zap_confirm }}
       project: ${{ inputs.project }}
       aws_region: ${{ inputs.aws_region }}
-      s3_bucket: ${{ inputs.s3_bucket }}
       ref: ${{ inputs.ref }}
       runs_on: ${{ inputs.zap_runs_on }}
     secrets:
@@ -188,7 +180,6 @@ jobs:
       id-token: write
     env:
       AWS_REGION: ${{ inputs.aws_region }}
-      S3_BUCKET: ${{ inputs.s3_bucket }}
     steps:
       - name: Which sast-rules commit is running
         id: self
@@ -222,13 +213,13 @@ jobs:
           path: .sast-rules
           persist-credentials: false
 
-      - name: Where the report goes
+      - name: Which commit was scanned
         id: dest
-        env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          .sast-rules/scripts/destination.sh src "${{ inputs.baseline_ref }}"
-          project="${{ inputs.project }}"; echo "project=${project:-${GITHUB_REPOSITORY##*/}}" >> "$GITHUB_OUTPUT"
+          branch="$(git -C src rev-parse --abbrev-ref HEAD)"
+          [ "$branch" = HEAD ] && branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git -C src rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Collect the scanners' reports
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # actions/download-artifact v8.0.1
@@ -256,7 +247,7 @@ jobs:
           # Per-run package refresh: a new value re-runs the layer below.
           ARG APK_REFRESH
           USER root
-          RUN apk add --no-cache aws-cli && apk upgrade --no-cache
+          RUN apk upgrade --no-cache
           DOCKERFILE
 
       - name: Combine the reports
@@ -284,18 +275,6 @@ jobs:
             -e GITHUB_EVENT_NAME -e GITHUB_STEP_SUMMARY sast-report:fips \
             python3 /r/scripts/combine_reports.py "$RUNNER_TEMP/artifacts" "$RUNNER_TEMP/report"
           echo "rc=$?" >> "$GITHUB_OUTPUT"
-
-      - name: Upload the combined report to S3
-        if: inputs.s3_bucket != '' && steps.dest.outputs.upload == 'true'
-        env:
-          KEY_BASE: ${{ steps.dest.outputs.project }}/${{ steps.dest.outputs.base }}
-        run: |
-          key="${KEY_BASE}_security-scan/dt=$(date -u +%F)/run-${GITHUB_RUN_ID}/security-report.json"
-          docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
-            -e AWS_DEFAULT_REGION="$AWS_REGION" -v "$RUNNER_TEMP/report:/data" -w /data \
-            --entrypoint aws sast-report:fips s3 cp security-report.json "s3://${S3_BUCKET}/${key}" \
-            --content-type application/json --metadata "commit=${{ steps.dest.outputs.commit }},run=${GITHUB_RUN_ID}"
-          echo "Uploaded s3://${S3_BUCKET}/${key}" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the combined report
         if: always()
