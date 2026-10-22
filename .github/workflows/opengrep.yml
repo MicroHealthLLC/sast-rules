@@ -8,7 +8,6 @@ name: SAST (Opengrep)
 #       uses: MicroHealthLLC/sast-rules/.github/workflows/opengrep.yml@main # the newest release
 #       with:
 #         aws_region: ${{ vars.AWS_REGION_EAST_1 }}
-#         s3_bucket: ${{ vars.SECURITY_REPORTS_S3_BUCKET }}
 #       secrets: inherit
 #
 # What a run does, and why:
@@ -24,10 +23,9 @@ name: SAST (Opengrep)
 #     Opengrep's binary can make HTTPS calls of its own, outside the system
 #     OpenSSL, and a scan with every rule local has no reason to.
 #   * The JSON report is stamped with the ruleset and engine
-#     (scripts/annotate_report.py) and uploaded to
-#     s3://<bucket>/<project>/sast/dt=<day>/run-<id>/sast.json, where Tueri Core
-#     ingests it. `rules_evaluated` in that stamp is what lets Tueri Core tell a
-#     retired rule from fixed code.
+#     (scripts/annotate_report.py) and kept as the run's `sast-reports`
+#     artifact. NOTHING IS UPLOADED TO S3: Tueri Core scans natively now and no
+#     longer ingests CI reports, so there is no bucket input and no upload step.
 #   * SARIF goes to GitHub code scanning (category `sast`) when the repository
 #     has it; its publication outcome is recorded separately from the scan's.
 
@@ -45,10 +43,6 @@ on:
       aws_region:
         type: string
         required: true
-      s3_bucket:
-        description: "Evidence bucket; empty skips the S3 upload (and Tueri Core never sees the run)"
-        type: string
-        default: ""
       exclude:
         description: "Extra paths to skip, one glob per line (a .sastignore file at the root is read too)"
         type: string
@@ -66,12 +60,12 @@ on:
         type: string
         default: ""
       baseline_ref:
-        description: "Report only findings introduced since this ref (a pull request's base). Such a scan is never uploaded for ingest."
+        description: "Report only findings introduced since this ref (a pull request's base)"
         type: string
         default: ""
     secrets:
       AWS_ROLE:
-        description: "OIDC role: pulls the FIPS image from ECR and writes the report to S3"
+        description: "OIDC role: pulls the FIPS image from ECR"
         required: true
     outputs:
       findings:
@@ -96,13 +90,12 @@ jobs:
       # integration" and the SARIF is never published.
       actions: read
       security-events: write
-      id-token: write # job_workflow_sha, ECR pull and the S3 upload
+      id-token: write # job_workflow_sha and the ECR pull
     outputs:
       findings: ${{ steps.annotate.outputs.findings }}
       rules_commit: ${{ steps.self.outputs.sha }}
     env:
       AWS_REGION: ${{ inputs.aws_region }}
-      S3_BUCKET: ${{ inputs.s3_bucket }}
       BUNDLE: ${{ inputs.bundle }}
     steps:
       - name: Which sast-rules commit is running
@@ -133,31 +126,6 @@ jobs:
           ref: ${{ inputs.ref }}
           # A diff scan needs the baseline's history.
           fetch-depth: ${{ inputs.baseline_ref != '' && '0' || '1' }}
-
-      # Where the report goes. Only a full scan of the default branch feeds
-      # Tueri Core's findings (<project>/sast/...). Another branch's scan is
-      # kept under <project>/_branch-scans/branch=<slug>/..., which ingest never
-      # reads, so work in progress never opens or resolves a finding; a diff
-      # scan (baseline_ref) is a partial view and is not uploaded at all.
-      - name: Where the report goes
-        id: dest
-        env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          BASELINE: ${{ inputs.baseline_ref }}
-        run: |
-          branch="$(git -C src rev-parse --abbrev-ref HEAD)"
-          [ "$branch" = HEAD ] && branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-          if [ -n "$BASELINE" ] || [ "$GITHUB_EVENT_NAME" = pull_request ]; then
-            echo "prefix=" >> "$GITHUB_OUTPUT"
-            echo "Diff or pull-request scan: not uploaded for ingest." >> "$GITHUB_STEP_SUMMARY"
-          elif [ "$branch" = "$DEFAULT_BRANCH" ]; then
-            echo "prefix=sast" >> "$GITHUB_OUTPUT"
-          else
-            slug="$(printf '%s' "$branch" | tr -c 'A-Za-z0-9._-' '-' | cut -c1-80)"
-            echo "prefix=_branch-scans/branch=${slug}/sast" >> "$GITHUB_OUTPUT"
-          fi
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
-          echo "commit=$(git -C src rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Checkout the rules (the commit this workflow runs at)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
@@ -206,12 +174,12 @@ jobs:
           ARG APK_REFRESH
           # git: Opengrep takes its targets from `git ls-files`, which keeps
           # .gitignore'd files out of the scan; the checkout belongs to the
-          # runner user, so git trusts the mounted tree. aws-cli and py3-yaml
-          # (Alpine's, on the image's Python and so the system OpenSSL with
-          # only the FIPS provider) upload the report and stamp it. Root: the
+          # runner user, so git trusts the mounted tree. py3-yaml (Alpine's, on the
+          # image's Python and so the system OpenSSL with only the FIPS
+          # provider) stamps the report. Root: the
           # scan writes into mounted runner directories; nothing here ships.
           USER root
-          RUN apk add --no-cache git aws-cli py3-yaml && apk upgrade --no-cache \
+          RUN apk add --no-cache git py3-yaml && apk upgrade --no-cache \
               && git config --system --add safe.directory '*'
           # The Opengrep musl build, verified against engine.json before this
           # build. It is statically linked except for musl libc and loads no
@@ -219,19 +187,6 @@ jobs:
           COPY opengrep /usr/local/bin/opengrep
           RUN opengrep --version
           DOCKERFILE
-
-      - name: Preflight — verify AWS credentials and S3 write access
-        if: inputs.s3_bucket != '' && steps.dest.outputs.prefix != ''
-        env:
-          PROJECT_INPUT: ${{ inputs.project }}
-        run: |
-          PROJECT="${PROJECT_INPUT:-${GITHUB_REPOSITORY##*/}}"
-          printf 'preflight ok: run %s commit %s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > "$RUNNER_TEMP/preflight.txt"
-          docker run --rm \
-            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
-            -e AWS_DEFAULT_REGION="$AWS_REGION" -v "$RUNNER_TEMP:/data" -w /data \
-            --entrypoint aws sast-scan:fips \
-            s3 cp preflight.txt "s3://${S3_BUCKET}/${PROJECT}/_preflight/sast.txt" --content-type text/plain
 
       - name: Run Opengrep
         id: scan
@@ -306,38 +261,6 @@ jobs:
             -e GITHUB_RUN_ATTEMPT -e GITHUB_SERVER_URL \
             -e GITHUB_OUTPUT -e GITHUB_STEP_SUMMARY \
             sast-scan:fips python3 /r/scripts/publication_status.py
-
-      # A fresh session for the upload: the one taken before the scan lasts an
-      # hour, and a long scan outlived it ("ExpiredToken" on the S3 upload,
-      # after a scan that had finished).
-      - name: Refresh AWS credentials for the upload
-        if: inputs.s3_bucket != '' && steps.dest.outputs.prefix != ''
-        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE }}
-          role-session-name: GitHubActionsSastUpload
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Upload JSON report to S3
-        if: inputs.s3_bucket != '' && steps.dest.outputs.prefix != ''
-        env:
-          SCAN_OUTCOME: ${{ steps.scan.outcome }}
-          SARIF_PUBLICATION_STATUS: ${{ steps.publication_status.outputs.sarif_publication_status }}
-          STATUS_RECORDED_AT: ${{ steps.publication_status.outputs.recorded_at_utc }}
-          RULES_COMMIT: ${{ steps.self.outputs.sha }}
-          ENGINE_VERSION: ${{ steps.engine.outputs.version }}
-          PROJECT_INPUT: ${{ inputs.project }}
-        run: |
-          [ -s "$RUNNER_TEMP/out/sast.json" ] || { echo "::error::sast.json was not created"; exit 1; }
-          PROJECT="${PROJECT_INPUT:-${GITHUB_REPOSITORY##*/}}"
-          KEY="${PROJECT}/${{ steps.dest.outputs.prefix }}/dt=$(date -u +%F)/run-${GITHUB_RUN_ID}/sast.json"
-          docker run --rm \
-            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
-            -e AWS_DEFAULT_REGION="$AWS_REGION" -v "$RUNNER_TEMP/out:/data" -w /data \
-            --entrypoint aws sast-scan:fips \
-            s3 cp sast.json "s3://${S3_BUCKET}/${KEY}" --content-type application/json \
-            --metadata "commit=${{ steps.dest.outputs.commit }},branch=${{ steps.dest.outputs.branch }},run=${GITHUB_RUN_ID},scan=${SCAN_OUTCOME},sarif-publication=${SARIF_PUBLICATION_STATUS},status-recorded-at=${STATUS_RECORDED_AT},engine=opengrep-${ENGINE_VERSION},rules=${RULES_COMMIT},bundle=${BUNDLE}"
-          echo "Uploaded s3://${S3_BUCKET}/${KEY}" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Upload report artifacts
         if: always()

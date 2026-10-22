@@ -15,8 +15,8 @@ name: ZAP DAST
 #     release tarball and the scan scripts and policies of ZAP's official
 #     image, each refused unless its SHA-256 matches. ZAP is Java: its TLS (the
 #     JDK's) is outside the FIPS claim — a test tool attacking a target.
-#   * Reports go where scripts/destination.sh says (<project>/zap-dast/… for
-#     the default branch).
+#   * Reports are kept as run artifacts. NOTHING IS UPLOADED TO S3: Tueri Core
+#     scans natively now and no longer ingests CI reports.
 
 on:
   workflow_call:
@@ -43,9 +43,6 @@ on:
       aws_region:
         type: string
         required: true
-      s3_bucket:
-        type: string
-        default: ""
       ref:
         type: string
         default: ""
@@ -91,7 +88,6 @@ jobs:
       status: ${{ steps.status.outputs.status }}
     env:
       AWS_REGION: ${{ inputs.aws_region }}
-      S3_BUCKET: ${{ inputs.s3_bucket }}
       TARGET: ${{ inputs.target }}
       SCAN: ${{ inputs.scan }}
       OPENAPI: ${{ inputs.openapi }}
@@ -150,15 +146,6 @@ jobs:
           path: .sast-rules
           persist-credentials: false
 
-      - name: Where the report goes
-        id: dest
-        if: steps.has.outputs.run == 'true'
-        env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-        run: |
-          .sast-rules/scripts/destination.sh src
-          project="${{ inputs.project }}"; echo "project=${project:-${GITHUB_REPOSITORY##*/}}" >> "$GITHUB_OUTPUT"
-
       - name: Configure AWS credentials
         if: steps.has.outputs.run == 'true'
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
@@ -173,24 +160,10 @@ jobs:
         with:
           registries: "295669632222"
 
-      - name: Build scanner images (FIPS)
+      - name: Build the scanner image (FIPS)
         if: steps.has.outputs.run == 'true'
         run: |
           base="$(.sast-rules/scripts/fips-image.sh python)"
-          docker build --build-arg BASE="$base" --build-arg APK_REFRESH=${{ github.run_id }} -t sast-aws:fips - <<'DOCKERFILE'
-          ARG BASE
-          FROM ${BASE}
-          # Per-run package refresh: a new value re-runs the layer below.
-          ARG APK_REFRESH
-          # Alpine's aws-cli (v2) on the image's Python, whose ssl module is the
-          # system OpenSSL with only the FIPS provider. fips-python runs as
-          # 10001; this CI-only tool runs as root so it can write into the
-          # runner's mounted directories (nothing in it ships).
-          USER root
-          RUN apk add --no-cache aws-cli && apk upgrade --no-cache
-          ENTRYPOINT ["aws"]
-          DOCKERFILE
-
           docker build --build-arg BASE="$base" --build-arg APK_REFRESH=${{ github.run_id }} -t sast-zap:fips - <<'DOCKERFILE'
           ARG BASE
           FROM ${BASE}
@@ -264,7 +237,6 @@ jobs:
           USER 1000
           DOCKERFILE
 
-          docker run --rm sast-aws:fips --version
           docker run --rm sast-zap:fips zap.sh -cmd -version
 
       - name: Run ZAP
@@ -294,29 +266,6 @@ jobs:
             echo "::error::ZAP could not run (exit $rc)"; exit 1
           fi
           jq -n --arg t "${TARGET:-$OPENAPI}" --arg s "$SCAN" '{status:"ran", target:$t, scan:$s}' > "$RUNNER_TEMP/out/zap-status.json"
-
-      # A fresh session for the upload: the one taken before the scan lasts an
-      # hour, and a long scan outlived it ("ExpiredToken" on the S3 upload,
-      # after a scan that had finished).
-      - name: Refresh AWS credentials for the upload
-        if: steps.scan.outcome == 'success' && inputs.s3_bucket != '' && steps.dest.outputs.upload == 'true'
-        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE }}
-          role-session-name: GitHubActionsZapUpload
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Upload report to S3
-        if: steps.scan.outcome == 'success' && inputs.s3_bucket != '' && steps.dest.outputs.upload == 'true'
-        env:
-          KEY_BASE: ${{ steps.dest.outputs.project }}/${{ steps.dest.outputs.base }}
-        run: |
-          key="${KEY_BASE}zap-dast/dt=$(date -u +%F)/run-${GITHUB_RUN_ID}/zap.json"
-          docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
-            -e AWS_DEFAULT_REGION="$AWS_REGION" -v "$RUNNER_TEMP/out:/data" -w /data sast-aws:fips \
-            s3 cp zap.json "s3://${S3_BUCKET}/${key}" --content-type application/json \
-            --metadata "commit=${{ steps.dest.outputs.commit }},branch=${{ steps.dest.outputs.branch }},run=${GITHUB_RUN_ID},scan=${SCAN}"
-          echo "Uploaded s3://${S3_BUCKET}/${key}" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Status
         id: status
