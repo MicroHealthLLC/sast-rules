@@ -12,8 +12,9 @@ the scan guarantees is decided here, so it is tested here:
 * every action is pinned to a commit with a version comment, every job's
   permissions are explicit, and nothing runs on pull_request_target;
 * every image is built FROM a FIPS base pinned by digest in fips-images.json,
-  never written into a workflow (upstream.yml's daily bump pushes with an
-  Actions token, which GitHub refuses for .github/workflows/);
+  never written into a workflow (bots push data, never .github/workflows/);
+  tests/test_fips_bump.py covers the bump, the freshness gate and the main
+  guard;
 * without GH_PAT, upstream.yml pushes its update branch and says where to
   open the pull request, instead of failing on one the Actions token may not
   create.
@@ -132,9 +133,9 @@ class SharedWorkflowTests(unittest.TestCase):
             self.assertNotRegex(path.read_text(), r"microhealthllc/fips-[a-z0-9-]+:", path.name)
         up = (WORKFLOWS / "upstream.yml").read_text()
         self.assertIn("grep -q '^\\.github/workflows/'", up)
-        bump = (ROOT / "scripts" / "fips_bump.py").read_text()
-        self.assertIn('ROOT / "fips-images.json"', bump)
-        self.assertNotIn("rglob", bump)
+        # The bump workflow refuses to commit a workflow file, too.
+        fb = (WORKFLOWS / "fips-base-images.yml").read_text()
+        self.assertIn("grep -q ' \\.github/workflows/'", fb)
 
     def run_upstream_pr_step(self, have_pat: str, pr_state: str) -> tuple[subprocess.CompletedProcess, str, str]:
         """Run upstream.yml's pull-request step in a scratch clone with a fake gh."""

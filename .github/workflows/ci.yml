@@ -2,8 +2,10 @@ name: CI
 # Every change: the bundles and the lock must be what the sources build, every
 # rule in both bundles must load in the pinned Opengrep, MicroHealth's own
 # rules must pass their tests, and the shared workflow must scan this
-# repository end to end (no S3 upload). A push to integration on which all of
-# that passes is promoted to main (promote-main; owner's decision 2026-10-18).
+# repository end to end (no S3 upload). Before any of it, the FIPS image pins
+# must be the newest (fips-fresh) and main may receive integration only
+# (main-from-integration). A push to integration on which all of that passes
+# is promoted to main (promote-main; owner's decision 2026-10-18).
 on:
   pull_request:
   push:
@@ -14,10 +16,92 @@ permissions:
   contents: read
 
 jobs:
+  # Before anything else, on every push to integration and main and every pull
+  # request into main: no release may carry a stale MicroHealth FIPS image
+  # (owner's order, 2026-10-22). A stale or unresolvable pin in
+  # fips-images.json turns the run red, so nothing is validated or promoted
+  # until fips-base-images.yml has merged the bump. Pull requests into
+  # integration (the bump's own included) skip it; their push is checked.
+  fips-fresh:
+    name: FIPS image pins are the newest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # ECR digest lookup and the tools image pull
+      actions: write # dispatch fips-base-images.yml when a pin is stale
+    steps:
+      - id: scope
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          check=true
+          if [ "$GITHUB_EVENT_NAME" = pull_request ] && [ "$BASE_REF" != main ]; then check=false; fi
+          echo "check=$check" >> "$GITHUB_OUTPUT"
+      - if: steps.scope.outputs.check == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          persist-credentials: false
+      - if: steps.scope.outputs.check == 'true'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # aws-actions/configure-aws-credentials v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: SastRulesFipsFresh
+          aws-region: ${{ vars.AWS_REGION_EAST_1 }}
+      - if: steps.scope.outputs.check == 'true'
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # aws-actions/amazon-ecr-login v2
+        with:
+          registries: "295669632222"
+      - name: Every FIPS pin is the newest digest of its tag
+        if: steps.scope.outputs.check == 'true'
+        run: scripts/ci-run.sh python3 scripts/fips_bump.py --check
+      # fips-container moves dev-latest on every build, not only on the
+      # releases that dispatch fips-base-images.yml, so a stale pin found here
+      # starts the bump itself: it merges into integration, whose CI then
+      # passes and promotes. A dispatch made with GITHUB_TOKEN does start a run.
+      - name: Start the FIPS bump
+        if: failure() && github.event_name == 'push' && steps.scope.outputs.check == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run fips-base-images.yml --repo "$GITHUB_REPOSITORY" --ref integration
+          echo "A FIPS image pin is stale: fips-base-images.yml was dispatched; integration is promoted once its bump merges and CI passes." >> "$GITHUB_STEP_SUMMARY"
+
+  # main receives integration only (AI_RULES.md §1): a pull request into main
+  # must come from this repository's integration branch, and every non-merge
+  # commit pushed to main must already be on integration.
+  main-from-integration:
+    name: main receives integration only
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: A pull request into main comes from integration
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+        env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ] || [ "$HEAD_REF" != integration ]; then
+            echo "::error::main receives only integration from ${GITHUB_REPOSITORY}; this pull request is from ${HEAD_REPO}:${HEAD_REF}. Retarget it to integration."
+            exit 1
+          fi
+          echo "From ${HEAD_REPO}:integration."
+      - if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Every commit pushed to main is already on integration
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          HEAD_SHA: ${{ github.sha }}
+        run: scripts/require-from-integration.sh
+
   # promote-main fast-forwards integration to the merge it pushed to main;
   # that push is a commit main's own run validates, so it is not run twice.
   changes:
     name: Already validated on main?
+    needs: [fips-fresh, main-from-integration]
     runs-on: ubuntu-latest
     permissions:
       contents: read

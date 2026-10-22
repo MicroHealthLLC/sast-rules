@@ -38,6 +38,9 @@ skipped and why, and every push or PR made (branch and commit).
   2026-10-18), or a human merges a PR
   `integration` → `main`. Never push anything else to `main`, never promote
   from a red or partial run, never open a PR from any other branch to `main`.
+  CI enforces it (`main-from-integration`): a PR into `main` whose head is not
+  this repository's `integration` fails, and every non-merge commit pushed to
+  `main` must already be on `integration` (`scripts/require-from-integration.sh`).
 - A side branch (`rule-fp/<repo>-<date>`, a bot's update branch) is merged
   into `integration` (PR base `integration`), never into `main`. If one was
   opened against `main`, retarget it to `integration`.
@@ -125,6 +128,14 @@ PR until it is green. Never report "done" on an unverified push.
   around that: it would also let Actions approve PRs. It pushes with an Actions token, which GitHub never lets
   change `.github/workflows/`: anything a bot moves (FIPS image pins:
   `fips-images.json`) lives outside the workflow files, never inside them. `release.yml` tags `vYYYY.M.N` on `main`.
+- **No release ever ships a stale MicroHealth FIPS image** (owner's order,
+  2026-10-22). `fips-base-images.yml` alone moves the pins
+  (`scripts/fips_bump.py`): weekly, on fips-container's dispatch, by hand, and
+  whenever CI finds a stale pin; it opens ONE PR into `integration` and merges
+  it at once with `GH_PAT`, and `promote-main` takes it to `main`. `ci.yml`
+  (`fips-fresh`) and `release.yml` run `fips_bump.py --check` first and go red
+  on a stale or unresolvable pin. Never hand-type a digest, never skip or
+  soften the check, never move FIPS pins in `upstream.yml` again.
 
 ## §6 Documentation
 
