@@ -66,6 +66,7 @@ disabled:
     (innerHTML, outerHTML, insertAdjacentHTML, document.write, srcdoc) and
     treats escaping helpers and DOMPurify as sanitisers; it finds the one
     real case (a document.write of unescaped vendor and model text).
+  mh.gitlab.csharp_crypto_rule-CertificateValidationDisabled: "Replaced by mh.microhealth.csharp.crypto.certificate-validation-disabled: the same rule with its lambda pattern written `(...) => true` instead of `(...) => true;`, which Opengrep 1.32.0 no longer parses for C# (the rule failed to load in both bundles). It still reports a ServerCertificateValidationCallback lambda or method that returns true."
   mh.gitlab.javascript_react_rule-dangerouslysetinnerhtml: >-
     Reports every dangerouslySetInnerHTML, including values produced by
     DOMPurify in the same component (10 of 10 sanitised in TueriCXO).
