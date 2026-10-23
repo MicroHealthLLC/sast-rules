@@ -89,11 +89,17 @@ jobs:
           ARG TRIVY_VERSION
           ARG FLOORS
           USER root
-          # The module source of the tag, so its go.mod can take the floors
-          # (`go install pkg@version` builds exactly the tag's own requirements).
-          # Every module is still checked against sum.golang.org.
-          RUN command -v git >/dev/null || apk add --no-cache git
-          RUN git clone -q --depth 1 --branch "v${TRIVY_VERSION}" https://github.com/aquasecurity/trivy.git /src/trivy
+          # The module source of the version, so its go.mod can take the floors
+          # (`go install pkg@version` builds exactly the version's own
+          # requirements). Fetched as a MODULE, not a git clone: the download is
+          # checked against sum.golang.org like every dependency, so a moved or
+          # replaced tag cannot be built. Every variable that could switch that
+          # check off (GOSUMDB=off, GONOSUMDB, GOPRIVATE, ...) is cleared here.
+          RUN set -eu; unset GOFLAGS GOSUMDB GONOSUMDB GONOSUMCHECK GOINSECURE GOPRIVATE GONOPROXY; \
+              GOTOOLCHAIN=local go mod download -json "github.com/aquasecurity/trivy@v${TRIVY_VERSION}" > /tmp/m.json; \
+              dir="$(sed -n 's/^[[:space:]]*"Dir": "\(.*\)",$/\1/p' /tmp/m.json)"; \
+              test -n "$dir" && test -f "$dir/go.mod"; \
+              mkdir -p /src && cp -r "$dir" /src/trivy && chmod -R u+w /src/trivy
           WORKDIR /src/trivy
           # Floors: raise each listed module the build requires to at least its
           # version, never lower it. GOTOOLCHAIN=local: a floor that needs a
