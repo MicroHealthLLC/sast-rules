@@ -14,7 +14,7 @@
   },
   "trivy": {
     "version": "0.74.0",
-    "build": 2,
+    "build": 3,
     "dep_floors": [
       "golang.org/x/net@v0.60.0",
       "golang.org/x/crypto@v0.57.0",
