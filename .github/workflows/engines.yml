@@ -1,12 +1,23 @@
 name: Build the Trivy engine
-# Trivy is built from source ONCE per version here, not in every scan: on
+# Trivy is built from source ONCE per (version, build) here, not in every scan: on
 # MicroHealth's FIPS Go image with the Go Cryptographic Module (GOFIPS140,
 # CMVP #5247), every Go module checked against sum.golang.org. A release
 # binary from upstream would carry Go's non-validated crypto; building it in
 # every scan cost each run several minutes and several GB of runner disk,
 # which large repositories did not have.
 #
-# The binary is published as a release asset (`engine-trivy-<version>`);
+# A version is REBUILT by raising `trivy.build` in engine.json. Built once
+# and never again, the binary kept the Go and the dependencies of the day it
+# was built: every scan image carrying it (Tueri Core's code-scanner, for one)
+# then reported the same stdlib, x/net, grpc and containerd findings however
+# often that image was rebuilt. A rebuild takes the newest fips-go and raises
+# each `trivy.dep_floors` module the build requires to at least its floor
+# (never lower), so a fix upstream has not released yet still lands.
+#
+# The binary is published as a release asset (`engine-trivy-<version>` for
+# build 1, `engine-trivy-<version>-b<build>` after that). A published release is
+# never replaced: repositories pinned to an older commit of this one download
+# it by the sha256 that commit records.
 # scripts/record_trivy.sh then records its URL and sha256 in engine.json, in
 # a reviewed change (Actions here may not open pull requests). Scans download it
 # and refuse it unless the hash matches — the same contract as Opengrep.
@@ -33,14 +44,21 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
 
-      - name: Is this version already built
+      - name: Is this version and build already built
         id: need
         run: |
           version="$(jq -r .trivy.version engine.json)"
+          build="$(jq -r '.trivy.build // 1' engine.json)"
           have="$(jq -r '.trivy.version_built // ""' engine.json)"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          if [ "$have" = "$version" ] && [ -n "$(jq -r '.trivy.sha256 // ""' engine.json)" ]; then
-            echo "build=false" >> "$GITHUB_OUTPUT"; echo "Trivy $version is already built."
+          have_build="$(jq -r '.trivy.build_built // 1' engine.json)"
+          floors="$(jq -r '(.trivy.dep_floors // []) | join(" ")' engine.json)"
+          tag="engine-trivy-${version}"; [ "$build" = 1 ] || tag="${tag}-b${build}"
+          {
+            echo "version=$version"; echo "number=$build"; echo "tag=$tag"; echo "floors=$floors"
+          } >> "$GITHUB_OUTPUT"
+          if [ "$have" = "$version" ] && [ "$have_build" = "$build" ] \
+             && [ -n "$(jq -r '.trivy.sha256 // ""' engine.json)" ]; then
+            echo "build=false" >> "$GITHUB_OUTPUT"; echo "Trivy $version build $build is already built."
           else
             echo "build=true" >> "$GITHUB_OUTPUT"
           fi
@@ -60,24 +78,46 @@ jobs:
         if: steps.need.outputs.build == 'true'
         env:
           VERSION: ${{ steps.need.outputs.version }}
+          FLOORS: ${{ steps.need.outputs.floors }}
         run: |
           mkdir -p "$RUNNER_TEMP/trivy"
           base="$(scripts/fips-image.sh go)"
-          docker build --build-arg BASE="$base" --build-arg TRIVY_VERSION="$VERSION" --output "type=local,dest=$RUNNER_TEMP/trivy" - <<'DOCKERFILE'
+          docker build --build-arg BASE="$base" --build-arg TRIVY_VERSION="$VERSION" --build-arg FLOORS="$FLOORS" \
+            --output "type=local,dest=$RUNNER_TEMP/trivy" - <<'DOCKERFILE'
           ARG BASE
           FROM ${BASE} AS build
           ARG TRIVY_VERSION
+          ARG FLOORS
+          USER root
+          # The module source of the tag, so its go.mod can take the floors
+          # (`go install pkg@version` builds exactly the tag's own requirements).
+          # Every module is still checked against sum.golang.org.
+          RUN command -v git >/dev/null || apk add --no-cache git
+          RUN git clone -q --depth 1 --branch "v${TRIVY_VERSION}" https://github.com/aquasecurity/trivy.git /src/trivy
+          WORKDIR /src/trivy
+          # Floors: raise each listed module the build requires to at least its
+          # version, never lower it. GOTOOLCHAIN=local: a floor that needs a
+          # newer Go than fips-go fails here instead of fetching a toolchain
+          # from outside the FIPS image.
+          RUN set -eu; export GOTOOLCHAIN=local GOFLAGS=-mod=mod; \
+              for want in ${FLOORS}; do \
+                mod="${want%@*}"; floor="${want#*@}"; \
+                have="$(go list -m -f '{{.Version}}' "$mod" 2>/dev/null)" || continue; \
+                [ -n "$have" ] || continue; \
+                [ "$(printf '%s\n%s\n' "$have" "$floor" | sort -V | head -n1)" = "$floor" ] && continue; \
+                echo "floor: $mod $have -> $floor"; go get "$want"; \
+              done
           # GOEXPERIMENT=jsonv2 is what upstream's own release build sets.
           # Checked here, where the Go toolchain is: built with the Go
           # Cryptographic Module, and the version it claims.
-          RUN GOEXPERIMENT=jsonv2 go install -trimpath \
+          RUN mkdir -p /tmp/out \
+           && GOTOOLCHAIN=local GOFLAGS=-mod=mod GOEXPERIMENT=jsonv2 go build -trimpath \
                 -ldflags "-s -w -X github.com/aquasecurity/trivy/pkg/version/app.ver=${TRIVY_VERSION}" \
-                "github.com/aquasecurity/trivy/cmd/trivy@v${TRIVY_VERSION}" \
-           && go version -m "${GOPATH}/bin/trivy" > /tmp/buildinfo.txt \
-           && grep 'GOFIPS140=v1.0.0' /tmp/buildinfo.txt >/dev/null \
-           && "${GOPATH}/bin/trivy" --version > /tmp/version.txt \
-           && grep "Version: ${TRIVY_VERSION}" /tmp/version.txt >/dev/null \
-           && mkdir -p /tmp/out && cp "${GOPATH}/bin/trivy" /tmp/buildinfo.txt /tmp/out/
+                -o /tmp/out/trivy ./cmd/trivy \
+           && go version -m /tmp/out/trivy > /tmp/out/buildinfo.txt \
+           && grep 'GOFIPS140=v1.0.0' /tmp/out/buildinfo.txt >/dev/null \
+           && /tmp/out/trivy --version > /tmp/version.txt \
+           && grep "Version: ${TRIVY_VERSION}" /tmp/version.txt >/dev/null
           FROM scratch
           COPY --from=build /tmp/out/ /
           DOCKERFILE
@@ -91,18 +131,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.need.outputs.version }}
+          NUMBER: ${{ steps.need.outputs.number }}
+          TAG: ${{ steps.need.outputs.tag }}
         run: |
-          tag="engine-trivy-${VERSION}"
+          tag="$TAG"
           file="trivy-${VERSION}-linux-amd64-fips"
           sum="$(cut -d' ' -f1 "$RUNNER_TEMP/trivy/${file}.sha256")"
-          gh release view "$tag" >/dev/null 2>&1 && gh release delete "$tag" --yes --cleanup-tag
+          # Never replaced: an older commit of this repository may record its sha256.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "::error::Release $tag already exists. Raise trivy.build in engine.json to rebuild."
+            exit 1
+          fi
           gh release create "$tag" "$RUNNER_TEMP/trivy/$file" "$RUNNER_TEMP/trivy/${file}.buildinfo.txt" \
-            "$RUNNER_TEMP/trivy/${file}.sha256" --title "Trivy ${VERSION} (FIPS build)" --latest=false \
+            "$RUNNER_TEMP/trivy/${file}.sha256" --title "Trivy ${VERSION} (FIPS build ${NUMBER})" --latest=false \
             --notes "Trivy ${VERSION} built from source on MicroHealth's fips-go image with GOFIPS140=v1.0.0 (Go Cryptographic Module, CMVP #5247). sha256 ${sum}. Build info (go version -m) attached."
           {
-            echo "### Trivy ${VERSION} (FIPS build)"
+            echo "### Trivy ${VERSION} (FIPS build ${NUMBER})"
             echo
             echo "Release \`${tag}\`, sha256 \`${sum}\`. Record it in engine.json:"
             echo
-            echo "    scripts/record_trivy.sh ${VERSION}"
+            echo "    scripts/record_trivy.sh ${VERSION} ${NUMBER}"
           } >> "$GITHUB_STEP_SUMMARY"

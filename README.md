@@ -299,10 +299,14 @@ workflow files on purpose: no bot edits `.github/workflows/`.
   non-merge commit pushed to `main` must already be on `integration`
   (`scripts/require-from-integration.sh`).
 
-**Trivy** is built from source once per version (`engines.yml`) on
+**Trivy** is built from source once per version and build (`engines.yml`) on
 MicroHealth's FIPS Go image with the Go Cryptographic Module (`GOFIPS140`,
 CMVP #5247); every Go module is checked against sum.golang.org, and every scan
-refuses a binary whose sha256 is not the one `engine.json` records. Its
+refuses a binary whose sha256 is not the one `engine.json` records. Raising
+`trivy.build` rebuilds the same version on the newest fips-go, with each
+`trivy.dep_floors` module raised to at least its floor (never lowered), so the
+binary does not keep the Go and dependency findings of the day it was first
+built. Each build is its own release; none is ever replaced. Its
 vulnerability database is downloaded on each run.
 
 **ZAP is outside the FIPS claim.** It is Java, and its TLS is the JDK's. It is
