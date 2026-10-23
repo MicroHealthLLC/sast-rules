@@ -730,11 +730,9 @@
    "path": "upstream/gitlab/csharp/crypto/rule-CertificateValidationDisabled.yml",
    "license": "MIT",
    "sha256": "fc55ec4e6f5db16cc8018808ccb12aabf51049c284ae27cd7e335bae84c57ffe",
-   "bundles": [
-    "internal",
-    "product"
-   ],
-   "status": "active"
+   "bundles": [],
+   "status": "disabled",
+   "reason": "Replaced by mh.microhealth.csharp.crypto.certificate-validation-disabled: the same rule with its lambda pattern written `(...) => true` instead of `(...) => true;`, which Opengrep 1.32.0 no longer parses for C# (the rule failed to load in both bundles). It still reports a ServerCertificateValidationCallback lambda or method that returns true."
   },
   "mh.gitlab.csharp_crypto_rule-WeakCipherAlgorithm": {
    "source": "gitlab",
@@ -6710,6 +6708,18 @@
    "path": "rules/microhealth/bash/ifs-global.yaml",
    "license": "MIT",
    "sha256": "6de0b98cca1b1e9b445fa24d52c1d15aee2429d73d8658302f7821168e55e2bd",
+   "bundles": [
+    "internal",
+    "product"
+   ],
+   "status": "active"
+  },
+  "mh.microhealth.csharp.crypto.certificate-validation-disabled": {
+   "source": "microhealth",
+   "upstream_id": "csharp.crypto.certificate-validation-disabled",
+   "path": "rules/microhealth/csharp/certificate-validation-disabled.yaml",
+   "license": "MIT",
+   "sha256": "c4e416ff37ab0907570d51fddb3bb79e4a69beff6421b62bbcbcd876430fdbb4",
    "bundles": [
     "internal",
     "product"
