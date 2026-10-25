@@ -53,3 +53,6 @@ rules/microhealth/dockerfile/last-user-root.dockerfile
 rules/microhealth/javascript/*.ts
 rules/microhealth/javascript/*.js
 rules/microhealth/json/*.json
+# Rule-test fixture: deliberate ServerCertificateValidationCallback lambdas returning
+# true that `opengrep scan --test` checks the C# rule against; never compiled or run.
+rules/microhealth/csharp/certificate-validation-disabled.cs

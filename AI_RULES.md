@@ -86,8 +86,9 @@ skipped and why, and every push or PR made (branch and commit).
      with a fixture in `tests/refine/` naming the full `mh.*` id;
   2. `allow:` for a known text shape (e.g. `gitleaks:allow`);
   3. a changed copy in `rules/microhealth/<language>/` with `mh_replaces`,
-     its own `# ruleid:` / `# ok:` test file, and the old id disabled in
-     `overrides.yaml` with a reason naming the copy;
+     its own `# ruleid:` / `# ok:` test file (listed in `.sastignore`, or the
+     self-scan reports it), and the old id disabled in `overrides.yaml` with
+     a reason naming the copy;
   4. `disable` with a reason, only when the rule cannot be made precise.
 - Every narrowing states in its `reason` (or the rule's header comment) which
   repository tripped it, how many hits, the shape it now skips, and what it

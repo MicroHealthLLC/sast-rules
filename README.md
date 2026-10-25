@@ -194,7 +194,10 @@ with its reason, and a rule it narrows carries `refined`, with its reason.
 - `overrides.yaml` and the other configuration files must not repeat a key:
   YAML would keep only the last, so the build refuses it.
 - A new rule goes in `rules/microhealth/<language>/<name>.yaml`, with a test
-  file of the same name beside it (`# ruleid:` and `# ok:` comments).
+  file of the same name beside it (`# ruleid:` and `# ok:` comments). List the
+  test file in [`.sastignore`](.sastignore): this repository scans itself, and
+  a fixture's deliberate `ruleid:` cases would otherwise be code scanning
+  alerts (`tests/test_sastignore.py` fails on one that is missing).
 - Every rule file there starts with a `# License:` header, read per file as
   GitLab's are: `MIT` for a rule we wrote, the upstream license for a changed
   copy of an upstream rule (an LGPL rule we narrowed is still LGPL and stays
