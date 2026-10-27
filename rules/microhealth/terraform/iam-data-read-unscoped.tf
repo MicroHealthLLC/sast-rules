@@ -43,3 +43,40 @@ data "aws_iam_policy_document" "reader" {
     resources = [aws_ssm_parameter.p.arn]
   }
 }
+
+# A permissions boundary grants nothing: AllowAll is its ceiling, the Denies
+# are the guardrail.
+data "aws_iam_policy_document" "production_boundary" {
+  statement {
+    sid    = "AllowAll"
+    effect = "Allow"
+    # ok: terraform.iam-data-read-unscoped
+    actions   = ["*"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "ci_boundary" {
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      # ok: terraform.iam-data-read-unscoped
+      Action   = "*"
+      Resource = "*"
+    }]
+  })
+}
+
+# Not a boundary: still reported.
+resource "aws_iam_policy" "admin" {
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      # ruleid: terraform.iam-data-read-unscoped
+      Action   = "*"
+      Resource = "*"
+    }]
+  })
+}
