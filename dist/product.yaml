@@ -14777,6 +14777,12 @@ rules:
     mh_upstream_id: terraform.iam-data-read-unscoped
     mh_license: MIT
   patterns:
+  - pattern-not-inside: 'data "aws_iam_policy_document" "=~/(?i)boundary/" {...}
+
+      '
+  - pattern-not-inside: 'resource "aws_iam_policy" "=~/(?i)boundary/" {...}
+
+      '
   - pattern-either:
     - patterns:
       - pattern-either:

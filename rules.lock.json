@@ -7571,7 +7571,7 @@
    "upstream_id": "terraform.iam-data-read-unscoped",
    "path": "rules/microhealth/terraform/iam-data-read-unscoped.yaml",
    "license": "MIT",
-   "sha256": "1ae089eb19dbe87f52e87844a4c7444c57aac15e7749dca6fe1af4c29c720c56",
+   "sha256": "dada15749f6f9d3bd2fb7375f9bfa977ffbbdf4ff931adcacafadbe38d82ba5a",
    "bundles": [
     "internal",
     "product"

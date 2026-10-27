@@ -27,7 +27,20 @@ rules:
       # which AWS only accepts on "*" (Gnosis deployment/ecs). Resource scope
       # is per statement, so this rule reads the action and the resource from
       # the same statement.
+      #
+      # Permissions boundaries are skipped (dsc-aws-applications
+      # stacks/mhhq-iam/policies.tf, 1 hit, 2026-10-27): a boundary is a
+      # ceiling that grants nothing, and its standard shape is an `AllowAll`
+      # ("*" on "*") statement followed by the Deny statements that are the
+      # real guardrail. A document is treated as a boundary when its Terraform
+      # label (data "aws_iam_policy_document" / resource "aws_iam_policy")
+      # contains "boundary". Every other policy, document or inline role
+      # policy is still reported.
     patterns:
+      - pattern-not-inside: |
+          data "aws_iam_policy_document" "=~/(?i)boundary/" {...}
+      - pattern-not-inside: |
+          resource "aws_iam_policy" "=~/(?i)boundary/" {...}
       - pattern-either:
           - patterns:
               - pattern-either:
