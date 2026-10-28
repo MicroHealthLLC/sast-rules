@@ -28,8 +28,8 @@
     "build_note": "Raise build (and record it) to rebuild the same version: when fips-go's Go moves, or when a floor is added. Floors only ever raise a module the build already requires; drop one once the pinned version already requires it.",
     "note": "0.75.0 needs Go 1.27; fips-go ships the go1.26 line",
     "version_built": "0.74.0",
-    "url": "https://github.com/MicroHealthLLC/sast-rules/releases/download/engine-trivy-0.74.0-b3/trivy-0.74.0-linux-amd64-fips",
-    "sha256": "ae9b8b821ba1305c8c512a57c2d16b40db78a4b42e5692c77f4b6fc4d511296d",
-    "build_built": 3
+    "url": "https://github.com/MicroHealthLLC/sast-rules/releases/download/engine-trivy-0.74.0-b4/trivy-0.74.0-linux-amd64-fips",
+    "sha256": "e37db82d9150e6cee34f6bc639ee10890211be24820f3fec701e4eff85dafd0c",
+    "build_built": 4
   }
 }
