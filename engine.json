@@ -14,15 +14,16 @@
   },
   "trivy": {
     "version": "0.74.0",
-    "build": 3,
+    "build": 4,
     "dep_floors": [
-      "golang.org/x/net@v0.60.0",
+      "golang.org/x/net@v0.62.0",
       "golang.org/x/crypto@v0.57.0",
       "google.golang.org/grpc@v1.83.2",
       "github.com/containerd/containerd/v2@v2.3.6",
       "go.opentelemetry.io/otel/sdk@v1.45.0",
       "go.opentelemetry.io/otel/exporters/otlp/otlptrace@v1.45.0",
-      "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc@v1.45.0"
+      "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc@v1.45.0",
+      "github.com/go-jose/go-jose/v4@v4.1.6"
     ],
     "build_note": "Raise build (and record it) to rebuild the same version: when fips-go's Go moves, or when a floor is added. Floors only ever raise a module the build already requires; drop one once the pinned version already requires it.",
     "note": "0.75.0 needs Go 1.27; fips-go ships the go1.26 line",
