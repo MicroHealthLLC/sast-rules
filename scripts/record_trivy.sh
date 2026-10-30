@@ -10,8 +10,8 @@ tag="engine-trivy-${v}"; [ "$b" = 1 ] || tag="${tag}-b${b}"
 file="trivy-${v}-linux-amd64-fips"
 url="https://github.com/MicroHealthLLC/sast-rules/releases/download/${tag}/${file}"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-curl -fsSL -o "$tmp/$file" "$url"
-curl -fsSL -o "$tmp/$file.sha256" "$url.sha256"
+curl -fsSL --retry 5 -o "$tmp/$file" "$url"
+curl -fsSL --retry 5 -o "$tmp/$file.sha256" "$url.sha256"
 (cd "$tmp" && sha256sum -c "$file.sha256")
 sum="$(cut -d' ' -f1 "$tmp/$file.sha256")"
 python3 - "$root/engine.json" "$v" "$b" "$url" "$sum" <<'PY'
