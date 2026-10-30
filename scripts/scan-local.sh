@@ -37,7 +37,7 @@ read -r version file want < <(python3 -I -c 'import json,sys; e=json.load(open(s
 cache="${XDG_CACHE_HOME:-$HOME/.cache}/sast-rules/opengrep-${version}-${arch}"
 if ! echo "${want}  ${cache}" | sha256sum -c --quiet - 2>/dev/null; then
   mkdir -p "$(dirname "$cache")"
-  curl -fsSL -o "$cache.tmp" "https://github.com/opengrep/opengrep/releases/download/v${version}/${file}"
+  curl -fsSL --retry 5 -o "$cache.tmp" "https://github.com/opengrep/opengrep/releases/download/v${version}/${file}"
   echo "${want}  ${cache}.tmp" | sha256sum -c --quiet - || { echo "Opengrep download does not match engine.json" >&2; exit 1; }
   mv "$cache.tmp" "$cache"; chmod 0755 "$cache"
 fi

@@ -186,7 +186,7 @@ jobs:
               && /opt/zap-py/bin/pip install --no-cache-dir "zaproxy==${ZAPROXY_CLIENT_VERSION}" \
               && adduser -D -u 1000 -h /home/zap -s /bin/bash zap \
               && mkdir -p /zap/wrk /tmp/zap-src && cd /tmp/zap-src \
-              && curl -fsSL -o zap.tar.gz \
+              && curl -fsSL --retry 5 -o zap.tar.gz \
                 "https://github.com/zaproxy/zaproxy/releases/download/v${ZAP_VERSION}/ZAP_${ZAP_VERSION}_Linux.tar.gz" \
               && echo "${ZAP_SHA256}  zap.tar.gz" | sha256sum -c - \
               && tar -xzf zap.tar.gz -C /zap --strip-components=1 \
@@ -214,7 +214,7 @@ jobs:
                 > SHA256SUMS \
               && while read -r sum path; do \
                    mkdir -p "$(dirname "$path")" \
-                   && curl -fsSL -o "$path" "${ZAP_DOCKER_SRC}/$(printf '%s' "$path" | sed 's/ /%20/g')" \
+                   && curl -fsSL --retry 5 -o "$path" "${ZAP_DOCKER_SRC}/$(printf '%s' "$path" | sed 's/ /%20/g')" \
                    || exit 1; \
                  done < SHA256SUMS \
               && sha256sum -c SHA256SUMS \
