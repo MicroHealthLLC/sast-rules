@@ -193,7 +193,9 @@ jobs:
           url="$(jq -r .trivy.url .sast-rules/engine.json)"; sum="$(jq -r .trivy.sha256 .sast-rules/engine.json)"
           case "$sum" in (*[!0-9a-f]*|"") echo "::error::engine.json records no Trivy build"; exit 1;; esac
           mkdir -p "$RUNNER_TEMP/trivy-bin"
-          curl -fsSL -o "$RUNNER_TEMP/trivy-bin/trivy" "$url"
+          # Every matrix job fetches this asset at once; GitHub answers a burst with
+          # 429. --retry backs off (honouring Retry-After) instead of failing the scan.
+          curl -fsSL --retry 5 -o "$RUNNER_TEMP/trivy-bin/trivy" "$url"
           echo "${sum}  $RUNNER_TEMP/trivy-bin/trivy" | sha256sum -c -
           chmod 0755 "$RUNNER_TEMP/trivy-bin/trivy"
           base="$(.sast-rules/scripts/fips-image.sh python)"

@@ -87,7 +87,7 @@ jobs:
           # the release (LGPL-2.1: whoever MicroHealth gives the binary to can
           # get its source from the same place), as do every license text.
           version="$(jq -r .version engine.json)"
-          curl -fsSL -o "$RUNNER_TEMP/opengrep-${version}-source.tar.gz" \
+          curl -fsSL --retry 5 -o "$RUNNER_TEMP/opengrep-${version}-source.tar.gz" \
             "https://github.com/opengrep/opengrep/archive/refs/tags/v${version}.tar.gz"
           tar -czf "$RUNNER_TEMP/licenses.tar.gz" -C dist licenses
           git tag "$tag" "$GITHUB_SHA"
