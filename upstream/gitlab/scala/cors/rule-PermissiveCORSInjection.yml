@@ -5,7 +5,7 @@
 rules:
 - id: "scala_cors_rule-PermissiveCORSInjection"
   languages:
-  - "java"
+  - "scala"
   message: |
     Prior to HTML5, Web browsers enforced the Same Origin Policy which ensures that in order for
     JavaScript to access the contents of a Web page, both the JavaScript and the Web page must
@@ -27,17 +27,17 @@ rules:
     - "A02:2025-Security Misconfiguration"
     shortDescription: "Permissive Cross-domain Policy with Untrusted Domains"
     technology:
-    - "java"
+    - "scala"
     security-severity: "Low"
   mode: "taint"
   pattern-sinks:
   - patterns:
     - pattern-either:
-      - pattern: "(HttpServletResponse $RES).setHeader(\"$HEADER\", ...)"
-      - pattern: "(HttpServletResponse $RES).addHeader(\"$HEADER\", ...)"
+      - pattern: "($RES: HttpServletResponse).setHeader(\"$HEADER\", ...)"
+      - pattern: "($RES: HttpServletResponse).addHeader(\"$HEADER\", ...)"
     - metavariable-regex:
         metavariable: "$HEADER"
         regex: "(?i)(Access-Control-Allow-Origin)"
   pattern-sources:
-  - pattern: "(HttpServletRequest $REQ).getParameter(...)"
+  - pattern: "($REQ: HttpServletRequest).getParameter(...)"
   severity: "ERROR"

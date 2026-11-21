@@ -1,6 +1,5 @@
 # yamllint disable
 # License: MIT (c) GitLab Inc.
-# License: MIT (c) GitLab Inc.
 # yamllint enable
 ---
 rules:
@@ -11,35 +10,58 @@ rules:
     - pattern-either:
       - patterns:
         - pattern-inside: |
-            $FUNC(...,String $VAR, ...) {
+            def $FUNC(..., $VAR: String, ...): $RET = {
               ...
             }
         - pattern-either:
-          - pattern: "new FileInputStream(<... $VAR ...>);"
+          - pattern: "new FileInputStream(<... $VAR ...>)"
           - pattern: "getClass.getResourceAsStream(<... $VAR ...>)"
       - patterns:
         - pattern-inside: |
             class $CLZ {
-              String $X = "...";
+              ...
+              val $X = "..."
               ...
             }
         - pattern-inside: |
-            $FUNC(...,String $Y, ...) {
+            def $FUNC(..., $Y: String, ...): $RET = {
               ...
             }
         - pattern-either:
-          - pattern: "new FileInputStream($X + $Y);"
+          - pattern: "new FileInputStream($X + $Y)"
           - pattern: "getClass.getResourceAsStream($X + $Y)"
   pattern-sinks:
   - patterns:
     - pattern-either:
       - pattern-inside: |-
-          (javax.xml.transform.TransformerFactory $T).newTransformer($SRC, ...)
+          ($T: javax.xml.transform.TransformerFactory).newTransformer($SRC, ...)
       - pattern-inside: |-
-          (javax.xml.transform.Transformer $T).transform($SRC, ...)
+          ($T: javax.xml.transform.Transformer).transform($SRC, ...)
+      # flow instead of type assertion
+      - patterns:
+        - pattern-either:
+          - pattern-inside: |
+              val $FACTORY = javax.xml.transform.TransformerFactory.newInstance
+              ...
+          - pattern-inside: |
+              val $FACTORY = javax.xml.transform.TransformerFactory.newInstance(...)
+              ...
+        - pattern-inside: "$FACTORY.newTransformer($SRC, ...)"
+      - patterns:
+        - pattern-either:
+          - pattern-inside: |
+              val $FACTORY = javax.xml.transform.TransformerFactory.newInstance
+              ...
+          - pattern-inside: |
+              val $FACTORY = javax.xml.transform.TransformerFactory.newInstance(...)
+              ...
+        - pattern-inside: |
+            val $T = $FACTORY.newTransformer(...)
+            ...
+        - pattern-inside: "$T.transform($SRC, ...)"
     - pattern: "$SRC"
   languages:
-  - "java"
+  - "scala"
   message: |
     It is possible to attach malicious behavior to those style sheets. Therefore, if an attacker
     can control the content or the source of the style sheet, he might be able to trigger remote
