@@ -6,8 +6,8 @@ sources:
     # `# License:` header (MIT, Apache-2.0 from gosec, GPL-2.0 from flawfinder,
     # LGPL, Commons Clause, GitLab EE), so the license is read per file.
     url: https://gitlab.com/gitlab-org/security-products/sast-rules.git
-    ref: v2.10.1
-    commit: 53bf5cf6df3c51b6c02110f5a638b5e6213666cd
+    ref: v2.10.2
+    commit: 83144bd2ec7d3200cda96347fa923f81c8ad8413
     track: tags
     path: upstream/gitlab
     # Security rules only: style, correctness, portability and the like are
