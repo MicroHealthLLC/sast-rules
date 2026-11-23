@@ -180,8 +180,8 @@ jobs:
           # Per-run package refresh: a new value re-runs the layer below.
           ARG APK_REFRESH
           USER root
-          RUN apk add --no-cache bash curl openjdk21-jre xvfb py3-yaml py3-six \
-              && apk upgrade --no-cache \
+          RUN apk upgrade --no-cache \
+              && apk add --no-cache bash curl openjdk21-jre xvfb py3-yaml py3-six \
               && python3 -m venv --system-site-packages /opt/zap-py \
               && /opt/zap-py/bin/pip install --no-cache-dir "zaproxy==${ZAPROXY_CLIENT_VERSION}" \
               && adduser -D -u 1000 -h /home/zap -s /bin/bash zap \
