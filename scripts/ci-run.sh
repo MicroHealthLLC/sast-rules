@@ -16,7 +16,7 @@ ARG BASE
 FROM ${BASE}
 ARG APK_REFRESH
 USER root
-RUN apk add --no-cache git py3-yaml aws-cli bash tar && apk upgrade --no-cache \
+RUN apk upgrade --no-cache && apk add --no-cache git py3-yaml aws-cli bash tar \
     && git config --system --add safe.directory '*'
 DOCKERFILE
 fi

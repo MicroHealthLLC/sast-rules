@@ -179,7 +179,7 @@ jobs:
           # provider) stamps the report. Root: the
           # scan writes into mounted runner directories; nothing here ships.
           USER root
-          RUN apk add --no-cache git py3-yaml && apk upgrade --no-cache \
+          RUN apk upgrade --no-cache && apk add --no-cache git py3-yaml \
               && git config --system --add safe.directory '*'
           # The Opengrep musl build, verified against engine.json before this
           # build. It is statically linked except for musl libc and loads no

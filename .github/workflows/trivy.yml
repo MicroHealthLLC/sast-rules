@@ -207,7 +207,7 @@ jobs:
           # git: Trivy reads the checkout; aws-cli fetches the ECR token. Root:
           # the scan writes into mounted runner directories; nothing ships.
           USER root
-          RUN apk add --no-cache git aws-cli && apk upgrade --no-cache \
+          RUN apk upgrade --no-cache && apk add --no-cache git aws-cli \
               && git config --system --add safe.directory '*'
           # Built from source on fips-go with GOFIPS140 by engines.yml, and
           # checked against engine.json's sha256 before this build.
