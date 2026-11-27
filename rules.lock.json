@@ -3,8 +3,8 @@
  "sources": {
   "gitlab": {
    "url": "https://gitlab.com/gitlab-org/security-products/sast-rules.git",
-   "ref": "v2.10.1",
-   "commit": "53bf5cf6df3c51b6c02110f5a638b5e6213666cd"
+   "ref": "v2.10.2",
+   "commit": "83144bd2ec7d3200cda96347fa923f81c8ad8413"
   },
   "opengrep": {
    "url": "https://github.com/opengrep/opengrep-rules.git",
@@ -5739,7 +5739,7 @@
    "upstream_id": "scala_cors_rule-PermissiveCORSInjection",
    "path": "upstream/gitlab/scala/cors/rule-PermissiveCORSInjection.yml",
    "license": "MIT",
-   "sha256": "2b1e120460458692fed1a6055e7ab0c1d85b05110bff62f0cc2b24ba3be95e81",
+   "sha256": "dc644f3ec83e5e596a5645e900be8a209a4ad391f624aec1937d25eea6d2e363",
    "bundles": [
     "internal",
     "product"
@@ -6075,7 +6075,7 @@
    "upstream_id": "scala_inject_rule-CustomInjectionSQLString",
    "path": "upstream/gitlab/scala/inject/rule-CustomInjectionSQLString.yml",
    "license": "MIT",
-   "sha256": "320b5c86ae5af8e07681bffaace847a097f85a0c82a70c66d1a05787896205df",
+   "sha256": "3181b03ada72c77dbf072f08f46bf0f18bdfb19bbc9db224c91c80e97a330264",
    "bundles": [
     "internal",
     "product"
@@ -6528,7 +6528,7 @@
    "upstream_id": "scala_xml_rule-XsltTransform",
    "path": "upstream/gitlab/scala/xml/rule-XsltTransform.yml",
    "license": "MIT",
-   "sha256": "b7eae7d4793efd3b5490d717612591d56706bbb1d6a38641db0c48a464542ffb",
+   "sha256": "f3482278422bb9a338f24d487c437ab7da609f80a9b66d1474215a3ba795aac6",
    "bundles": [
     "internal",
     "product"
