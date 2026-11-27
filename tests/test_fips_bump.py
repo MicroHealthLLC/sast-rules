@@ -1,8 +1,12 @@
 """No release may carry a stale MicroHealth FIPS image (owner's order, 2026-10-22).
 
 * scripts/fips_bump.py finds every microhealthllc/fips-* pin in the tracked
-  files, moves it to its tag's current digest, and with --check exits 1 on a
-  stale OR unresolvable pin (tested offline with --from-file);
+  files, moves it to the newest image of its channel, and with --check exits 1
+  on a stale OR unresolvable pin (tested offline with --from-file);
+* the dev channel is found without dev-latest (ECR.2): the newest
+  dev-<YYYYMMDDHHMM>-<sha8> image by imagePushedAt from describe-images, pinned
+  tag@digest, with dev-latest only as a logged fallback (tested against a
+  stand-in aws CLI);
 * fips-base-images.yml runs on fips-container's dispatch and weekly, opens ONE
   pull request into integration and merges it at once with GH_PAT, and fails
   red when it cannot;
@@ -15,9 +19,12 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
+import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -28,6 +35,11 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 REG = "295669632222.dkr.ecr.us-east-1.amazonaws.com/microhealthllc"
 OLD, NEW, OTHER = "sha256:" + "1" * 64, "sha256:" + "2" * 64, "sha256:" + "3" * 64
+DEV = "dev-202611271200-0123abcd"
+
+_spec = importlib.util.spec_from_file_location("fips_bump", ROOT / "scripts" / "fips_bump.py")
+fips_bump = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(fips_bump)
 
 
 def load(name: str) -> dict:
@@ -78,7 +90,7 @@ class BumpScriptTests(unittest.TestCase):
         self.assertIn(OLD, (work / "tests" / "fixture.json").read_text())
         self.assertIn(OLD, (work / "other.yml").read_text())
         self.assertIn(OLD, (work / "untracked.sh").read_text())
-        self.assertIn("| `fips-python:dev-latest` | `111111111111` | `222222222222` |", summary.read_text())
+        self.assertIn("| `fips-python:dev-latest` | `111111111111` | `dev-latest@222222222222` |", summary.read_text())
         self.assertEqual(self.bump(work, table, "--check").returncode, 0)
 
     def test_check_fails_on_a_stale_pin_and_writes_nothing(self) -> None:
@@ -109,6 +121,25 @@ class BumpScriptTests(unittest.TestCase):
         self.assertTrue(images["go"].endswith(NEW))
         self.assertIn("Not resolvable in ECR (pin left as is): `fips-go:dev-latest`", res.stdout)
 
+    def test_moves_dev_latest_pins_to_the_dev_channel_tag(self) -> None:
+        work, table = self.repo({"fips-python": f"{DEV}@{NEW}", "fips-go": f"{DEV}@{NEW}"})
+        self.assertEqual(self.bump(work, table, "--check").returncode, 1)  # python's digest moved
+        res = self.bump(work, table)
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        images = json.loads((work / "fips-images.json").read_text())
+        self.assertEqual(images["python"], f"{REG}/fips-python:{DEV}@{NEW}")
+        self.assertEqual(images["go"], f"{REG}/fips-go:{DEV}@{NEW}")
+        self.assertIn(f"FROM {REG}/fips-python:{DEV}@{NEW}", (work / "build.sh").read_text())
+        # The new form is read back by the next run (both pin forms match).
+        self.assertEqual(self.bump(work, table, "--check").returncode, 0)
+
+    def test_a_pin_only_renamed_is_fresh(self) -> None:
+        # go is pinned dev-latest@NEW and NEW is the newest image: fresh, though the bump renames it.
+        work, table = self.repo({"fips-python": f"{DEV}@{OLD}", "fips-go": f"{DEV}@{NEW}"})
+        res = self.bump(work, table, "--check")
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertIn("0 stale pin(s), 2 pin(s) to rewrite", res.stdout)
+
     def test_nothing_resolvable_is_an_error(self) -> None:
         work, table = self.repo({})
         self.assertEqual(self.bump(work, table).returncode, 1)
@@ -125,6 +156,101 @@ class BumpScriptTests(unittest.TestCase):
                              capture_output=True, text=True)
         self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
         self.assertIn(f"{len(table)} image tag(s), 0 stale pin(s)", res.stdout)
+
+
+class DevChannelTests(unittest.TestCase):
+    """CONTRACT §3: describe-images, newest dev tag by imagePushedAt, dev-latest fallback."""
+
+    def test_dev_tag_pattern(self) -> None:
+        for tag in (DEV, "17-" + DEV):
+            self.assertTrue(fips_bump.DEV_TAG.match(tag), tag)
+        for tag in ("dev-latest", "latest", "sha-0123abcd", "dev-20261127-0123abcd", "dev-202611271200-0123ABCD",
+                    "prod-2026-11-27_0848", "3.24.4-20261127.283", "x-" + DEV, DEV + "-x"):
+            self.assertFalse(fips_bump.DEV_TAG.match(tag), tag)
+        self.assertTrue(fips_bump.follows_dev_channel("dev-latest"))
+        self.assertTrue(fips_bump.follows_dev_channel(DEV))
+        self.assertFalse(fips_bump.follows_dev_channel("sha-0123abcd"))
+
+    def test_newest_by_push_time_not_by_tag(self) -> None:
+        newest = fips_bump.newest_dev_image([
+            {"imageTags": ["dev-202611270900-aaaaaaaa"], "imageDigest": OLD, "imagePushedAt": "2026-11-27T09:00:00-05:00"},
+            # Built earlier, pushed last (a re-run): push time decides.
+            {"imageTags": ["dev-202611260900-bbbbbbbb", "sha-bbbbbbbb"], "imageDigest": NEW,
+             "imagePushedAt": "2026-11-27T15:00:00+00:00"},
+            {"imageTags": ["dev-latest", "latest"], "imageDigest": OTHER, "imagePushedAt": "2026-11-28T00:00:00+00:00"},
+        ])
+        self.assertEqual(newest, ("dev-202611260900-bbbbbbbb", NEW))
+        self.assertIsNone(fips_bump.newest_dev_image(
+            [{"imageTags": ["dev-latest"], "imageDigest": OTHER, "imagePushedAt": "2026-11-28T00:00:00+00:00"}]))
+        self.assertIsNone(fips_bump.newest_dev_image([]))
+
+    def fake_ecr(self, state: dict) -> tuple[Path, dict]:
+        """A work repository and an env whose `aws` answers from `state`."""
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp)
+        (tmp / "bin").mkdir()
+        (tmp / "ecr.json").write_text(json.dumps(state))
+        aws = tmp / "bin" / "aws"
+        aws.write_text(f"""#!{sys.executable}
+import json, sys
+state = json.load(open({str(tmp / "ecr.json")!r}))
+args = sys.argv[1:]
+repo = args[args.index("--repository-name") + 1].removeprefix("microhealthllc/")
+if "describe-images" in args:
+    assert "tagStatus=TAGGED" in args
+    print(json.dumps(state["images"].get(repo, [])))
+elif "batch-get-image" in args:
+    tag = args[args.index("--image-ids") + 1].removeprefix("imageTag=")
+    print(json.dumps(state["tags"].get(repo + ":" + tag)))
+else:
+    sys.exit(2)
+""")
+        aws.chmod(0o755)
+        work = tmp / "work"
+        work.mkdir()
+        git("init", "-q", cwd=work)
+        (work / "fips-images.json").write_text(json.dumps({
+            "python": f"{REG}/fips-python:dev-latest@{OLD}",
+            "go": f"{REG}/fips-go:dev-202611200000-11111111@{OLD}",
+        }, indent=2) + "\n")
+        git("add", "fips-images.json", cwd=work)
+        return work, {**os.environ, "PATH": f"{tmp / 'bin'}{os.pathsep}{os.environ['PATH']}"}
+
+    def run_bump(self, work: Path, env: dict, *args: str) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, str(ROOT / "scripts" / "fips_bump.py"), "--root", str(work), *args],
+                              capture_output=True, text=True, env=env)
+
+    def test_pins_the_newest_dev_tag_at_its_digest(self) -> None:
+        work, env = self.fake_ecr({"images": {
+            "fips-python": [
+                {"imageTags": ["dev-202611270100-aaaaaaaa"], "imageDigest": OTHER, "imagePushedAt": "2026-11-27T01:00:00+00:00"},
+                {"imageTags": [DEV, "dev-latest"], "imageDigest": NEW, "imagePushedAt": "2026-11-27T12:00:00+00:00"},
+            ],
+            "fips-go": [{"imageTags": [DEV], "imageDigest": NEW, "imagePushedAt": "2026-11-27T12:00:00+00:00"}],
+        }, "tags": {}})
+        self.assertEqual(self.run_bump(work, env, "--check").returncode, 1)
+        res = self.run_bump(work, env)
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertNotIn("falling back", res.stdout)
+        images = json.loads((work / "fips-images.json").read_text())
+        self.assertEqual(images["python"], f"{REG}/fips-python:{DEV}@{NEW}")
+        self.assertEqual(images["go"], f"{REG}/fips-go:{DEV}@{NEW}")
+        self.assertEqual(self.run_bump(work, env, "--check").returncode, 0)
+
+    def test_falls_back_to_dev_latest_and_says_so(self) -> None:
+        work, env = self.fake_ecr({"images": {
+            "fips-python": [{"imageTags": ["dev-latest", "latest"], "imageDigest": NEW,
+                             "imagePushedAt": "2026-11-27T12:00:00+00:00"}],
+        }, "tags": {"fips-python:dev-latest": NEW, "fips-go:dev-latest": NEW}})
+        res = self.run_bump(work, env)
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertIn("fips_bump: fips-python has no dev-<YYYYMMDDHHMM>-<sha8> tag in ECR yet; falling back to dev-latest",
+                      res.stdout)
+        self.assertIn("Resolved through the dev-latest fallback (no dev-channel tag yet): `fips-go`, `fips-python`",
+                      res.stdout)
+        images = json.loads((work / "fips-images.json").read_text())
+        self.assertEqual(images["python"], f"{REG}/fips-python:dev-latest@{NEW}")
+        self.assertEqual(images["go"], f"{REG}/fips-go:dev-latest@{NEW}")
 
 
 class BumpWorkflowTests(unittest.TestCase):

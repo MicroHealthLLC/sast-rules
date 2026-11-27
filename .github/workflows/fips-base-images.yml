@@ -1,9 +1,11 @@
 name: FIPS base images
 # No release of this repository may run on a stale MicroHealth FIPS image
 # (owner's order, 2026-10-22). fips-container rebuilds its images nightly and
-# on every release, so the tags in fips-images.json move and their digests go
-# stale. This job resolves every pinned tag to its current digest
-# (scripts/fips_bump.py, `aws ecr batch-get-image` over OIDC), opens or
+# on every release under a new dev-channel tag, so the digests in
+# fips-images.json go stale. This job moves every pin to the newest
+# dev-<YYYYMMDDHHMM>-<sha8> image (scripts/fips_bump.py over OIDC:
+# describe-images, dev-latest as a logged fallback until fips-container pushes
+# dev-channel tags), opens or
 # refreshes ONE pull request into integration that moves every pin together,
 # and MERGES it at once with GH_PAT (`gh pr merge --merge --admin
 # --delete-branch`): no human step. The merge is a push to integration made
