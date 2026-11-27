@@ -283,9 +283,14 @@ workflow files on purpose: no bot edits `.github/workflows/`.
 
 **No release ever carries a stale FIPS image** (owner's order, 2026-10-22):
 
-- `fips-base-images.yml` resolves every `microhealthllc/fips-*` pin in the
-  tracked files to its tag's current digest (`scripts/fips_bump.py`, `aws ecr
-  batch-get-image` over OIDC), opens ONE pull request into `integration` and
+- `fips-base-images.yml` moves every `microhealthllc/fips-*` pin in the
+  tracked files to the newest image of its channel (`scripts/fips_bump.py`
+  over OIDC). A dev-channel pin (`dev-latest` or `dev-<YYYYMMDDHHMM>-<sha8>`)
+  becomes the newest `dev-<YYYYMMDDHHMM>-<sha8>` tag by push time, as
+  `tag@digest`, from `aws ecr describe-images`; while fips-container has
+  pushed no such tag it falls back to `dev-latest` (`batch-get-image`) and
+  says so (ECR.2: the fips-* repositories are becoming immutable, so
+  `dev-latest` stops moving). It opens ONE pull request into `integration` and
   merges it at once with `GH_PAT` (`gh pr merge --merge --admin
   --delete-branch`, brief retries; a merge that fails turns the run red). It
   runs weekly, by hand, when fips-container dispatches it after a release, and
@@ -293,7 +298,9 @@ workflow files on purpose: no bot edits `.github/workflows/`.
   validates it and `promote-main` carries it to `main` with no human step.
 - `ci.yml` (`fips-fresh`) runs `scripts/fips_bump.py --check` before anything
   else on every push to `integration` and `main` and every pull request into
-  `main`; `release.yml` runs it before tagging. A stale or unresolvable pin
+  `main`; `release.yml` runs it before tagging. A pin is fresh when its
+  digest is the newest image's (a `dev-latest@` pin is only renamed by the
+  next bump). A stale or unresolvable pin
   turns the run red ("the FIPS bump is pending — wait for fips-base-images.yml
   to merge (or dispatch it), then promote integration again"), so nothing is
   promoted or released on it.

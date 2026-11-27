@@ -54,7 +54,7 @@ jobs:
       - name: Every FIPS pin is the newest digest of its tag
         if: steps.scope.outputs.check == 'true'
         run: scripts/ci-run.sh python3 scripts/fips_bump.py --check
-      # fips-container moves dev-latest on every build, not only on the
+      # fips-container pushes a new dev-channel image on every build, not only on the
       # releases that dispatch fips-base-images.yml, so a stale pin found here
       # starts the bump itself: it merges into integration, whose CI then
       # passes and promotes. A dispatch made with GITHUB_TOKEN does start a run.

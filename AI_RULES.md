@@ -131,7 +131,10 @@ PR until it is green. Never report "done" on an unverified push.
   `fips-images.json`) lives outside the workflow files, never inside them. `release.yml` tags `vYYYY.M.N` on `main`.
 - **No release ever ships a stale MicroHealth FIPS image** (owner's order,
   2026-10-22). `fips-base-images.yml` alone moves the pins
-  (`scripts/fips_bump.py`): weekly, on fips-container's dispatch, by hand, and
+  (`scripts/fips_bump.py`: the newest `dev-<YYYYMMDDHHMM>-<sha8>` image by push
+  time from `describe-images`, pinned `tag@digest`, with `dev-latest` only as a
+  logged fallback until fips-container pushes dev-channel tags; ECR.2):
+  weekly, on fips-container's dispatch, by hand, and
   whenever CI finds a stale pin; it opens ONE PR into `integration` and merges
   it at once with `GH_PAT`, and `promote-main` takes it to `main`. `ci.yml`
   (`fips-fresh`) and `release.yml` run `fips_bump.py --check` first and go red
