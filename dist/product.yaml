@@ -1,5 +1,5 @@
 # sast-rules bundle `product` — built by scripts/build.py; do not edit.
-# 296 rules. Sources: gitlab@53bf5cf6df3c, opengrep@f1d2b562b414, microhealth@local
+# 296 rules. Sources: gitlab@83144bd2ec7d, opengrep@f1d2b562b414, microhealth@local
 # Licenses of the rules in this bundle: Apache-2.0, MIT.
 # Each rule's own license is its metadata.mh_license.
 # MODIFIED from the upstream rules (MicroHealth, LLC): each rule's id is
@@ -9521,7 +9521,7 @@ rules:
   severity: ERROR
 - id: mh.gitlab.scala_cors_rule-PermissiveCORSInjection
   languages:
-  - java
+  - scala
   message: 'Prior to HTML5, Web browsers enforced the Same Origin Policy which ensures that in order for
 
     JavaScript to access the contents of a Web page, both the JavaScript and the Web page must
@@ -9554,7 +9554,7 @@ rules:
     - A02:2025-Security Misconfiguration
     shortDescription: Permissive Cross-domain Policy with Untrusted Domains
     technology:
-    - java
+    - scala
     security-severity: '2.0'
     mh_upstream_security_severity: Low
     mh_source: gitlab
@@ -9564,13 +9564,13 @@ rules:
   pattern-sinks:
   - patterns:
     - pattern-either:
-      - pattern: (HttpServletResponse $RES).setHeader("$HEADER", ...)
-      - pattern: (HttpServletResponse $RES).addHeader("$HEADER", ...)
+      - pattern: '($RES: HttpServletResponse).setHeader("$HEADER", ...)'
+      - pattern: '($RES: HttpServletResponse).addHeader("$HEADER", ...)'
     - metavariable-regex:
         metavariable: $HEADER
         regex: (?i)(Access-Control-Allow-Origin)
   pattern-sources:
-  - pattern: (HttpServletRequest $REQ).getParameter(...)
+  - pattern: '($REQ: HttpServletRequest).getParameter(...)'
   severity: ERROR
 - id: mh.gitlab.scala_crypto_rule-BlowfishKeySize
   languages:
@@ -10629,13 +10629,14 @@ rules:
     - pattern: '"$SQL_STR" + $SQLIN
 
         '
-    - pattern: String.format("$SQL_STR", ... + $SQLIN + ...)
+    - pattern: String.format("$SQL_STR", ..., $SQLIN, ...)
+    - pattern: '"$SQL_STR".format(..., $SQLIN, ...)'
     - pattern: '"$SQL_STR".concat(...)
 
         '
-    - pattern: (StringBuilder $BUILDER). ... .append("$SQL_STR")
+    - pattern: '($BUILDER: StringBuilder). ... .append("$SQL_STR")'
     - patterns:
-      - pattern-inside: 'StringBuilder $BUILDER = new StringBuilder(... + "$SQL_STR" + ...);
+      - pattern-inside: 'val $BUILDER = new StringBuilder(<... "$SQL_STR" ...>)
 
           ...
 
@@ -10643,7 +10644,7 @@ rules:
       - pattern: $BUILDER.append(...)
       - pattern-not: $BUILDER.append("...")
     - patterns:
-      - pattern-inside: '$QUERY = "$SQL_STR";
+      - pattern-inside: 'var $QUERY = "$SQL_STR"
 
           ...
 
@@ -12445,24 +12446,55 @@ rules:
   - patterns:
     - pattern-either:
       - patterns:
-        - pattern-inside: "$FUNC(...,String $VAR, ...) {\n  ...\n}\n"
+        - pattern-inside: "def $FUNC(..., $VAR: String, ...): $RET = {\n  ...\n}\n"
         - pattern-either:
-          - pattern: new FileInputStream(<... $VAR ...>);
+          - pattern: new FileInputStream(<... $VAR ...>)
           - pattern: getClass.getResourceAsStream(<... $VAR ...>)
       - patterns:
-        - pattern-inside: "class $CLZ {\n  String $X = \"...\";\n  ...\n}\n"
-        - pattern-inside: "$FUNC(...,String $Y, ...) {\n  ...\n}\n"
+        - pattern-inside: "class $CLZ {\n  ...\n  val $X = \"...\"\n  ...\n}\n"
+        - pattern-inside: "def $FUNC(..., $Y: String, ...): $RET = {\n  ...\n}\n"
         - pattern-either:
-          - pattern: new FileInputStream($X + $Y);
+          - pattern: new FileInputStream($X + $Y)
           - pattern: getClass.getResourceAsStream($X + $Y)
   pattern-sinks:
   - patterns:
     - pattern-either:
-      - pattern-inside: (javax.xml.transform.TransformerFactory $T).newTransformer($SRC, ...)
-      - pattern-inside: (javax.xml.transform.Transformer $T).transform($SRC, ...)
+      - pattern-inside: '($T: javax.xml.transform.TransformerFactory).newTransformer($SRC, ...)'
+      - pattern-inside: '($T: javax.xml.transform.Transformer).transform($SRC, ...)'
+      - patterns:
+        - pattern-either:
+          - pattern-inside: 'val $FACTORY = javax.xml.transform.TransformerFactory.newInstance
+
+              ...
+
+              '
+          - pattern-inside: 'val $FACTORY = javax.xml.transform.TransformerFactory.newInstance(...)
+
+              ...
+
+              '
+        - pattern-inside: $FACTORY.newTransformer($SRC, ...)
+      - patterns:
+        - pattern-either:
+          - pattern-inside: 'val $FACTORY = javax.xml.transform.TransformerFactory.newInstance
+
+              ...
+
+              '
+          - pattern-inside: 'val $FACTORY = javax.xml.transform.TransformerFactory.newInstance(...)
+
+              ...
+
+              '
+        - pattern-inside: 'val $T = $FACTORY.newTransformer(...)
+
+            ...
+
+            '
+        - pattern-inside: $T.transform($SRC, ...)
     - pattern: $SRC
   languages:
-  - java
+  - scala
   message: 'It is possible to attach malicious behavior to those style sheets. Therefore, if an attacker
 
     can control the content or the source of the style sheet, he might be able to trigger remote
