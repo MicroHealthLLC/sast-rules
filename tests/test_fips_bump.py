@@ -148,7 +148,10 @@ class BumpScriptTests(unittest.TestCase):
         # fips-images.json is found by the tracked-file scan (the check would
         # otherwise pass on nothing).
         images = json.loads((ROOT / "fips-images.json").read_text())
-        table = {f"fips-{k}:dev-latest": v.rsplit("@", 1)[1] for k, v in images.items() if k != "comment"}
+        # Answer as the dev channel does: each image's newest dev tag is the one pinned.
+        # "fips-go": "dev-<stamp>-<sha8>@sha256:..." (the pin's own tag@digest).
+        table = {f"fips-{k}": v.split(f"/microhealthllc/fips-{k}:", 1)[1]
+                 for k, v in images.items() if k != "comment"}
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
             json.dump(table, f)
         self.addCleanup(Path(f.name).unlink)
